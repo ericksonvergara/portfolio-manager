@@ -38,6 +38,7 @@ from common import (
 
 from github_api import (
     GitHubClient,
+    GitHubNotFoundError,
 )
 
 
@@ -65,7 +66,8 @@ GITHUB_TOKEN = os.getenv(
 
 GITHUB_OWNER = os.getenv(
     "GITHUB_OWNER",
-    "")
+    ""
+)
 
 GITHUB_REPOSITORY = os.getenv(
     "GITHUB_REPOSITORY",
@@ -136,7 +138,7 @@ def get_epic_module(
         raise ValueError(
             f"No module mapping found for Epic '{epic_id}'."
         ) from error
-        
+
 
 def get_user_story_module(
     story: dict[str, Any],
@@ -150,7 +152,6 @@ def get_user_story_module(
     return get_epic_module(
         epic_id,
     )
-    
 
 def get_technical_story_module(
     story: dict[str, Any],
@@ -173,8 +174,7 @@ def get_technical_story_module(
             "No module mapping found for "
             f"Technical Story '{technical_story_id}'."
         ) from error
-        
-        
+
 def get_epic_estimated_hours(
     epic: dict[str, Any],
     user_stories: list[dict[str, Any]],
@@ -227,8 +227,8 @@ def validate_configuration() -> None:
             "Missing required GitHub configuration: "
             f"{missing_values}"
         )
-        
-        
+
+
 # =============================================================================
 # CLIENT
 # =============================================================================
@@ -244,8 +244,8 @@ def create_github_client() -> GitHubClient:
         owner=GITHUB_OWNER,
         repository=GITHUB_REPOSITORY,
     )
-    
-    
+
+
 # =============================================================================
 # VALIDATION
 # =============================================================================
@@ -290,7 +290,7 @@ def validate_project(
     )
 
     return project_id
-    
+
 
 def validate_token(
     client: GitHubClient,
@@ -306,6 +306,83 @@ def validate_token(
     Console.success(
         "GitHub token validated."
     )
+
+
+# =============================================================================
+# EXISTING ISSUE INDEX
+# =============================================================================
+
+
+def build_existing_issue_index(
+    client: GitHubClient,
+) -> dict[str, dict[str, Any]]:
+    """
+    Builds an index of existing GitHub Issues by backlog ID.
+    """
+
+    Console.section(
+        "Indexing Existing Issues"
+    )
+
+    existing_issues = client.list_issues()
+
+    issue_index: dict[str, dict[str, Any]] = {}
+
+    for issue in existing_issues:
+
+        if "pull_request" in issue:
+
+            continue
+
+        body = issue.get(
+            "body"
+        ) or ""
+
+        backlog_id = None
+
+        for line in body.splitlines():
+
+            line = line.strip()
+
+            if line.startswith(
+                "- **ID:**"
+            ):
+
+                backlog_id = line.removeprefix(
+                    "- **ID:**"
+                ).strip()
+
+                break
+
+        if not backlog_id:
+
+            continue
+
+        if backlog_id in issue_index:
+
+            first_issue = issue_index[
+                backlog_id
+            ]
+
+            raise RuntimeError(
+                "Duplicate backlog ID detected "
+                f"'{backlog_id}' in GitHub Issues "
+                f"#{first_issue['number']} and "
+                f"#{issue['number']}."
+            )
+
+        issue_index[
+            backlog_id
+        ] = issue
+
+    Console.success(
+        f"Indexed {len(issue_index)} existing "
+        "backlog Issues."
+    )
+
+    Console.blank()
+
+    return issue_index
 
 
 # =============================================================================
@@ -338,7 +415,7 @@ def create_epic_issue(
         title=title,
         body=body,
     )
-    
+
 
 def create_user_story_issue(
     client: GitHubClient,
@@ -385,8 +462,8 @@ def create_user_story_issue(
         title=title,
         body=body,
     )
-    
-    
+
+
 def create_technical_story_issue(
     client: GitHubClient,
     story: dict[str, Any],
@@ -432,8 +509,8 @@ def create_technical_story_issue(
         title=title,
         body=body,
     )
-    
-    
+
+
 # =============================================================================
 # ISSUE CONFIGURATION
 # =============================================================================
@@ -450,7 +527,7 @@ def configure_issue(
     """
     Configures a GitHub Issue using backlog metadata.
     """
-    
+
     if work_item_type not in {
         "Epic",
         "User Story",
@@ -490,11 +567,17 @@ def configure_issue(
             milestone_id,
         )
 
-    project_item_id = client.add_project_item(
-        project_id,
-        issue["node_id"],
-    )
-    
+    try:
+        project_item_id = client.get_project_item_id(
+            project_id,
+            issue["node_id"],
+        )
+    except GitHubNotFoundError:
+        project_item_id = client.add_project_item(
+            project_id,
+            issue["node_id"],
+        )
+
     if work_item_type == "Epic":
 
         issue_type = "Epic"
@@ -597,19 +680,19 @@ def configure_issue(
             project_item_id,
             status,
         )
-        
+
     client.set_issue_type(
         project_id,
         project_item_id,
         issue_type,
     )
-    
+
     client.set_estimated_hours(
         project_id,
         project_item_id,
         estimated_hours,
     )
-    
+
     if module:
 
         client.set_module(
@@ -617,8 +700,8 @@ def configure_issue(
             project_item_id,
             module,
         )
-        
-        
+
+
 # =============================================================================
 # PROCESSING
 # =============================================================================
@@ -628,11 +711,12 @@ def process_backlog(
     client: GitHubClient,
     backlog: dict[str, dict[str, Any]],
     project_id: str,
+    existing_issue_index: dict[str, dict[str, Any]],
 ) -> dict[str, int]:
     """
     Creates and configures GitHub Issues for the complete backlog.
     """
-    
+
     epics = get_epics(
         backlog,
     )
@@ -656,14 +740,19 @@ def process_backlog(
     # EPICS
     # =========================================================================
 
-    Console.section("Creating Epics")
+    Console.section("Creating or Reusing Epics")
 
     for epic in epics:
 
-        issue = create_epic_issue(
-            client,
-            epic,
+        issue = existing_issue_index.get(
+            epic["id"],
         )
+
+        if issue is None:
+            issue = create_epic_issue(
+                client,
+                epic,
+            )
 
         configure_issue(
             client,
@@ -681,14 +770,19 @@ def process_backlog(
     # USER STORIES
     # =========================================================================
 
-    Console.section("Creating User Stories")
+    Console.section("Creating or Reusing User Stories")
 
     for story in user_stories:
 
-        issue = create_user_story_issue(
-            client,
-            story,
+        issue = existing_issue_index.get(
+            story["id"],
         )
+
+        if issue is None:
+            issue = create_user_story_issue(
+                client,
+                story,
+            )
 
         configure_issue(
             client,
@@ -705,14 +799,19 @@ def process_backlog(
     # TECHNICAL STORIES
     # =========================================================================
 
-    Console.section("Creating Technical Stories")
+    Console.section("Creating or Reusing Technical Stories")
 
     for story in technical_stories:
 
-        issue = create_technical_story_issue(
-            client,
-            story,
+        issue = existing_issue_index.get(
+            story["id"],
         )
+
+        if issue is None:
+            issue = create_technical_story_issue(
+                client,
+                story,
+            )
 
         configure_issue(
             client,
@@ -876,8 +975,8 @@ def print_statistics(
     )
 
     Console.blank()
-     
-    
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -892,11 +991,11 @@ def main() -> None:
         APPLICATION_NAME,
         VERSION,
     )
-    
+
     validate_configuration()
 
     client = create_github_client()
-    
+
     validate_token(
         client,
     )
@@ -915,17 +1014,22 @@ def main() -> None:
         backlog,
     )
 
+    existing_issue_index = build_existing_issue_index(
+        client,
+    )
+
     statistics = process_backlog(
         client,
         backlog,
         project_id,
+        existing_issue_index,
     )
 
     print_statistics(
         statistics,
     )
-    
-    
+
+
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
