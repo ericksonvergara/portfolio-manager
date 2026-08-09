@@ -1,0 +1,45 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/workflows/deploy.yml
+# Version: 1.0.0
+# Description: Deployment workflow template
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: Deploy (Template)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deployment-placeholder:
+    name: Deployment Placeholder
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deployment Strategy
+        run: |
+          echo "Deployment has not been configured yet."
+          echo ""
+          echo "This workflow is intentionally a placeholder."
+          echo "It will be replaced when the target platform is selected."
+          echo ""
+          echo "Supported targets include:"
+          echo "- Azure App Service"
+          echo "- AWS"
+          echo "- Google Cloud"
+          echo "- Railway"
+          echo "- Render"
+          echo "- Docker + VPS"
+          echo "- Kubernetes"
+
+      - name: Finish
+        run: echo "Deployment template completed successfully."

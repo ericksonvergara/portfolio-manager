@@ -1,0 +1,113 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/milestones.yml
+# Version: 1.0.0
+# Description: GitHub Milestones Catalog
+# ============================================================================
+
+version: 1.0.0
+
+milestones:
+
+  - id: MS001
+    title: Sprint 1
+    description: >
+      Configuración inicial del proyecto, arquitectura base,
+      infraestructura, Docker y base de datos.
+    sprint: Sprint 1
+    order: 1
+    status: Planned
+
+  - id: MS002
+    title: Sprint 2
+    description: >
+      Implementación de autenticación, seguridad y
+      documentación inicial de la API.
+    sprint: Sprint 2
+    order: 2
+    status: Planned
+
+  - id: MS003
+    title: Sprint 3
+    description: >
+      Desarrollo de la Landing Page pública y
+      visualización del portafolio.
+    sprint: Sprint 3
+    order: 3
+    status: Planned
+
+  - id: MS004
+    title: Sprint 4
+    description: >
+      Gestión completa de proyectos (CRUD),
+      carga de imágenes y administración.
+    sprint: Sprint 4
+    order: 4
+    status: Planned
+
+  - id: MS005
+    title: Sprint 5
+    description: >
+      Administración de tecnologías,
+      perfil del administrador y recuperación de contraseña.
+    sprint: Sprint 5
+    order: 5
+    status: Planned
+
+  - id: MS006
+    title: Sprint 6
+    description: >
+      Implementación de reglas de negocio,
+      validaciones y mejoras funcionales.
+    sprint: Sprint 6
+    order: 6
+    status: Planned
+
+  - id: MS007
+    title: Sprint 7
+    description: >
+      Dashboard administrativo,
+      auditoría y analítica de visitas.
+    sprint: Sprint 7
+    order: 7
+    status: Planned
+
+  - id: MS008
+    title: Sprint 8
+    description: >
+      Calidad de software,
+      pruebas automatizadas,
+      integración continua y despliegue.
+    sprint: Sprint 8
+    order: 8
+    status: Planned
+
+  - id: MS009
+    title: MVP
+    description: >
+      Primera versión funcional del sistema
+      con autenticación, Landing Page,
+      gestión de proyectos y despliegue inicial.
+    targetVersion: 1.0.0-beta
+    order: 9
+    status: Planned
+
+  - id: MS010
+    title: Version 1.0
+    description: >
+      Primera versión estable del Portfolio Manager
+      con todas las funcionalidades previstas
+      para el proyecto.
+    targetVersion: 1.0.0
+    order: 10
+    status: Planned
+
+  - id: MS011
+    title: Project Closure
+    description: >
+      Cierre oficial del proyecto,
+      documentación final,
+      retrospectiva y entrega.
+    targetVersion: 1.0.0
+    order: 11
+    status: Planned

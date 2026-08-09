@@ -1,0 +1,20 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/ISSUE_TEMPLATE/config.yml
+# Description: GitHub Issue Forms Configuration
+# ============================================================================
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: "📚 Project Documentation"
+    url: "https://github.com/<YOUR_GITHUB_USERNAME>/portfolio-manager/tree/main/docs"
+    about: "Read the official project documentation before creating a new Issue."
+
+  - name: "📋 Issue Management Standard"
+    url: "https://github.com/<YOUR_GITHUB_USERNAME>/portfolio-manager/blob/main/docs/github/05-issue-management-standard.md"
+    about: "Review the Issue Management Standard before reporting or requesting work."
+
+  - name: "🗓 Sprint Roadmap"
+    url: "https://github.com/<YOUR_GITHUB_USERNAME>/portfolio-manager/blob/main/docs/project/Sprint%20Development%20Roadmap.md"
+    about: "Review the Sprint planning and roadmap before creating a new Issue."

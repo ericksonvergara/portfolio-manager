@@ -1,0 +1,477 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/technical-stories.yml
+# Version: 1.0.0
+# Description: Technical Stories Backlog
+# ============================================================================
+
+version: 1.0.0
+
+technicalStories:
+
+  - id: HT001
+    epic: EP002
+    title: Configurar arquitectura hexagonal
+    description: >
+      Como equipo de desarrollo quiero estructurar el backend utilizando
+      Arquitectura Hexagonal para garantizar una adecuada separación
+      de responsabilidades y facilitar el mantenimiento.
+    businessValue: Very High
+    priority: Critical
+    complexity: High
+    estimatedHours: 20
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - backend
+      - architecture
+    acceptanceCriteria:
+      - Crear módulos application.
+      - Crear módulos domain.
+      - Crear módulos infrastructure.
+      - Crear módulo shared.
+      - Dependencias orientadas al dominio.
+      - Casos de uso desacoplados.
+    dependencies: []
+    status: Backlog
+
+  - id: HT002
+    epic: EP002
+    title: Aplicar principios SOLID y Clean Code
+    description: >
+      Como equipo de desarrollo quiero desarrollar el código
+      siguiendo SOLID y Clean Code para mejorar
+      la mantenibilidad y escalabilidad.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 16
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - backend
+      - architecture
+    acceptanceCriteria:
+      - Aplicar principios SOLID.
+      - Aplicar Clean Code.
+      - Evitar dependencias innecesarias.
+      - Mantener bajo acoplamiento.
+    dependencies:
+      - HT001
+    status: Backlog
+
+  - id: HT003
+    epic: EP002
+    title: Configurar Docker Compose
+    description: >
+      Como equipo de desarrollo quiero ejecutar toda la solución
+      mediante Docker Compose para facilitar el despliegue
+      y la portabilidad.
+    businessValue: Very High
+    priority: Critical
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - devops
+      - docker
+    acceptanceCriteria:
+      - Configurar frontend.
+      - Configurar backend.
+      - Configurar PostgreSQL.
+      - Configurar Nginx.
+      - Ejecutar docker compose up correctamente.
+    dependencies: []
+    status: Backlog
+
+  - id: HT004
+    epic: EP002
+    title: Configurar variables de entorno
+    description: >
+      Como equipo de desarrollo quiero administrar la configuración
+      mediante archivos .env para evitar credenciales
+      dentro del código fuente.
+    businessValue: High
+    priority: High
+    complexity: Low
+    estimatedHours: 6
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - devops
+      - security
+    acceptanceCriteria:
+      - Variables separadas por ambiente.
+      - No almacenar secretos en Git.
+      - Configuración reutilizable.
+    dependencies:
+      - HT003
+    status: Backlog
+
+  - id: HT005
+    epic: EP002
+    title: Configurar Nginx
+    description: >
+      Como equipo de desarrollo quiero utilizar Nginx
+      como Reverse Proxy para centralizar
+      el acceso a los servicios.
+    businessValue: High
+    priority: Medium
+    complexity: Medium
+    estimatedHours: 8
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - technical-story
+      - devops
+      - nginx
+    acceptanceCriteria:
+      - Configurar Reverse Proxy.
+      - Configurar rutas.
+      - Configurar compresión.
+      - Configurar cabeceras.
+    dependencies:
+      - HT003
+    status: Backlog
+
+  - id: HT006
+    epic: EP004
+    title: Configurar PostgreSQL
+    description: >
+      Como equipo de desarrollo quiero integrar PostgreSQL
+      como motor de base de datos para almacenar
+      la información del sistema.
+    businessValue: Very High
+    priority: Critical
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - database
+    acceptanceCriteria:
+      - Crear base de datos.
+      - Configurar conexión.
+      - Validar persistencia.
+    dependencies: []
+    status: Backlog
+
+  - id: HT007
+    epic: EP004
+    title: Configurar Flyway
+    description: >
+      Como equipo de desarrollo quiero administrar
+      las migraciones mediante Flyway
+      para controlar la evolución de la base de datos.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - database
+    acceptanceCriteria:
+      - Configurar Flyway.
+      - Crear migración inicial.
+      - Validar ejecución automática.
+    dependencies:
+      - HT006
+    status: Backlog
+
+  - id: HT008
+    epic: EP002
+    title: Configurar Spring Security
+    description: >
+      Como equipo de desarrollo quiero proteger la API
+      mediante Spring Security para restringir
+      el acceso a los recursos protegidos.
+    businessValue: Very High
+    priority: Critical
+    complexity: High
+    estimatedHours: 18
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - technical-story
+      - backend
+      - security
+    acceptanceCriteria:
+      - Configurar filtros.
+      - Configurar autorización.
+      - Configurar autenticación.
+      - Restringir endpoints protegidos.
+    dependencies:
+      - HT001
+    status: Backlog
+
+  - id: HT009
+    epic: EP002
+    title: Implementar autenticación JWT
+    description: >
+      Como equipo de desarrollo quiero implementar
+      autenticación basada en JWT para garantizar
+      sesiones seguras.
+    businessValue: Very High
+    priority: Critical
+    complexity: High
+    estimatedHours: 16
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - technical-story
+      - backend
+      - security
+    acceptanceCriteria:
+      - Generar JWT.
+      - Validar JWT.
+      - Refresh Token.
+      - Logout seguro.
+    dependencies:
+      - HT008
+    status: Backlog
+
+  - id: HT010
+    epic: EP002
+    title: Documentar la API
+    description: >
+      Como equipo de desarrollo quiero documentar la API utilizando
+      OpenAPI/Swagger para facilitar su consumo y mantenimiento.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - technical-story
+      - backend
+      - documentation
+      - api
+    acceptanceCriteria:
+      - Integrar OpenAPI/Swagger.
+      - Documentar todos los endpoints públicos.
+      - Documentar todos los endpoints protegidos.
+      - Publicar interfaz Swagger UI.
+    dependencies:
+      - HT008
+      - HT009
+    status: Backlog
+
+  - id: HT011
+    epic: EP009
+    title: Implementar pruebas unitarias
+    description: >
+      Como equipo de desarrollo quiero desarrollar pruebas unitarias
+      para la lógica de negocio con el fin de garantizar el correcto
+      funcionamiento de los casos críticos.
+    businessValue: High
+    priority: High
+    complexity: High
+    estimatedHours: 20
+    sprint: Sprint 8
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - qa
+      - backend
+      - testing
+    acceptanceCriteria:
+      - Implementar pruebas utilizando JUnit 5.
+      - Utilizar Mockito para dependencias.
+      - Alcanzar una cobertura mínima recomendada del 80% en los casos críticos.
+      - Todas las pruebas deben ejecutarse satisfactoriamente.
+    dependencies:
+      - HT001
+    status: Backlog
+
+  - id: HT012
+    epic: EP009
+    title: Configurar análisis de calidad
+    description: >
+      Como equipo de desarrollo quiero integrar SonarQube
+      para detectar vulnerabilidades, duplicidad y problemas
+      de calidad del código.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 8
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - qa
+      - devops
+      - quality
+    acceptanceCriteria:
+      - Integrar SonarQube.
+      - Ejecutar análisis automático.
+      - Detectar duplicidad de código.
+      - Detectar vulnerabilidades.
+      - Generar reporte de calidad.
+    dependencies:
+      - HT011
+    status: Backlog
+
+  - id: HT013
+    epic: EP009
+    title: Configurar sistema de logs
+    description: >
+      Como equipo de desarrollo quiero registrar errores,
+      advertencias y accesos para facilitar el monitoreo
+      y diagnóstico de la aplicación.
+    businessValue: High
+    priority: Medium
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 1
+    milestone: MVP
+    labels:
+      - technical-story
+      - backend
+      - monitoring
+    acceptanceCriteria:
+      - Registrar errores.
+      - Registrar advertencias.
+      - Registrar accesos.
+      - Configurar niveles de logging.
+    dependencies:
+      - HT001
+    status: Backlog
+
+  - id: HT014
+    epic: EP008
+    title: Optimizar consultas del Dashboard
+    description: >
+      Como equipo de desarrollo quiero optimizar las consultas
+      e índices de PostgreSQL para garantizar tiempos
+      de respuesta inferiores a dos segundos.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - database
+      - performance
+    acceptanceCriteria:
+      - Crear índices necesarios.
+      - Optimizar consultas del Dashboard.
+      - Validar tiempos inferiores a dos segundos.
+    dependencies:
+      - HT006
+    status: Backlog
+
+  - id: HT015
+    epic: EP008
+    title: Optimizar el registro de visitas
+    description: >
+      Como equipo de desarrollo quiero registrar visitas
+      sin afectar el rendimiento de la aplicación
+      para mantener una buena experiencia de usuario.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - backend
+      - performance
+    acceptanceCriteria:
+      - Registrar visitas de forma eficiente.
+      - Evitar bloqueos durante el registro.
+      - Mantener tiempos de respuesta adecuados.
+    dependencies:
+      - HT014
+    status: Backlog
+
+  - id: HT016
+    epic: EP009
+    title: Automatizar la construcción del proyecto
+    description: >
+      Como equipo de desarrollo quiero ejecutar automáticamente
+      la compilación del backend y frontend
+      para detectar errores de integración de forma temprana.
+    businessValue: Very High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 8
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - devops
+      - ci
+    acceptanceCriteria:
+      - Compilar Backend automáticamente.
+      - Compilar Frontend automáticamente.
+      - Ejecutar pipeline en cada Push y Pull Request.
+    dependencies:
+      - HT003
+    status: Backlog
+
+  - id: HT017
+    epic: EP009
+    title: Automatizar la ejecución de pruebas
+    description: >
+      Como equipo de desarrollo quiero ejecutar automáticamente
+      las pruebas unitarias en cada integración
+      para asegurar la estabilidad del sistema.
+    businessValue: Very High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 8
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - qa
+      - ci
+    acceptanceCriteria:
+      - Ejecutar pruebas automáticamente.
+      - Detener el pipeline ante errores.
+      - Publicar resultados de ejecución.
+    dependencies:
+      - HT011
+      - HT016
+    status: Backlog
+
+  - id: HT018
+    epic: EP009
+    title: Automatizar el despliegue
+    description: >
+      Como equipo de desarrollo quiero desplegar la aplicación
+      mediante un proceso automatizado utilizando Docker Compose
+      para reducir errores manuales y facilitar la puesta en producción.
+    businessValue: Very High
+    priority: Critical
+    complexity: High
+    estimatedHours: 16
+    sprint: Sprint 8
+    milestone: Version 1.0
+    labels:
+      - technical-story
+      - devops
+      - cd
+      - deployment
+    acceptanceCriteria:
+      - Automatizar el despliegue.
+      - Ejecutar Docker Compose en producción.
+      - Validar despliegue exitoso.
+      - Permitir rollback del despliegue.
+    dependencies:
+      - HT003
+      - HT016
+      - HT017
+    status: Backlog

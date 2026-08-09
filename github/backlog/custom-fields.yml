@@ -1,0 +1,165 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/custom-fields.yml
+# Version: 1.0.0
+# Description: GitHub Project Custom Fields Configuration
+# ============================================================================
+
+version: 1.0.0
+
+customFields:
+
+  - id: CF001
+    name: Priority
+    type: Single Select
+    description: Nivel de prioridad de la Issue.
+    required: true
+    options:
+      - Critical
+      - High
+      - Medium
+      - Low
+    default: Medium
+
+  - id: CF002
+    name: Business Value
+    type: Single Select
+    description: Valor de negocio aportado por la Issue.
+    required: true
+    options:
+      - Very High
+      - High
+      - Medium
+      - Low
+    default: Medium
+
+  - id: CF003
+    name: Complexity
+    type: Single Select
+    description: Complejidad técnica estimada.
+    required: true
+    options:
+      - High
+      - Medium
+      - Low
+    default: Medium
+
+  - id: CF004
+    name: Estimated Hours
+    type: Number
+    description: Horas estimadas para completar la Issue.
+    required: true
+    minimum: 1
+    maximum: 200
+    unit: hours
+
+  - id: CF005
+    name: Sprint
+    type: Single Select
+    description: Sprint asignado a la Issue.
+    required: true
+    options:
+      - Sprint 1
+      - Sprint 2
+      - Sprint 3
+      - Sprint 4
+      - Sprint 5
+      - Sprint 6
+      - Sprint 7
+      - Sprint 8
+      - Backlog
+
+  - id: CF006
+    name: Issue Type
+    type: Single Select
+    description: Clasificación funcional de la Issue.
+    required: true
+    options:
+      - Epic
+      - User Story
+      - Technical Story
+      - Task
+      - Bug
+
+  - id: CF007
+    name: Module
+    type: Single Select
+    description: Módulo funcional al que pertenece la Issue.
+    required: true
+    options:
+      - Landing Page
+      - Authentication
+      - Dashboard
+      - Projects
+      - Technologies
+      - Profile
+      - Audit
+      - Analytics
+      - Business Rules
+      - Infrastructure
+      - DevOps
+
+  - id: CF008
+    name: Risk
+    type: Single Select
+    description: Riesgo asociado al desarrollo de la Issue.
+    required: false
+    options:
+      - High
+      - Medium
+      - Low
+
+  - id: CF009
+    name: QA Status
+    type: Single Select
+    description: Estado del proceso de pruebas.
+    required: false
+    options:
+      - Pending
+      - In Progress
+      - Passed
+      - Failed
+      - Blocked
+
+  - id: CF010
+    name: Environment
+    type: Single Select
+    description: Ambiente donde fue validada la funcionalidad.
+    required: false
+    options:
+      - Local
+      - Development
+      - QA
+      - Staging
+      - Production
+
+  - id: CF011
+    name: Story Points
+    type: Number
+    description: Estimación ágil en Story Points.
+    required: false
+    minimum: 1
+    maximum: 21
+
+  - id: CF012
+    name: Reviewer
+    type: Text
+    description: Responsable de realizar el Code Review.
+    required: false
+
+  - id: CF013
+    name: Developer
+    type: Text
+    description: Responsable de implementar la Issue.
+    required: false
+
+  - id: CF014
+    name: Release
+    type: Single Select
+    description: Versión del producto donde será entregada la Issue.
+    required: false
+    options:
+      - MVP
+      - Version 1.0
+      - Version 1.1
+      - Future Release

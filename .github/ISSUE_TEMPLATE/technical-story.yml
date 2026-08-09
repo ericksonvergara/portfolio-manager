@@ -1,0 +1,118 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/ISSUE_TEMPLATE/technical-story.yml
+# Version: 1.0.0
+# Description: GitHub Issue Form for Technical Stories
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: "⚙️ Technical Story"
+description: Create a new Technical Story for Portfolio Manager.
+title: "HT### - "
+labels:
+  - technical-story
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Technical Story
+
+        Use this form for architecture, infrastructure, security,
+        DevOps, database or technical implementation tasks.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: "🎯 Technical Objective"
+      description: "Describe the technical objective."
+      placeholder: |
+        Describe the technical goal and why it is required.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "📦 Scope"
+      description: "Describe the technical scope."
+      placeholder: |
+        Components affected
+        Modules
+        Services
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: "📑 Related Requirements"
+      description: "Reference RNF, RF or architecture decisions."
+      placeholder: |
+        RNF001
+        RNF005
+        ADR001
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Technical Acceptance Criteria"
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: "🔗 Dependencies"
+      placeholder: |
+        HT002
+        HU005
+
+        or
+
+        None
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: "🛠️ Implementation Notes"
+      description: "Architecture, libraries, frameworks or implementation details."
+      placeholder: |
+        Spring Boot
+        PostgreSQL
+        Docker
+        Flyway
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✔ Definition of Done
+
+        - [ ] Technical implementation completed
+        - [ ] Code reviewed
+        - [ ] Unit tests executed
+        - [ ] Documentation updated
+        - [ ] Architecture validated
+        - [ ] Merge completed
+
+        ---
+        After creating this Issue, complete the GitHub Project fields:
+        - Priority
+        - Sprint
+        - Business Value
+        - Complexity
+        - Estimated Hours
+        - Milestone
+        - Status

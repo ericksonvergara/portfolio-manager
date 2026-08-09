@@ -1,0 +1,113 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/ISSUE_TEMPLATE/task.yml
+# Version: 1.0.0
+# Description: GitHub Issue Form for Engineering Tasks
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: "🛠️ Engineering Task"
+description: Create a technical or operational task that supports the project.
+title: "TASK### - "
+labels:
+  - task
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Engineering Task
+
+        Use this template for engineering, DevOps, documentation,
+        automation, maintenance or infrastructure activities.
+
+  - type: input
+    id: summary
+    attributes:
+      label: "📋 Task Summary"
+      description: "Provide a concise title or summary."
+      placeholder: "Configure GitHub Actions for CI pipeline"
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: "🎯 Objective"
+      description: "Describe why this task is required."
+      placeholder: |
+        Explain the purpose and expected outcome.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: "📂 Task Category"
+      description: "Select the task category."
+      options:
+        - DevOps
+        - Documentation
+        - Infrastructure
+        - Refactoring
+        - Automation
+        - Database
+        - Security
+        - Testing
+        - Maintenance
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: "📦 Deliverables"
+      description: "List the expected deliverables."
+      placeholder: |
+        - Deliverable 1
+        - Deliverable 2
+        - Deliverable 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: "🔗 Dependencies"
+      placeholder: |
+        HT004
+        TASK002
+
+        or
+
+        None
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "📝 Implementation Notes"
+      placeholder: |
+        Scripts
+        Configuration
+        References
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✔ Definition of Done
+
+        - [ ] Task completed
+        - [ ] Validation performed
+        - [ ] Documentation updated
+        - [ ] Repository updated
+        - [ ] Project Board updated
+
+        ---
+        Complete the corresponding GitHub Project fields after creating this Task.

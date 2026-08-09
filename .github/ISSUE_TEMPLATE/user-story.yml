@@ -1,0 +1,119 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/ISSUE_TEMPLATE/user-story.yml
+# Version: 1.0.0
+# Description: GitHub Issue Form for User Stories
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: "📖 User Story"
+description: Create a new User Story for Portfolio Manager.
+title: "HU### - "
+labels:
+  - user-story
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## User Story
+
+        Complete all required fields before submitting this issue.
+
+        > This form follows the **Issue Management Standard** of the project.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "📋 Description"
+      description: "Describe the User Story using the standard format."
+      placeholder: |
+        As a...
+        I want...
+        So that...
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: "🎯 Objective"
+      description: "Describe the business objective."
+      placeholder: "Describe the functional objective of this story."
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: "📑 Related Requirements"
+      description: "Reference Functional (RF), Non-functional (RNF) or Business Rules (RN)."
+      placeholder: |
+        RF001
+        RNF003
+        RN004
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Acceptance Criteria"
+      description: "Acceptance criteria must be measurable and verifiable."
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: "🔗 Dependencies"
+      description: "Related User Stories or Technical Stories."
+      placeholder: |
+        HU002
+        HT005
+
+        or
+
+        None
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical_notes
+    attributes:
+      label: "📝 Technical Notes"
+      description: "Additional implementation notes."
+      placeholder: |
+        API endpoints
+        Business validations
+        Technical considerations
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✔ Definition of Done
+
+        - [ ] Development completed
+        - [ ] Code reviewed
+        - [ ] Tests executed
+        - [ ] Documentation updated
+        - [ ] Acceptance criteria validated
+        - [ ] Merge completed
+
+        ---
+        After creating this Issue, complete the GitHub Project fields:
+        - Priority
+        - Sprint
+        - Business Value
+        - Complexity
+        - Estimated Hours
+        - Milestone
+        - Status

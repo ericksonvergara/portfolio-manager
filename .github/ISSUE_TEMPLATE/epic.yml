@@ -1,0 +1,99 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/ISSUE_TEMPLATE/epic.yml
+# Version: 1.0.0
+# Description: GitHub Issue Form for Epics
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: "🚀 Epic"
+description: Create a new Epic to group related User Stories and Technical Stories.
+title: "EP### - "
+labels:
+  - epic
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Epic
+
+        An Epic represents a major functional or technical capability.
+        It groups multiple User Stories and Technical Stories.
+
+  - type: input
+    id: business_goal
+    attributes:
+      label: "🎯 Business Goal"
+      description: "Describe the main business objective."
+      placeholder: "Example: Allow administrators to manage portfolio projects."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "📦 Scope"
+      description: "Describe what is included in this Epic."
+      placeholder: |
+        Included:
+        - Feature A
+        - Feature B
+
+        Excluded:
+        - Feature C
+    validations:
+      required: true
+
+  - type: textarea
+    id: stories
+    attributes:
+      label: "📚 Related User Stories / Technical Stories"
+      description: "List the Issues that belong to this Epic."
+      placeholder: |
+        HU001
+        HU002
+        HT001
+        HT002
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Epic Completion Criteria"
+      description: "Define when this Epic can be considered complete."
+      placeholder: |
+        - [ ] All related User Stories completed
+        - [ ] All Technical Stories completed
+        - [ ] Documentation updated
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: "⚠️ Risks / Considerations"
+      description: "Identify potential risks or technical considerations."
+      placeholder: |
+        Dependencies
+        External services
+        Architecture constraints
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✔ Definition of Done
+
+        - [ ] All related Issues are completed
+        - [ ] Acceptance criteria satisfied
+        - [ ] Documentation updated
+        - [ ] Epic validated
+        - [ ] Project Board updated
+
+        ---
+        Complete the corresponding GitHub Project fields after creating the Epic.

@@ -1,0 +1,92 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/metadata.yml
+# Version: 1.0.0
+# Description: Backlog Metadata Configuration
+# ============================================================================
+
+project:
+  id: PM-001
+  name: Portfolio Manager
+  version: 1.0.0
+  description: >
+    Aplicación web para la administración y publicación
+    de un portafolio profesional de proyectos de software.
+
+repository:
+  owner: ericksonvergara
+  name: portfolio-manager
+  defaultBranch: main
+
+backlog:
+  version: 1.0.0
+  status: Active
+  totalEpics: 9
+  totalUserStories: 30
+  totalTechnicalStories: 18
+  totalIssues: 57
+
+management:
+  methodology: Scrum
+  sprintDurationWeeks: 2
+  estimatedProjectDurationMonths: 6
+  sourceOfTruth: github/backlog
+
+workflow:
+  - Backlog
+  - Ready
+  - In Progress
+  - Code Review
+  - Testing
+  - Done
+
+priorityLevels:
+  - Critical
+  - High
+  - Medium
+  - Low
+
+businessValueLevels:
+  - Very High
+  - High
+  - Medium
+  - Low
+
+complexityLevels:
+  - Low
+  - Medium
+  - High
+
+issueTypes:
+  - Epic
+  - User Story
+  - Technical Story
+  - Task
+  - Bug
+
+defaultValues:
+  status: Backlog
+  priority: Medium
+  businessValue: Medium
+  complexity: Medium
+
+quality:
+  minimumCoverage: 80
+  codeReviewRequired: true
+  testingRequired: true
+
+automation:
+  generateMarkdown: true
+  generateGithubIssues: true
+  validateBeforeGeneration: true
+
+scripts:
+  validator: github/scripts/validate-backlog.py
+  generator: github/scripts/generate-issues.py
+  powershellImporter: github/scripts/create-github-issues.ps1
+  bashImporter: github/scripts/create-github-issues.sh
+
+maintainers:
+  - Erickson Vergara
+
+lastUpdated: 2026-08-07

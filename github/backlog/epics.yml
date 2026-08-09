@@ -1,0 +1,173 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/epics.yml
+# Version: 1.0.0
+# Description: Functional Epics Catalog
+# ============================================================================
+
+version: 1.0.0
+
+epics:
+
+  - id: EP001
+    name: Landing Page
+    description: >
+      Public website where visitors can browse the portfolio,
+      view projects and contact the administrator.
+    businessValue: Very High
+    priority: High
+    milestone: MVP
+    primarySprint: 3
+    labels:
+      - epic
+      - frontend
+      - backend
+    userStories:
+      - HU001
+      - HU002
+      - HU003
+      - HU004
+      - HU005
+      - HU006
+    status: Backlog
+
+  - id: EP002
+    name: Authentication
+    description: >
+      Secure administrator authentication and session management.
+    businessValue: Very High
+    priority: Critical
+    milestone: MVP
+    primarySprint: 2
+    labels:
+      - epic
+      - security
+      - backend
+      - frontend
+    userStories:
+      - HU007
+      - HU008
+      - HU009
+      - HU010
+      - HU011
+    status: Backlog
+
+  - id: EP003
+    name: Dashboard
+    description: >
+      Administrative dashboard with portfolio indicators and statistics.
+    businessValue: High
+    priority: High
+    milestone: Version 1.0
+    primarySprint: 7
+    labels:
+      - epic
+      - dashboard
+      - analytics
+    userStories:
+      - HU012
+      - HU013
+      - HU014
+    status: Backlog
+
+  - id: EP004
+    name: Project Management
+    description: >
+      Complete CRUD for portfolio projects including images,
+      publication and lifecycle management.
+    businessValue: Very High
+    priority: Critical
+    milestone: MVP
+    primarySprint: 4
+    labels:
+      - epic
+      - backend
+      - frontend
+    userStories:
+      - HU015
+      - HU016
+      - HU017
+      - HU018
+      - HU019
+      - HU020
+    status: Backlog
+
+  - id: EP005
+    name: Technologies
+    description: >
+      Technology catalog administration and association with projects.
+    businessValue: Medium
+    priority: Medium
+    milestone: Version 1.0
+    primarySprint: 5
+    labels:
+      - epic
+      - catalog
+    userStories:
+      - HU021
+      - HU022
+    status: Backlog
+
+  - id: EP006
+    name: Administrator Profile
+    description: >
+      Administrator profile management.
+    businessValue: Medium
+    priority: Medium
+    milestone: Version 1.0
+    primarySprint: 5
+    labels:
+      - epic
+      - profile
+    userStories:
+      - HU023
+    status: Backlog
+
+  - id: EP007
+    name: Audit
+    description: >
+      Audit log of critical operations performed within the application.
+    businessValue: High
+    priority: High
+    milestone: Version 1.0
+    primarySprint: 7
+    labels:
+      - epic
+      - audit
+    userStories:
+      - HU024
+    status: Backlog
+
+  - id: EP008
+    name: Visit Analytics
+    description: >
+      Visitor tracking and project popularity metrics.
+    businessValue: High
+    priority: High
+    milestone: Version 1.0
+    primarySprint: 7
+    labels:
+      - epic
+      - analytics
+    userStories:
+      - HU025
+      - HU026
+      - HU027
+    status: Backlog
+
+  - id: EP009
+    name: Business Rules
+    description: >
+      Functional validations that guarantee data integrity and publication quality.
+    businessValue: High
+    priority: High
+    milestone: Version 1.0
+    primarySprint: 6
+    labels:
+      - epic
+      - validation
+    userStories:
+      - HU028
+      - HU029
+      - HU030
+    status: Backlog

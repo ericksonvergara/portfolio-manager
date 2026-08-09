@@ -1,0 +1,801 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/user-stories.yml
+# Version: 1.0.0
+# Description: Functional User Stories Backlog
+# ============================================================================
+
+version: 1.0.0
+
+userStories:
+
+  - id: HU001
+    epic: EP001
+    title: Visualizar Landing Page
+    description: >
+      Como visitante quiero acceder a la Landing Page sin autenticación
+      para conocer el perfil profesional y los proyectos publicados.
+    businessValue: Very High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 3
+    milestone: MVP
+    labels:
+      - user-story
+      - frontend
+      - backend
+      - public
+    acceptanceCriteria:
+      - El sitio es accesible sin iniciar sesión.
+      - Se muestra la presentación personal.
+      - Se muestra la fotografía del perfil.
+      - Se muestran las tecnologías utilizadas.
+      - Se muestran las redes sociales.
+      - Se muestra la información de contacto.
+    dependencies: []
+    status: Backlog
+
+  - id: HU002
+    epic: EP001
+    title: Visualizar proyectos
+    description: >
+      Como visitante quiero visualizar los proyectos publicados
+      para conocer el portafolio disponible.
+    businessValue: Very High
+    priority: High
+    complexity: Medium
+    estimatedHours: 14
+    sprint: Sprint 3
+    milestone: MVP
+    labels:
+      - user-story
+      - frontend
+      - backend
+      - public
+    acceptanceCriteria:
+      - Solo aparecen proyectos activos.
+      - Cada tarjeta muestra imagen.
+      - Cada tarjeta muestra nombre.
+      - Cada tarjeta muestra descripción corta.
+      - Cada tarjeta muestra tecnologías.
+      - Existe botón Ver Proyecto.
+      - Existe botón Repositorio.
+    dependencies:
+      - HU001
+    status: Backlog
+
+  - id: HU003
+    epic: EP001
+    title: Consultar detalle del proyecto
+    description: >
+      Como visitante quiero visualizar el detalle de un proyecto
+      para conocer toda su información.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 3
+    milestone: MVP
+    labels:
+      - user-story
+      - frontend
+      - backend
+    acceptanceCriteria:
+      - Mostrar nombre del proyecto.
+      - Mostrar descripción completa.
+      - Mostrar galería de imágenes.
+      - Mostrar tecnologías.
+      - Mostrar fecha.
+      - Mostrar estado.
+      - Mostrar URL del proyecto.
+      - Mostrar URL del repositorio.
+      - Mostrar video cuando exista.
+    dependencies:
+      - HU002
+    status: Backlog
+
+  - id: HU004
+    epic: EP001
+    title: Buscar proyectos
+    description: >
+      Como visitante quiero buscar proyectos por nombre o tecnología
+      para encontrarlos rápidamente.
+    businessValue: High
+    priority: Medium
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 6
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - frontend
+      - backend
+      - search
+    acceptanceCriteria:
+      - Permite búsqueda por nombre.
+      - Permite búsqueda por tecnología.
+      - Los resultados se actualizan correctamente.
+    dependencies:
+      - HU002
+    status: Backlog
+
+  - id: HU005
+    epic: EP001
+    title: Filtrar proyectos
+    description: >
+      Como visitante quiero filtrar proyectos por categoría tecnológica
+      para visualizar únicamente los que me interesan.
+    businessValue: High
+    priority: Medium
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 6
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - frontend
+      - backend
+      - filter
+    acceptanceCriteria:
+      - Filtrar por Backend.
+      - Filtrar por Frontend.
+      - Filtrar por Full Stack.
+      - Filtrar por Mobile.
+      - Filtrar por DevOps.
+      - Filtrar por IA.
+    dependencies:
+      - HU002
+    status: Backlog
+
+  - id: HU006
+    epic: EP001
+    title: Enviar mensaje de contacto
+    description: >
+      Como visitante quiero enviar un mensaje desde el formulario
+      de contacto para comunicarme con el administrador.
+    businessValue: Medium
+    priority: Medium
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 6
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - frontend
+      - backend
+      - contact
+    acceptanceCriteria:
+      - El formulario solicita nombre.
+      - El formulario solicita correo.
+      - El formulario solicita mensaje.
+      - El formulario valida los datos antes del envío.
+      - El mensaje se registra correctamente.
+    dependencies:
+      - HU001
+    status: Backlog
+
+  - id: HU007
+    epic: EP002
+    title: Iniciar sesión
+    description: >
+      Como administrador quiero iniciar sesión mediante correo
+      y contraseña para acceder al panel administrativo.
+    businessValue: Very High
+    priority: Critical
+    complexity: High
+    estimatedHours: 18
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - user-story
+      - security
+      - authentication
+      - backend
+      - frontend
+    acceptanceCriteria:
+      - Validar correo electrónico.
+      - Validar contraseña segura.
+      - Autenticación mediante JWT.
+      - Acceso únicamente para administradores.
+    dependencies: []
+    status: Backlog
+
+  - id: HU008
+    epic: EP002
+    title: Gestionar sesión
+    description: >
+      Como administrador quiero mantener mi sesión activa
+      mientras el token sea válido para no autenticarme
+      constantemente.
+    businessValue: Very High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - user-story
+      - authentication
+      - security
+    acceptanceCriteria:
+      - Mantener sesión mientras el JWT sea válido.
+      - Invalidar sesión cuando el token expire.
+      - Restaurar sesión al recargar la aplicación.
+    dependencies:
+      - HU007
+    status: Backlog
+
+  - id: HU009
+    epic: EP002
+    title: Cerrar sesión
+    description: >
+      Como administrador quiero cerrar mi sesión
+      para proteger mi cuenta.
+    businessValue: High
+    priority: High
+    complexity: Low
+    estimatedHours: 4
+    sprint: Sprint 2
+    milestone: MVP
+    labels:
+      - user-story
+      - authentication
+      - security
+    acceptanceCriteria:
+      - Eliminar el token de autenticación.
+      - Redireccionar al Login.
+      - Impedir el acceso a rutas protegidas.
+    dependencies:
+      - HU008
+    status: Backlog
+
+  - id: HU010
+    epic: EP002
+    title: Recuperar contraseña
+    description: >
+      Como administrador quiero recuperar mi contraseña
+      mediante correo electrónico para volver a acceder
+      al sistema.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 5
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - authentication
+      - security
+      - email
+    acceptanceCriteria:
+      - Permitir solicitar recuperación por correo.
+      - Enviar enlace seguro de recuperación.
+      - Permitir establecer una nueva contraseña.
+    dependencies:
+      - HU007
+    status: Backlog
+  - id: HU011
+    epic: EP002
+    title: Cambiar contraseña
+    description: >
+      Como administrador quiero cambiar mi contraseña
+      para mantener la seguridad de mi cuenta.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 8
+    sprint: Sprint 5
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - authentication
+      - security
+      - profile
+    acceptanceCriteria:
+      - Solicitar contraseña actual.
+      - Solicitar nueva contraseña.
+      - Confirmar nueva contraseña.
+      - Validar política de contraseña segura.
+      - Almacenar la contraseña utilizando BCrypt.
+    dependencies:
+      - HU007
+    status: Backlog
+
+  - id: HU012
+    epic: EP003
+    title: Visualizar Dashboard
+    description: >
+      Como administrador quiero visualizar indicadores generales
+      para conocer el estado del portafolio.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 14
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - dashboard
+      - frontend
+      - backend
+    acceptanceCriteria:
+      - Mostrar total de proyectos.
+      - Mostrar total de tecnologías.
+      - Mostrar último proyecto registrado.
+      - Mostrar último acceso al sistema.
+    dependencies:
+      - HU007
+    status: Backlog
+
+  - id: HU013
+    epic: EP003
+    title: Visualizar estadísticas de visitas
+    description: >
+      Como administrador quiero consultar estadísticas de visitas
+      para medir el uso del sitio.
+    businessValue: High
+    priority: High
+    complexity: High
+    estimatedHours: 16
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - dashboard
+      - analytics
+      - backend
+      - frontend
+    acceptanceCriteria:
+      - Mostrar visitantes totales.
+      - Mostrar visitas del día.
+      - Mostrar visitas del mes.
+      - Mostrar proyecto más visto.
+      - Mostrar total de tecnologías.
+      - Mostrar último proyecto publicado.
+    dependencies:
+      - HU012
+    status: Backlog
+
+  - id: HU014
+    epic: EP003
+    title: Visualizar ranking de proyectos
+    description: >
+      Como administrador quiero visualizar los proyectos más visitados
+      para conocer cuáles generan mayor interés.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - dashboard
+      - analytics
+    acceptanceCriteria:
+      - Mostrar Top de proyectos más visitados.
+      - Ordenar por cantidad de visitas.
+      - Actualizar la información automáticamente.
+    dependencies:
+      - HU013
+    status: Backlog
+
+  - id: HU015
+    epic: EP004
+    title: Registrar proyecto
+    description: >
+      Como administrador quiero crear un nuevo proyecto
+      para publicarlo en el portafolio.
+    businessValue: Very High
+    priority: Critical
+    complexity: High
+    estimatedHours: 18
+    sprint: Sprint 4
+    milestone: MVP
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - project
+    acceptanceCriteria:
+      - Registrar nombre.
+      - Registrar descripción corta.
+      - Registrar descripción completa.
+      - Registrar imágenes.
+      - Registrar tecnologías.
+      - Registrar URLs.
+      - Registrar estado.
+      - Registrar fecha.
+      - Registrar orden.
+      - Registrar indicador de destacado.
+    dependencies:
+      - HU007
+    status: Backlog
+
+  - id: HU016
+    epic: EP004
+    title: Editar proyecto
+    description: >
+      Como administrador quiero modificar la información
+      de un proyecto para mantenerla actualizada.
+    businessValue: Very High
+    priority: High
+    complexity: Medium
+    estimatedHours: 14
+    sprint: Sprint 4
+    milestone: MVP
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - project
+    acceptanceCriteria:
+      - Permitir editar toda la información del proyecto.
+      - Conservar historial de modificaciones.
+      - Validar la información antes de guardar.
+    dependencies:
+      - HU015
+    status: Backlog
+
+  - id: HU017
+    epic: EP004
+    title: Eliminar proyecto
+    description: >
+      Como administrador quiero eliminar un proyecto
+      para retirar información obsoleta.
+    businessValue: High
+    priority: High
+    complexity: Low
+    estimatedHours: 6
+    sprint: Sprint 4
+    milestone: MVP
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - project
+    acceptanceCriteria:
+      - Solicitar confirmación antes de eliminar.
+      - Eliminar el proyecto correctamente.
+      - Registrar la operación en auditoría.
+    dependencies:
+      - HU015
+    status: Backlog
+
+  - id: HU018
+    epic: EP004
+    title: Activar o desactivar proyecto
+    description: >
+      Como administrador quiero cambiar el estado
+      de un proyecto para ocultarlo sin eliminarlo.
+    businessValue: High
+    priority: Medium
+    complexity: Low
+    estimatedHours: 6
+    sprint: Sprint 4
+    milestone: MVP
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - project
+    acceptanceCriteria:
+      - Permitir activar un proyecto.
+      - Permitir desactivar un proyecto.
+      - Los proyectos inactivos no aparecen en la Landing Page.
+    dependencies:
+      - HU015
+    status: Backlog
+
+  - id: HU019
+    epic: EP004
+    title: Gestionar imágenes
+    description: >
+      Como administrador quiero cargar imágenes para un proyecto
+      para mostrar contenido visual.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 14
+    sprint: Sprint 4
+    milestone: MVP
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - upload
+    acceptanceCriteria:
+      - Permitir imágenes JPG.
+      - Permitir imágenes JPEG.
+      - Permitir imágenes PNG.
+      - Validar tamaño máximo permitido.
+      - Validar tipo MIME.
+      - Generar nombre único para cada archivo.
+    dependencies:
+      - HU015
+    status: Backlog
+
+  - id: HU020
+    epic: EP004
+    title: Visualizar vista previa
+    description: >
+      Como administrador quiero visualizar una vista previa
+      de la imagen antes de guardar para verificar que sea correcta.
+    businessValue: Medium
+    priority: Medium
+    complexity: Low
+    estimatedHours: 6
+    sprint: Sprint 4
+    milestone: MVP
+    labels:
+      - user-story
+      - frontend
+      - upload
+    acceptanceCriteria:
+      - Mostrar vista previa antes de guardar.
+      - Permitir reemplazar la imagen seleccionada.
+      - Mantener la calidad de la imagen mostrada.
+    dependencies:
+      - HU019
+    status: Backlog
+  - id: HU021
+    epic: EP005
+    title: Administrar tecnologías
+    description: >
+      Como administrador quiero crear, editar y eliminar tecnologías
+      para mantener actualizado el catálogo del sistema.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 5
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - catalog
+    acceptanceCriteria:
+      - Crear una nueva tecnología.
+      - Editar una tecnología existente.
+      - Eliminar una tecnología.
+      - Listar todas las tecnologías registradas.
+      - Evitar nombres duplicados.
+    dependencies:
+      - HU007
+    status: Backlog
+
+  - id: HU022
+    epic: EP005
+    title: Asociar tecnologías a proyectos
+    description: >
+      Como administrador quiero asociar múltiples tecnologías
+      a un proyecto para describir correctamente el stack utilizado.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 5
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - catalog
+    acceptanceCriteria:
+      - Asociar una o varias tecnologías.
+      - Eliminar asociaciones existentes.
+      - Mostrar las tecnologías asociadas.
+      - Mantener la integridad de la información.
+    dependencies:
+      - HU015
+      - HU021
+    status: Backlog
+
+  - id: HU023
+    epic: EP006
+    title: Actualizar perfil
+    description: >
+      Como administrador quiero modificar mi información personal
+      para mantenerla actualizada.
+    businessValue: Medium
+    priority: Medium
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 5
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - frontend
+      - profile
+    acceptanceCriteria:
+      - Modificar nombre.
+      - Actualizar fotografía.
+      - Actualizar correo electrónico.
+      - Validar formato del correo.
+    dependencies:
+      - HU007
+    status: Backlog
+
+  - id: HU024
+    epic: EP007
+    title: Registrar auditoría
+    description: >
+      Como sistema quiero registrar automáticamente
+      las operaciones críticas para mantener trazabilidad.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 12
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - audit
+    acceptanceCriteria:
+      - Registrar inicio de sesión.
+      - Registrar creación de proyectos.
+      - Registrar edición de proyectos.
+      - Registrar eliminación de proyectos.
+      - Registrar cambio de contraseña.
+    dependencies:
+      - HU015
+      - HU016
+      - HU017
+    status: Backlog
+
+  - id: HU025
+    epic: EP008
+    title: Registrar visitas
+    description: >
+      Como sistema quiero registrar automáticamente cada visita
+      para generar estadísticas de navegación.
+    businessValue: High
+    priority: High
+    complexity: High
+    estimatedHours: 16
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - analytics
+    acceptanceCriteria:
+      - Registrar fecha.
+      - Registrar IP anonimizada.
+      - Registrar navegador.
+      - Registrar dispositivo.
+      - Registrar sistema operativo.
+      - Registrar país.
+      - Registrar proyecto visitado cuando aplique.
+    dependencies: []
+    status: Backlog
+
+  - id: HU026
+    epic: EP008
+    title: Contabilizar visitas al proyecto
+    description: >
+      Como sistema quiero incrementar el contador de visitas
+      al consultar el detalle de un proyecto para medir su popularidad.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 10
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - analytics
+    acceptanceCriteria:
+      - Incrementar el contador al abrir el detalle.
+      - Relacionar la visita con el proyecto.
+      - Mantener estadísticas históricas.
+    dependencies:
+      - HU025
+      - HU003
+    status: Backlog
+
+  - id: HU027
+    epic: EP008
+    title: Evitar duplicidad de visitas
+    description: >
+      Como sistema quiero evitar múltiples registros
+      por recargas consecutivas para mantener estadísticas confiables.
+    businessValue: High
+    priority: High
+    complexity: Medium
+    estimatedHours: 8
+    sprint: Sprint 7
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - analytics
+      - validation
+    acceptanceCriteria:
+      - Evitar duplicidad por recarga.
+      - Aplicar ventana de tiempo configurable.
+      - Mantener estadísticas consistentes.
+    dependencies:
+      - HU025
+    status: Backlog
+
+  - id: HU028
+    epic: EP009
+    title: Validar unicidad del proyecto
+    description: >
+      Como sistema quiero impedir registrar proyectos
+      con el mismo nombre para mantener la integridad de la información.
+    businessValue: High
+    priority: High
+    complexity: Low
+    estimatedHours: 6
+    sprint: Sprint 6
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - validation
+    acceptanceCriteria:
+      - No permitir nombres duplicados.
+      - Mostrar mensaje de validación.
+      - Validar antes de guardar.
+    dependencies:
+      - HU015
+    status: Backlog
+
+  - id: HU029
+    epic: EP009
+    title: Validar URLs del proyecto
+    description: >
+      Como sistema quiero validar las URLs del proyecto
+      y del repositorio para evitar enlaces inválidos.
+    businessValue: High
+    priority: High
+    complexity: Low
+    estimatedHours: 6
+    sprint: Sprint 6
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - validation
+    acceptanceCriteria:
+      - Validar URL del proyecto.
+      - Validar URL del repositorio.
+      - Mostrar mensaje cuando la URL sea inválida.
+    dependencies:
+      - HU015
+    status: Backlog
+
+  - id: HU030
+    epic: EP009
+    title: Validar publicación de proyectos
+    description: >
+      Como sistema quiero impedir publicar proyectos
+      sin imagen principal o sin tecnologías asociadas
+      para garantizar la calidad del contenido.
+    businessValue: High
+    priority: Critical
+    complexity: Medium
+    estimatedHours: 8
+    sprint: Sprint 6
+    milestone: Version 1.0
+    labels:
+      - user-story
+      - backend
+      - validation
+    acceptanceCriteria:
+      - Validar existencia de imagen principal.
+      - Validar al menos una tecnología asociada.
+      - Impedir la publicación cuando no se cumplan las reglas.
+      - Mostrar mensajes de validación al usuario.
+    dependencies:
+      - HU015
+      - HU021
+      - HU022
+    status: Backlog

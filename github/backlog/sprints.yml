@@ -1,0 +1,146 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/sprints.yml
+# Version: 1.0.0
+# Description: Sprint Planning
+# ============================================================================
+
+version: 1.0.0
+
+project:
+
+  methodology: Scrum
+
+  sprintDuration:
+    weeks: 2
+
+  estimatedProjectDuration:
+    months: 6
+
+sprints:
+
+  - id: SPRINT-01
+    name: Sprint 1
+    goal: Configuración inicial de la arquitectura e infraestructura
+    milestone: Sprint 1
+    duration: 2 weeks
+    plannedIssues:
+      - HT001
+      - HT002
+      - HT003
+      - HT004
+      - HT006
+      - HT007
+      - HT013
+
+  - id: SPRINT-02
+    name: Sprint 2
+    goal: Implementar autenticación y seguridad
+    milestone: Sprint 2
+    duration: 2 weeks
+    plannedIssues:
+      - HU007
+      - HU008
+      - HU009
+      - HT005
+      - HT008
+      - HT009
+      - HT010
+
+  - id: SPRINT-03
+    name: Sprint 3
+    goal: Desarrollo de la Landing Page pública
+    milestone: Sprint 3
+    duration: 2 weeks
+    plannedIssues:
+      - HU001
+      - HU002
+      - HU003
+
+  - id: SPRINT-04
+    name: Sprint 4
+    goal: Gestión de proyectos
+    milestone: Sprint 4
+    duration: 2 weeks
+    plannedIssues:
+      - HU015
+      - HU016
+      - HU017
+      - HU018
+      - HU019
+      - HU020
+
+  - id: SPRINT-05
+    name: Sprint 5
+    goal: Administración de tecnologías y perfil
+    milestone: Sprint 5
+    duration: 2 weeks
+    plannedIssues:
+      - HU010
+      - HU011
+      - HU021
+      - HU022
+      - HU023
+
+  - id: SPRINT-06
+    name: Sprint 6
+    goal: Implementación de reglas de negocio
+    milestone: Sprint 6
+    duration: 2 weeks
+    plannedIssues:
+      - HU004
+      - HU005
+      - HU006
+      - HU028
+      - HU029
+      - HU030
+
+  - id: SPRINT-07
+    name: Sprint 7
+    goal: Dashboard, auditoría y analítica
+    milestone: Sprint 7
+    duration: 2 weeks
+    plannedIssues:
+      - HU012
+      - HU013
+      - HU014
+      - HU024
+      - HU025
+      - HU026
+      - HU027
+      - HT014
+      - HT015
+
+  - id: SPRINT-08
+    name: Sprint 8
+    goal: Calidad, pruebas y despliegue
+    milestone: Sprint 8
+    duration: 2 weeks
+    plannedIssues:
+      - HT011
+      - HT012
+      - HT016
+      - HT017
+      - HT018
+
+summary:
+
+  totalSprints: 8
+
+  totalEpics: 9
+
+  totalUserStories: 30
+
+  totalTechnicalStories: 18
+
+  totalIssues: 48
+
+  estimatedProjectDuration: 6 months
+
+status:
+
+  currentSprint: Sprint 1
+
+  projectStatus: Planning
+
+  backlogStatus: Ready

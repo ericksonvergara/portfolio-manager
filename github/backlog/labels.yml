@@ -1,0 +1,220 @@
+# ============================================================================
+# Portfolio Manager
+# File: github/backlog/labels.yml
+# Version: 1.0.0
+# Description: GitHub Labels Catalog
+# ============================================================================
+
+labels:
+
+  # --------------------------------------------------------------------------
+  # Issue Type
+  # --------------------------------------------------------------------------
+
+  - name: epic
+    color: "6F42C1"
+    description: "Epic del Product Backlog"
+
+  - name: user-story
+    color: "1D76DB"
+    description: "Historia de Usuario"
+
+  - name: technical-story
+    color: "5319E7"
+    description: "Historia Técnica"
+
+  - name: task
+    color: "0E8A16"
+    description: "Tarea de desarrollo"
+
+  - name: bug
+    color: "D73A4A"
+    description: "Error o defecto"
+
+  # --------------------------------------------------------------------------
+  # Priority
+  # --------------------------------------------------------------------------
+
+  - name: priority:critical
+    color: "B60205"
+    description: "Prioridad crítica"
+
+  - name: priority:high
+    color: "D93F0B"
+    description: "Prioridad alta"
+
+  - name: priority:medium
+    color: "FBCA04"
+    description: "Prioridad media"
+
+  - name: priority:low
+    color: "0E8A16"
+    description: "Prioridad baja"
+
+  # --------------------------------------------------------------------------
+  # Business Value
+  # --------------------------------------------------------------------------
+
+  - name: value:very-high
+    color: "5319E7"
+    description: "Valor de negocio muy alto"
+
+  - name: value:high
+    color: "1D76DB"
+    description: "Valor de negocio alto"
+
+  - name: value:medium
+    color: "FBCA04"
+    description: "Valor de negocio medio"
+
+  - name: value:low
+    color: "C2E0C6"
+    description: "Valor de negocio bajo"
+
+  # --------------------------------------------------------------------------
+  # Complexity
+  # --------------------------------------------------------------------------
+
+  - name: complexity:high
+    color: "B60205"
+    description: "Alta complejidad"
+
+  - name: complexity:medium
+    color: "FBCA04"
+    description: "Complejidad media"
+
+  - name: complexity:low
+    color: "0E8A16"
+    description: "Baja complejidad"
+
+  # --------------------------------------------------------------------------
+  # Modules
+  # --------------------------------------------------------------------------
+
+  - name: backend
+    color: "0052CC"
+    description: "Backend"
+
+  - name: frontend
+    color: "5319E7"
+    description: "Frontend"
+
+  - name: database
+    color: "006B75"
+    description: "Base de datos"
+
+  - name: security
+    color: "B60205"
+    description: "Seguridad"
+
+  - name: authentication
+    color: "D93F0B"
+    description: "Autenticación"
+
+  - name: dashboard
+    color: "1D76DB"
+    description: "Dashboard"
+
+  - name: analytics
+    color: "0052CC"
+    description: "Analítica"
+
+  - name: monitoring
+    color: "5319E7"
+    description: "Monitoreo"
+
+  - name: audit
+    color: "6F42C1"
+    description: "Auditoría"
+
+  - name: profile
+    color: "0E8A16"
+    description: "Perfil"
+
+  - name: project
+    color: "1D76DB"
+    description: "Gestión de Proyectos"
+
+  - name: catalog
+    color: "FBCA04"
+    description: "Catálogos"
+
+  - name: validation
+    color: "BFDADC"
+    description: "Validaciones"
+
+  - name: documentation
+    color: "C5DEF5"
+    description: "Documentación"
+
+  - name: api
+    color: "0366D6"
+    description: "API"
+
+  - name: docker
+    color: "2496ED"
+    description: "Docker"
+
+  - name: nginx
+    color: "009639"
+    description: "Nginx"
+
+  - name: architecture
+    color: "6F42C1"
+    description: "Arquitectura"
+
+  - name: devops
+    color: "2088FF"
+    description: "DevOps"
+
+  - name: ci
+    color: "0E8A16"
+    description: "Continuous Integration"
+
+  - name: cd
+    color: "5319E7"
+    description: "Continuous Deployment"
+
+  - name: deployment
+    color: "0052CC"
+    description: "Despliegue"
+
+  - name: performance
+    color: "F9D0C4"
+    description: "Optimización"
+
+  - name: qa
+    color: "C2E0C6"
+    description: "Quality Assurance"
+
+  - name: testing
+    color: "5319E7"
+    description: "Pruebas"
+
+  - name: quality
+    color: "FBCA04"
+    description: "Calidad"
+
+  - name: upload
+    color: "0366D6"
+    description: "Carga de archivos"
+
+  - name: email
+    color: "1D76DB"
+    description: "Correo electrónico"
+
+  - name: public
+    color: "0E8A16"
+    description: "Funcionalidad pública"
+
+  - name: search
+    color: "5319E7"
+    description: "Búsquedas"
+
+  - name: filter
+    color: "0052CC"
+    description: "Filtros"
+
+  - name: contact
+    color: "FBCA04"
+    description: "Formulario de contacto"
