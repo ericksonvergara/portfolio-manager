@@ -34,6 +34,7 @@ import requests
 # CONFIGURATION
 # =============================================================================
 
+
 @dataclass(frozen=True)
 class GitHubConfig:
     """
@@ -46,29 +47,30 @@ class GitHubConfig:
 
     timeout: int = 30
 
-    user_agent: str = (
-        "PortfolioManager/1.0"
-    )
+    user_agent: str = "PortfolioManager/1.0"
+
 
 # =============================================================================
 # EXCEPTIONS
 # =============================================================================
 
-class GitHubError(Exception):
-    ...
 
-class GitHubAuthenticationError(GitHubError):
-    ...
+class GitHubError(Exception): ...
 
-class GitHubApiError(GitHubError):
-    ...
 
-class GitHubNotFoundError(GitHubError):
-    ...
+class GitHubAuthenticationError(GitHubError): ...
+
+
+class GitHubApiError(GitHubError): ...
+
+
+class GitHubNotFoundError(GitHubError): ...
+
 
 # =============================================================================
 # ENUMERATIONS
 # =============================================================================
+
 
 class HttpMethod(str, Enum):
     """
@@ -90,8 +92,8 @@ class IssueState(str, Enum):
     OPEN = "open"
     CLOSED = "closed"
     ALL = "all"
-    
-    
+
+
 # =============================================================================
 # GRAPHQL QUERIES
 # =============================================================================
@@ -227,10 +229,11 @@ mutation(
 # GITHUB CLIENT
 # =============================================================================
 
+
 class GitHubClient:
     """
     GitHub REST API client.
-    """    
+    """
 
     def __init__(
         self,
@@ -241,7 +244,7 @@ class GitHubClient:
         """
         Initializes the GitHub client.
         """
-    
+
         self.token = token
 
         self.owner = owner
@@ -264,21 +267,19 @@ class GitHubClient:
             str,
             list[dict[str, Any]],
         ] = {}
-        
-# =============================================================================
-# AUTHENTICATION
-# =============================================================================
-   
+
+    # =============================================================================
+    # AUTHENTICATION
+    # =============================================================================
+
     @property
     def repository_path(self) -> str:
         """
         Returns the repository path.
         """
-    
-        return (
-            f"{self.owner}/{self.repository}"
-        )
-    
+
+        return f"{self.owner}/{self.repository}"
+
     def _build_headers(
         self,
     ) -> dict[str, str]:
@@ -288,17 +289,11 @@ class GitHubClient:
 
         return {
             "Accept": "application/vnd.github+json",
-            "Authorization": (
-                f"Bearer {self.token}"
-            ),
-            "X-GitHub-Api-Version": (
-                self.config.api_version
-            ),
-            "User-Agent": (
-                self.config.user_agent
-            ),
+            "Authorization": (f"Bearer {self.token}"),
+            "X-GitHub-Api-Version": (self.config.api_version),
+            "User-Agent": (self.config.user_agent),
         }
-    
+
     def validate_token(
         self,
     ) -> bool:
@@ -313,9 +308,9 @@ class GitHubClient:
 
         return True
 
-# =============================================================================
-# HTTP CLIENT
-# =============================================================================
+    # =============================================================================
+    # HTTP CLIENT
+    # =============================================================================
 
     def _request(
         self,
@@ -327,10 +322,7 @@ class GitHubClient:
         Executes an HTTP request against the GitHub API.
         """
 
-        url = (
-            f"{self.config.api_url}"
-            f"{endpoint}"
-        )
+        url = f"{self.config.api_url}{endpoint}"
 
         response = self.session.request(
             method=method.value,
@@ -340,45 +332,39 @@ class GitHubClient:
             **kwargs,
         )
 
-        try:
-
-            message = response.json().get(
-                "message",
-                response.reason,
-            )
-
-        except ValueError:
-
-            message = response.reason
-
         if not response.ok:
-            
+            try:
+                payload = response.json()
+
+                if isinstance(payload, dict):
+                    message = payload.get(
+                        "message",
+                        response.reason,
+                    )
+
+                else:
+                    message = response.reason
+
+            except ValueError:
+                message = response.reason
+
             error_message = (
                 "GitHub API request failed.\n\n"
                 f"Method   : {method.value}\n"
                 f"Endpoint : {endpoint}\n"
                 f"Status   : {response.status_code}\n"
                 f"Message  : {message}\n"
-            )            
-
-            if response.status_code in (401, 403):
-
-                raise GitHubAuthenticationError(
-                    error_message
-                )
-
-            if response.status_code == 404:
-
-                raise GitHubNotFoundError(
-                    error_message
-                )
-
-            raise GitHubApiError(
-                error_message
             )
 
-        return response
+            if response.status_code in (401, 403):
+                raise GitHubAuthenticationError(error_message)
+    
+            if response.status_code == 404:
+                raise GitHubNotFoundError(error_message)
+    
+            raise GitHubApiError(error_message)
 
+        return response
 
     def _json(
         self,
@@ -389,7 +375,7 @@ class GitHubClient:
         """
 
         return response.json()
-    
+
     def _graphql(
         self,
         query: str,
@@ -416,7 +402,6 @@ class GitHubClient:
         )
 
         if errors:
-
             messages = "; ".join(
                 error.get(
                     "message",
@@ -426,17 +411,15 @@ class GitHubClient:
             )
 
             raise GitHubApiError(
-                "GitHub GraphQL request failed.\n\n"
-                f"Message: {messages}"
+                f"GitHub GraphQL request failed.\n\nMessage: {messages}"
             )
 
         return data
-        
 
-# =============================================================================
-# REPOSITORY API
-# =============================================================================
-    
+    # =============================================================================
+    # REPOSITORY API
+    # =============================================================================
+
     def get_repository(
         self,
     ) -> dict[str, Any]:
@@ -445,15 +428,12 @@ class GitHubClient:
         """
 
         if self._repository is None:
-
             response = self._request(
                 HttpMethod.GET,
                 f"/repos/{self.repository_path}",
             )
 
-            self._repository = self._json(
-                response
-            )
+            self._repository = self._json(response)
 
         return self._repository
 
@@ -470,11 +450,10 @@ class GitHubClient:
             return True
 
         except GitHubNotFoundError:
-
             return False
 
     def get_repository_id(
-    self,
+        self,
     ) -> int:
         """
         Returns the repository identifier.
@@ -495,9 +474,9 @@ class GitHubClient:
 
         return repository["node_id"]
 
-# =============================================================================
-# ISSUE API
-# =============================================================================
+    # =============================================================================
+    # ISSUE API
+    # =============================================================================
 
     def get_issue(
         self,
@@ -509,10 +488,7 @@ class GitHubClient:
 
         response = self._request(
             HttpMethod.GET,
-            (
-                f"/repos/{self.repository_path}"
-                f"/issues/{issue_number}"
-            ),
+            (f"/repos/{self.repository_path}/issues/{issue_number}"),
         )
 
         return self._json(response)
@@ -528,13 +504,11 @@ class GitHubClient:
         issues = self.list_issues()
 
         for issue in issues:
-
             if issue["title"] == title:
-
                 return issue
 
         return None
-    
+
     def find_issue_by_backlog_id(
         self,
         backlog_id: str,
@@ -546,13 +520,9 @@ class GitHubClient:
         marker = f"- **ID:** {backlog_id}"
 
         for issue in self.list_issues():
-
-            body = issue.get(
-                "body"
-            ) or ""
+            body = issue.get("body") or ""
 
             if marker in body:
-
                 return issue
 
         return None
@@ -570,7 +540,6 @@ class GitHubClient:
         page = 1
 
         while True:
-
             response = self._request(
                 HttpMethod.GET,
                 f"/repos/{self.repository_path}/issues",
@@ -581,25 +550,19 @@ class GitHubClient:
                 },
             )
 
-            page_issues = self._json(
-                response
-            )
+            page_issues = self._json(response)
 
             if not page_issues:
-
                 break
 
-            issues.extend(
-                page_issues
-            )
+            issues.extend(page_issues)
 
             if len(page_issues) < 100:
-
                 break
 
             page += 1
 
-        return issues    
+        return issues
 
     def create_issue(
         self,
@@ -632,10 +595,7 @@ class GitHubClient:
 
         response = self._request(
             HttpMethod.PATCH,
-            (
-                f"/repos/{self.repository_path}"
-                f"/issues/{issue_number}"
-            ),
+            (f"/repos/{self.repository_path}/issues/{issue_number}"),
             json=fields,
         )
 
@@ -680,7 +640,7 @@ class GitHubClient:
             issue_number,
             labels=labels,
         )
-        
+
     def assign_milestone(
         self,
         issue_number: int,
@@ -695,9 +655,9 @@ class GitHubClient:
             milestone=milestone,
         )
 
-# =============================================================================
-# LABEL API
-# =============================================================================
+    # =============================================================================
+    # LABEL API
+    # =============================================================================
 
     def get_labels(
         self,
@@ -707,7 +667,6 @@ class GitHubClient:
         """
 
         if self._labels is None:
-
             response = self._request(
                 HttpMethod.GET,
                 f"/repos/{self.repository_path}/labels",
@@ -726,9 +685,7 @@ class GitHubClient:
         """
 
         for label in self.get_labels():
-
             if label["name"] == name:
-
                 return label
 
         return None
@@ -741,10 +698,7 @@ class GitHubClient:
         Checks whether a label exists.
         """
 
-        return (
-            self.find_label(name)
-            is not None
-        )
+        return self.find_label(name) is not None
 
     def create_label(
         self,
@@ -765,12 +719,10 @@ class GitHubClient:
                 "description": description,
             },
         )
-    
 
         label = self._json(response)
 
         if self._labels is not None:
-
             self._labels.append(label)
 
         return label
@@ -786,10 +738,7 @@ class GitHubClient:
         label = self.find_label(name)
 
         if label is None:
-
-            raise GitHubNotFoundError(
-                f"Label '{name}' not found."
-            )
+            raise GitHubNotFoundError(f"Label '{name}' not found.")
 
         return label
 
@@ -807,9 +756,9 @@ class GitHubClient:
 
         return self._require_label(name)["name"]
 
-# =============================================================================
-# MILESTONE API
-# =============================================================================
+    # =============================================================================
+    # MILESTONE API
+    # =============================================================================
 
     def get_milestones(
         self,
@@ -819,14 +768,13 @@ class GitHubClient:
         """
 
         if self._milestones is None:
-
             response = self._request(
                 HttpMethod.GET,
                 f"/repos/{self.repository_path}/milestones",
                 params={
                     "state": "all",
                 },
-            )        
+            )
 
             self._milestones = self._json(response)
 
@@ -841,9 +789,7 @@ class GitHubClient:
         """
 
         for milestone in self.get_milestones():
-
             if milestone["title"] == title:
-
                 return milestone
 
         return None
@@ -856,10 +802,7 @@ class GitHubClient:
         Checks whether a milestone exists.
         """
 
-        return (
-            self.find_milestone(title)
-            is not None
-        )
+        return self.find_milestone(title) is not None
 
     def _require_milestone(
         self,
@@ -869,15 +812,10 @@ class GitHubClient:
         Returns a milestone or raises an exception.
         """
 
-        milestone = self.find_milestone(
-            title
-        )
+        milestone = self.find_milestone(title)
 
         if milestone is None:
-
-            raise GitHubNotFoundError(
-                f"Milestone '{title}' not found."
-            )
+            raise GitHubNotFoundError(f"Milestone '{title}' not found.")
 
         return milestone
 
@@ -889,9 +827,7 @@ class GitHubClient:
         Returns the milestone identifier.
         """
 
-        return self._require_milestone(
-            title
-        )["number"]
+        return self._require_milestone(title)["number"]
 
     def create_milestone(
         self,
@@ -914,16 +850,13 @@ class GitHubClient:
         milestone = self._json(response)
 
         if self._milestones is not None:
-
-            self._milestones.append(
-                milestone
-            )
+            self._milestones.append(milestone)
 
         return milestone
 
-# =============================================================================
-# PROJECT API
-# =============================================================================
+    # =============================================================================
+    # PROJECT API
+    # =============================================================================
 
     def get_projects(
         self,
@@ -933,7 +866,6 @@ class GitHubClient:
         """
 
         if self._projects is not None:
-
             return self._projects
 
         data = self._graphql(
@@ -943,12 +875,7 @@ class GitHubClient:
             },
         )
 
-        self._projects = (
-            data["data"]
-                ["user"]
-                ["projectsV2"]
-                ["nodes"]
-        )
+        self._projects = data["data"]["user"]["projectsV2"]["nodes"]
 
         return self._projects
 
@@ -961,9 +888,7 @@ class GitHubClient:
         """
 
         for project in self.get_projects():
-
             if project["title"] == title:
-
                 return project
 
         return None
@@ -976,15 +901,10 @@ class GitHubClient:
         Returns a Project.
         """
 
-        project = self.find_project(
-            title
-        )
+        project = self.find_project(title)
 
         if project is None:
-
-            raise GitHubNotFoundError(
-                f"Project '{title}' not found."
-            )
+            raise GitHubNotFoundError(f"Project '{title}' not found.")
 
         return project
 
@@ -996,10 +916,8 @@ class GitHubClient:
         Returns Project node id.
         """
 
-        return self._require_project(
-            title
-        )["id"]
-        
+        return self._require_project(title)["id"]
+
     def add_project_item(
         self,
         project_id: str,
@@ -1017,13 +935,8 @@ class GitHubClient:
             },
         )
 
-        return (
-            data["data"]
-                ["addProjectV2ItemById"]
-                ["item"]
-                ["id"]
-        )
-        
+        return data["data"]["addProjectV2ItemById"]["item"]["id"]
+
     def get_project_item_id(
         self,
         project_id: str,
@@ -1041,18 +954,10 @@ class GitHubClient:
             },
         )
 
-        items = (
-            data["data"]
-                ["node"]
-                ["items"]
-                ["nodes"]
-        )
+        items = data["data"]["node"]["items"]["nodes"]
 
         for item in items:
-
-            content = item.get(
-                "content"
-            )
+            content = item.get("content")
 
             if content is None:
                 continue
@@ -1060,14 +965,11 @@ class GitHubClient:
             if content.get("id") == issue_id:
                 return item["id"]
 
-        raise GitHubNotFoundError(
-            "Issue was not found in the "
-            "GitHub Project."
-        )
+        raise GitHubNotFoundError("Issue was not found in the GitHub Project.")
 
-# =============================================================================
-# CUSTOM FIELDS API
-# =============================================================================
+    # =============================================================================
+    # CUSTOM FIELDS API
+    # =============================================================================
 
     def get_project_fields(
         self,
@@ -1076,24 +978,18 @@ class GitHubClient:
         """
         Returns the Project fields.
         """
-        
-        if project_id not in self._project_fields:
 
+        if project_id not in self._project_fields:
             data = self._graphql(
                 GET_PROJECT_FIELDS_QUERY,
                 {
                     "projectId": project_id,
                 },
             )
-            
-            self._project_fields[project_id] = (
-                data["data"]
-                    ["node"]
-                    ["fields"]
-                    ["nodes"]
-            )
-            
-        return self._project_fields[project_id]        
+
+            self._project_fields[project_id] = data["data"]["node"]["fields"]["nodes"]
+
+        return self._project_fields[project_id]
 
     def find_project_field(
         self,
@@ -1104,12 +1000,8 @@ class GitHubClient:
         Finds a Project field.
         """
 
-        for field in self.get_project_fields(
-            project_id
-        ):
-
+        for field in self.get_project_fields(project_id):
             if field["name"] == name:
-
                 return field
 
         return None
@@ -1129,10 +1021,7 @@ class GitHubClient:
         )
 
         if field is None:
-
-            raise GitHubNotFoundError(
-                f"Field '{name}' not found."
-            )
+            raise GitHubNotFoundError(f"Field '{name}' not found.")
 
         return field
 
@@ -1145,10 +1034,7 @@ class GitHubClient:
         Returns the Project field id.
         """
 
-        return self._require_project_field(
-            project_id,
-            name
-        )["id"]
+        return self._require_project_field(project_id, name)["id"]
 
     def get_single_select_option(
         self,
@@ -1169,14 +1055,10 @@ class GitHubClient:
             "options",
             [],
         ):
-
             if option["name"] == option_name:
-
                 return option
 
-        raise GitHubNotFoundError(
-            f"Option '{option_name}' not found."
-        )
+        raise GitHubNotFoundError(f"Option '{option_name}' not found.")
 
     def update_project_field(
         self,
@@ -1198,7 +1080,7 @@ class GitHubClient:
                 "optionId": option_id,
             },
         )
-        
+
     def update_project_number_field(
         self,
         project_id: str,
@@ -1219,7 +1101,7 @@ class GitHubClient:
                 "numberValue": value,
             },
         )
-        
+
     def set_estimated_hours(
         self,
         project_id: str,
@@ -1229,12 +1111,12 @@ class GitHubClient:
         """
         Sets the Estimated Hours field.
         """
-    
+
         field = self._require_project_field(
             project_id,
             "Estimated Hours",
         )
-    
+
         return self.update_project_number_field(
             project_id,
             item_id,
@@ -1269,8 +1151,8 @@ class GitHubClient:
             item_id,
             field["id"],
             option["id"],
-        )    
-        
+        )
+
     def set_priority(
         self,
         project_id: str,
@@ -1287,7 +1169,7 @@ class GitHubClient:
             "Priority",
             priority,
         )
-        
+
     def set_business_value(
         self,
         project_id: str,
@@ -1304,7 +1186,7 @@ class GitHubClient:
             "Business Value",
             value,
         )
-        
+
     def set_complexity(
         self,
         project_id: str,
@@ -1321,7 +1203,7 @@ class GitHubClient:
             "Complexity",
             value,
         )
-        
+
     def set_sprint(
         self,
         project_id: str,
@@ -1338,7 +1220,7 @@ class GitHubClient:
             "Sprint",
             sprint,
         )
-        
+
     def set_status(
         self,
         project_id: str,
@@ -1355,7 +1237,7 @@ class GitHubClient:
             "Status",
             status,
         )
-        
+
     def set_issue_type(
         self,
         project_id: str,
@@ -1372,7 +1254,7 @@ class GitHubClient:
             "Issue Type",
             issue_type,
         )
-        
+
     def set_module(
         self,
         project_id: str,

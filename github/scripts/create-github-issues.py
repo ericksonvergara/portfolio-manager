@@ -292,6 +292,83 @@ def validate_project(
     return project_id
 
 
+def ensure_milestones(
+    client: GitHubClient,
+    backlog: dict[str, dict[str, Any]],
+) -> None:
+    """
+    Ensures all backlog milestones required by the project
+    exist in the GitHub repository.
+    """
+
+    Console.section(
+        "Ensuring GitHub Milestones"
+    )
+
+    milestone_catalog = backlog.get(
+        "milestones",
+        {},
+    )
+
+    milestones = milestone_catalog.get(
+        "milestones",
+        [],
+    )
+
+    if not milestones:
+
+        Console.success(
+            "No milestones declared in backlog."
+        )
+
+        Console.blank()
+
+        return
+
+    existing_milestones = {
+        milestone["title"]
+        for milestone in client.get_milestones()
+    }
+
+    created = 0
+    reused = 0
+
+    for milestone in milestones:
+
+        title = milestone["title"]
+
+        if title in existing_milestones:
+
+            reused += 1
+
+            continue
+
+        client.create_milestone(
+            title=title,
+            description=milestone.get(
+                "description",
+                "",
+            ),
+        )
+
+        created += 1
+
+        existing_milestones.add(
+            title
+        )
+
+        Console.success(
+            f"Created milestone: {title}"
+        )
+
+    Console.success(
+        f"Milestones ready. "
+        f"Created: {created}. "
+        f"Reused: {reused}."
+    )
+
+    Console.blank()
+
 def validate_token(
     client: GitHubClient,
 ) -> None:
@@ -887,7 +964,7 @@ def validate_backlog(
     )
 
     work_item_ids = get_work_item_ids(
-        backlog,
+        work_items,
     )
 
     if len(work_items) != len(work_item_ids):
@@ -987,7 +1064,8 @@ def main() -> None:
     Main entry point.
     """
 
-    Console.header(
+    Console.title(
+        PROJECT_NAME,
         APPLICATION_NAME,
         VERSION,
     )
@@ -1011,6 +1089,11 @@ def main() -> None:
     backlog = load_project_backlog()
 
     validate_backlog(
+        backlog,
+    )
+    
+    ensure_milestones(
+        client,
         backlog,
     )
 
