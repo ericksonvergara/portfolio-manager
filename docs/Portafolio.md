@@ -18,8 +18,8 @@ Desarrollar una plataforma web que permita publicar y administrar proyectos de d
 ## Backend
 
 * Java 21
-* Spring Boot 3.x
-* Gradle
+* Spring Boot 4.1.0
+* Gradle 9.5.1
 * Arquitectura Hexagonal
 * Spring Security
 * JWT Authentication

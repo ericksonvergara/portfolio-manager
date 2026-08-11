@@ -188,7 +188,6 @@ mutation(
 GET_PROJECT_ITEM_QUERY = """
 query(
     $projectId: ID!,
-    $issueId: ID!
 ) {
     node(id: $projectId) {
         ... on ProjectV2 {
@@ -358,10 +357,10 @@ class GitHubClient:
 
             if response.status_code in (401, 403):
                 raise GitHubAuthenticationError(error_message)
-    
+
             if response.status_code == 404:
                 raise GitHubNotFoundError(error_message)
-    
+
             raise GitHubApiError(error_message)
 
         return response
@@ -950,7 +949,6 @@ class GitHubClient:
             GET_PROJECT_ITEM_QUERY,
             {
                 "projectId": project_id,
-                "issueId": issue_id,
             },
         )
 
@@ -1044,6 +1042,10 @@ class GitHubClient:
     ) -> dict[str, Any]:
         """
         Returns a single select option.
+
+        First attempts an exact match. If no exact match is found,
+        attempts a normalized match that ignores leading/trailing
+        whitespace and leading emoji symbols.
         """
 
         field = self._require_project_field(
@@ -1051,14 +1053,34 @@ class GitHubClient:
             field_name,
         )
 
-        for option in field.get(
+        options = field.get(
             "options",
             [],
-        ):
-            if option["name"] == option_name:
-                return option
+        )
 
-        raise GitHubNotFoundError(f"Option '{option_name}' not found.")
+        # Exact match.
+        for option in options:
+        
+            if option["name"] == option_name:
+            
+                return option
+    
+        # Normalized match for display prefixes such as emojis.
+        normalized_option_name = option_name.strip()
+    
+        for option in options:
+        
+            normalized_name = option["name"].strip()
+    
+            if normalized_name.endswith(
+                normalized_option_name
+            ):
+    
+                return option
+    
+        raise GitHubNotFoundError(
+            f"Option '{option_name}' not found."
+        )
 
     def update_project_field(
         self,
