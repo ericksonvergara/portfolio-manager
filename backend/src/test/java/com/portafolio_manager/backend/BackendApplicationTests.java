@@ -1,12 +1,16 @@
 package com.portafolio_manager.backend;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Testcontainers
@@ -19,6 +23,9 @@ class BackendApplicationTests {
 					.withUsername("portfolio")
 					.withPassword("portfolio");
 
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
 	@DynamicPropertySource
 	static void configureDatasource(DynamicPropertyRegistry registry) {
 		registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -28,5 +35,21 @@ class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {
+	}
+
+	@Test
+	void shouldApplyFlywayMigration() {
+		Integer tables = jdbcTemplate.queryForObject(
+				"""
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_name = 'flyway_schema_test'
+                """,
+				Integer.class
+		);
+
+		System.out.println("flyway_schema_test tables found: " + tables);
+		assertThat(tables).isEqualTo(1);
 	}
 }
