@@ -6,3 +6,9 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+
+logging:
+  level:
+    root: INFO
+    com.portafolio_manager.backend: DEBUG
+    org.springframework.web: INFO
