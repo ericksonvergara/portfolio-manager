@@ -19,7 +19,7 @@ import org.springframework.web.util.WebUtils;
 
 @RestController
 @RequestMapping("/api/auth")
-class AuthController {
+class AuthController implements AuthApi {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -40,20 +40,23 @@ class AuthController {
         this.cookieFactory = cookieFactory;
     }
 
+    @Override
     @PostMapping("/login")
-    ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthenticationResult result = loginUseCase.execute(new LoginCommand(request.email(), request.password()));
         return sessionResponse(result);
     }
 
+    @Override
     @PostMapping("/refresh")
-    ResponseEntity<TokenResponse> refresh(HttpServletRequest request) {
+    public ResponseEntity<TokenResponse> refresh(HttpServletRequest request) {
         AuthenticationResult result = refreshSessionUseCase.execute(readRefreshToken(request));
         return sessionResponse(result);
     }
 
+    @Override
     @PostMapping("/logout")
-    ResponseEntity<Void> logout(HttpServletRequest request) {
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
         logoutUseCase.execute(new LogoutCommand(readRefreshToken(request), readBearerToken(request)));
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, cookieFactory.clear().toString())
