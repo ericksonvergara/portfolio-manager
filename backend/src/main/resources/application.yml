@@ -7,6 +7,11 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
 logging:
   level:
     root: INFO
@@ -17,3 +22,16 @@ app:
   security:
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:portfolio-manager}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+      refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:7d}
+    refresh-cookie:
+      secure: ${REFRESH_COOKIE_SECURE:true}
+
+  bootstrap:
+    admin:
+      name: ${ADMIN_NAME:Administrador}
+      email: ${ADMIN_EMAIL:}
+      password: ${ADMIN_PASSWORD:}

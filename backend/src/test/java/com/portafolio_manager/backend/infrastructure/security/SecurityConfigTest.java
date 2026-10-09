@@ -1,5 +1,8 @@
 package com.portafolio_manager.backend.infrastructure.security;
 
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
+import com.portafolio_manager.backend.infrastructure.security.jwt.TestJwt;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -8,12 +11,21 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -23,7 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(
         controllers = SecurityConfigTest.TestController.class,
-        properties = "app.security.cors.allowed-origins=" + SecurityConfigTest.ALLOWED_ORIGIN
+        properties = {
+                "app.security.cors.allowed-origins=" + SecurityConfigTest.ALLOWED_ORIGIN,
+                TestJwt.SECRET_PROPERTY
+        }
 )
 @Import({SecurityConfig.class, SecurityConfigTest.TestController.class})
 class SecurityConfigTest {
@@ -35,6 +50,81 @@ class SecurityConfigTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtEncoder jwtEncoder;
+
+    @MockitoBean
+    private RevokedAccessTokenRepositoryPort revokedAccessTokenRepository;
+
+    @Test
+    void shouldRejectRevokedBearerToken() throws Exception {
+        String token = TestJwt.token(jwtEncoder, "revoked-id", TestJwt.ISSUER, Instant.now().plusSeconds(60), "ADMIN");
+        when(revokedAccessTokenRepository.isRevoked("revoked-id")).thenReturn(true);
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRejectBearerTokenWithoutJwtId() throws Exception {
+        String token = TestJwt.token(jwtEncoder, null, TestJwt.ISSUER, Instant.now().plusSeconds(60), "ADMIN");
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldIgnoreBearerTokenOnAuthEndpoints() throws Exception {
+        mockMvc.perform(get("/api/auth/ping").header(HttpHeaders.AUTHORIZATION, "Bearer expired-or-garbage"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldAllowAdminBearerToken() throws Exception {
+        String token = TestJwt.token(jwtEncoder, TestJwt.ISSUER, Instant.now().plusSeconds(60), "ADMIN");
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldReturnForbiddenForBearerTokenWithoutAdminRole() throws Exception {
+        String token = TestJwt.token(jwtEncoder, TestJwt.ISSUER, Instant.now().plusSeconds(60), "USER");
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRejectExpiredBearerToken() throws Exception {
+        String token = TestJwt.token(jwtEncoder, TestJwt.ISSUER, Instant.now().minusSeconds(120), "ADMIN");
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+    }
+
+    @Test
+    void shouldRejectBearerTokenFromAnotherIssuer() throws Exception {
+        String token = TestJwt.token(jwtEncoder, "someone-else", Instant.now().plusSeconds(60), "ADMIN");
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void shouldRejectBearerTokenSignedWithAnotherKey() throws Exception {
+        SecretKey otherKey = new SecretKeySpec(
+                "another-secret-that-is-also-32-bytes-long".getBytes(StandardCharsets.UTF_8),
+                "HmacSHA256"
+        );
+        JwtEncoder foreignEncoder = new NimbusJwtEncoder(new ImmutableSecret<>(otherKey));
+        String token = TestJwt.token(foreignEncoder, TestJwt.ISSUER, Instant.now().plusSeconds(60), "ADMIN");
+
+        mockMvc.perform(get("/api/admin/ping").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
 
     @Test
     void shouldAllowAnonymousRequestToPublicEndpoint() throws Exception {
@@ -107,7 +197,7 @@ class SecurityConfigTest {
     @RestController
     static class TestController {
 
-        @GetMapping({"/api/public/ping", "/api/protected/ping", "/api/admin/ping"})
+        @GetMapping({"/api/public/ping", "/api/auth/ping", "/api/protected/ping", "/api/admin/ping"})
         String ping() {
             return "pong";
         }

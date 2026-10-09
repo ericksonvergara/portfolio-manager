@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend;
 
+import com.portafolio_manager.backend.infrastructure.security.jwt.TestJwt;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,7 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = TestJwt.SECRET_PROPERTY)
 @Testcontainers
 class BackendApplicationTests {
 
