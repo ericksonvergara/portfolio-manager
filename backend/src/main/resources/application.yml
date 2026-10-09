@@ -12,3 +12,8 @@ logging:
     root: INFO
     com.portafolio_manager.backend: DEBUG
     org.springframework.web: INFO
+
+app:
+  security:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
