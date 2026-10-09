@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend.infrastructure.security;
 
+import com.portafolio_manager.backend.infrastructure.security.jwt.JwtConfig;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -24,6 +28,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableConfigurationProperties(CorsProperties.class)
 @Import({
+        JwtConfig.class,
         SecurityErrorResponseWriter.class,
         RestAuthenticationEntryPoint.class,
         RestAccessDeniedHandler.class
@@ -31,6 +36,8 @@ import java.util.List;
 public class SecurityConfig {
 
     static final String ADMIN_ROLE = "ADMIN";
+
+    private static final String AUTH_ENDPOINTS_PREFIX = "/api/auth/";
 
     static final String[] PUBLIC_ENDPOINTS = {
             "/error",
@@ -47,7 +54,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             RestAuthenticationEntryPoint authenticationEntryPoint,
-            RestAccessDeniedHandler accessDeniedHandler
+            RestAccessDeniedHandler accessDeniedHandler,
+            JwtAuthenticationConverter jwtAuthenticationConverter
     ) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -62,6 +70,12 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
                 )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .bearerTokenResolver(bearerTokenResolver())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(ADMIN_ENDPOINTS).hasRole(ADMIN_ROLE)
@@ -69,6 +83,17 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    /**
+     * Auth endpoints are public and handle tokens themselves: an expired access token sent to
+     * logout must not turn the request into a 401 before the refresh cookie is revoked and cleared.
+     */
+    private static BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
+        return request -> request.getRequestURI().startsWith(AUTH_ENDPOINTS_PREFIX)
+                ? null
+                : defaultResolver.resolve(request);
     }
 
     @Bean
