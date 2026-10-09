@@ -1,6 +1,7 @@
 package com.portafolio_manager.backend.infrastructure.web.auth;
 
 import com.jayway.jsonpath.JsonPath;
+import com.portafolio_manager.backend.infrastructure.AbstractPostgresIntegrationTest;
 import com.portafolio_manager.backend.infrastructure.security.jwt.TestJwt;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
@@ -10,13 +11,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Timestamp;
 
@@ -31,22 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.bootstrap.admin.password=" + AuthenticationFlowIntegrationTest.ADMIN_PASSWORD
 })
 @AutoConfigureMockMvc
-@Testcontainers
-class AuthenticationFlowIntegrationTest {
+class AuthenticationFlowIntegrationTest extends AbstractPostgresIntegrationTest {
 
     static final String ADMIN_EMAIL = "admin@portfolio.test";
     static final String ADMIN_PASSWORD = "Secret#123";
     private static final String REFRESH_COOKIE = "refresh_token";
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
-
-    @DynamicPropertySource
-    static void configureDatasource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @Autowired
     private MockMvc mockMvc;

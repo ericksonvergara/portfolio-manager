@@ -30,6 +30,7 @@ services:
       ADMIN_NAME: "${ADMIN_NAME:-Administrador}"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
+      API_DOCS_ENABLED: "${API_DOCS_ENABLED:-true}"
     depends_on:
       postgres:
         condition: service_healthy
