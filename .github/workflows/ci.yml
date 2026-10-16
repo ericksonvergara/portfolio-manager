@@ -16,6 +16,11 @@ on:
       - main
       - develop
       - feature/**
+      - fix/**
+      - hotfix/**
+      - refactor/**
+      - chore/**
+      - docs/**
   pull_request:
     branches:
       - main

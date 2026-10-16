@@ -1,0 +1,48 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/workflows/branch-name.yml
+# Version: 1.0.0
+# Description: Validates the branch naming convention on Pull Requests
+#              (see docs/github/06-branching-strategy.md)
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: Branch Name
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+
+  validate:
+    name: Validate branch name
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check naming convention
+        env:
+          # Passed through an env var, never interpolated into the script.
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          ID='(HU|HT|BUG|TASK)[0-9]{3}'
+          SLUG='[a-z0-9]+(-[a-z0-9]+)*'
+
+          if [[ "$BRANCH" =~ ^dependabot/ ]]; then
+            echo "✅ Dependabot branch: '$BRANCH' is exempt."
+          elif [[ "$BRANCH" =~ ^(feature|fix|hotfix)/${ID}-${SLUG}$ ]] \
+            || [[ "$BRANCH" =~ ^(refactor|chore|docs)/(${ID}-)?${SLUG}$ ]]; then
+            echo "✅ '$BRANCH' follows the convention."
+          else
+            echo "::error::Branch '$BRANCH' does not follow <tipo>/<ID>-<descripcion-corta>."
+            echo "Examples: feature/HU007-iniciar-sesion, fix/BUG003-token-no-expira, docs/branch-naming-convention"
+            echo "Lowercase ASCII only (no accents, no ñ). See docs/github/06-branching-strategy.md"
+            exit 1
+          fi

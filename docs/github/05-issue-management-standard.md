@@ -159,6 +159,14 @@ Una Issue únicamente podrá pasar al estado **Done** cuando:
 
 ------------------------------------------------------------------------
 
+# Ramas y Pull Requests
+
+La convención de nombres de ramas (`<tipo>/<ID>-<descripcion-corta>`),
+los commits y el flujo de Pull Requests se definen en
+[06-branching-strategy.md](06-branching-strategy.md).
+
+------------------------------------------------------------------------
+
 # Plantillas oficiales
 
 El proyecto utilizará los siguientes Issue Forms:
