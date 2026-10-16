@@ -9,7 +9,8 @@ describe('decodeAccessToken', () => {
       email: 'admin@example.com',
       name: 'José Muñoz',
       roles: ['ADMIN'],
-      exp: 1,
+      iat: 1,
+      exp: 2,
     })
 
     expect(decodeAccessToken(token)).toEqual({
@@ -17,7 +18,8 @@ describe('decodeAccessToken', () => {
       email: 'admin@example.com',
       name: 'José Muñoz',
       roles: ['ADMIN'],
-      exp: 1,
+      iat: 1,
+      exp: 2,
     })
   })
 
