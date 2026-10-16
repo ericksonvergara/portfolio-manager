@@ -1,0 +1,390 @@
+{
+  "info": {
+    "name": "Portfolio Manager API",
+    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Start every request without stored cookies: the refresh token is sent explicitly.",
+          "pm.cookies.jar().clear(pm.variables.replaceIn('{{baseUrl}}'), () => {});"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Keep the latest refresh token issued by the API (login and refresh rotate it).",
+          "const refreshCookie = pm.response.headers.all()",
+          "  .filter((header) => header.key.toLowerCase() === 'set-cookie')",
+          "  .map((header) => header.value)",
+          "  .find((value) => value.startsWith('refresh_token='));",
+          "if (refreshCookie) {",
+          "  pm.collectionVariables.set('refreshToken', refreshCookie.split(';')[0].substring('refresh_token='.length));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "description": "Flujo completo de HT009 / HU007-HU009. Ejecutar en orden con el Runner.",
+      "item": [
+        {
+          "name": "01 · Login con credenciales inválidas → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Usa el formato de error común', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql(401);",
+                  "  pm.expect(body.message).to.eql('Invalid email or password');",
+                  "  pm.expect(body.path).to.eql('/api/auth/login');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"Wrong#123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Contraseña incorrecta: el backend no revela si el correo existe."
+          }
+        },
+        {
+          "name": "02 · Login con datos mal formados → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Indica los campos inválidos', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql(400);",
+                  "  pm.expect(body.message).to.include('email');",
+                  "  pm.expect(body.message).to.include('password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"no-es-un-correo\",\n  \"password\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "03 · Ruta protegida sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Devuelve el error en JSON', () => pm.expect(pm.response.json().status).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/ping",
+            "description": "Cualquier ruta /api/admin/** exige un access token con rol ADMIN."
+          }
+        },
+        {
+          "name": "04 · Login → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve un access token Bearer vigente', () => {",
+                  "  pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+                  "  pm.expect(body.tokenType).to.eql('Bearer');",
+                  "  pm.expect(new Date(body.expiresAt).getTime()).to.be.above(Date.now());",
+                  "});",
+                  "pm.test('Establece la cookie refresh_token segura', () => {",
+                  "  const cookie = pm.response.headers.all().map((h) => h.value).find((v) => v.startsWith('refresh_token='));",
+                  "  pm.expect(cookie, 'Set-Cookie refresh_token').to.exist;",
+                  "  pm.expect(cookie).to.include('HttpOnly');",
+                  "  pm.expect(cookie).to.include('SameSite=Strict');",
+                  "  pm.expect(cookie).to.include('Path=/api/auth');",
+                  "});",
+                  "pm.test('La respuesta no se cachea', () => pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store'));",
+                  "pm.collectionVariables.set('accessToken', body.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Guarda `accessToken` y `refreshToken` en las variables de la colección."
+          }
+        },
+        {
+          "name": "05 · Ruta protegida con token válido → pasa la seguridad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// No admin endpoints exist yet: any answer other than 401/403 means the token was accepted.",
+                  "pm.test('El token es aceptado (ni 401 ni 403)', () => pm.expect(pm.response.code).to.not.be.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/ping",
+            "description": "Todavía no hay endpoints de administración: un 404 confirma que el token pasó la seguridad."
+          }
+        },
+        {
+          "name": "06 · Refresh → 200 (rota el refresh token)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.collectionVariables.set('previousRefreshToken', pm.collectionVariables.get('refreshToken'));"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve un access token nuevo', () => {",
+                  "  pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+                  "  pm.expect(body.accessToken).to.not.eql(pm.collectionVariables.get('accessToken'));",
+                  "});",
+                  "pm.test('Rota el refresh token', () => {",
+                  "  pm.expect(pm.collectionVariables.get('refreshToken')).to.not.eql(pm.collectionVariables.get('previousRefreshToken'));",
+                  "});",
+                  "pm.collectionVariables.set('accessToken', body.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Cookie", "value": "refresh_token={{refreshToken}}" }],
+            "url": "{{baseUrl}}/api/auth/refresh"
+          }
+        },
+        {
+          "name": "07 · Refresh reutilizando el token anterior → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Rechaza un refresh token ya rotado', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Cookie", "value": "refresh_token={{previousRefreshToken}}" }],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "description": "Reutilizar un token rotado se trata como robo: se revocan todas las sesiones del usuario."
+          }
+        },
+        {
+          "name": "08 · Refresh con el token vigente tras la detección → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('El token vigente también quedó revocado', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Cookie", "value": "refresh_token={{refreshToken}}" }],
+            "url": "{{baseUrl}}/api/auth/refresh"
+          }
+        },
+        {
+          "name": "09 · Login (nueva sesión) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "10 · Logout → 204",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('loggedOutAccessToken', pm.collectionVariables.get('accessToken'));",
+                  "pm.collectionVariables.set('loggedOutRefreshToken', pm.collectionVariables.get('refreshToken'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));",
+                  "pm.test('Borra la cookie refresh_token', () => {",
+                  "  const cookie = pm.response.headers.all().map((h) => h.value).find((v) => v.startsWith('refresh_token='));",
+                  "  pm.expect(cookie, 'Set-Cookie refresh_token').to.exist;",
+                  "  pm.expect(cookie).to.include('Max-Age=0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Cookie", "value": "refresh_token={{refreshToken}}" }],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "Revoca el refresh token (cookie) y el access token (Bearer)."
+          }
+        },
+        {
+          "name": "11 · Refresh tras el logout → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('El refresh token quedó revocado', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Cookie", "value": "refresh_token={{loggedOutRefreshToken}}" }],
+            "url": "{{baseUrl}}/api/auth/refresh"
+          }
+        },
+        {
+          "name": "12 · Access token tras el logout → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('El access token quedó revocado (HU009)', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{loggedOutAccessToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/ping"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documentación",
+      "item": [
+        {
+          "name": "Especificación OpenAPI → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "pm.test('Es una especificación OpenAPI 3 con los endpoints de autenticación', () => {",
+                  "  const spec = pm.response.json();",
+                  "  pm.expect(spec.openapi).to.match(/^3\\./);",
+                  "  pm.expect(spec.paths).to.have.property('/api/auth/login');",
+                  "  pm.expect(spec.components.securitySchemes).to.have.property('bearerAuth');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/docs/openapi"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "accessToken", "value": "", "description": "Set by the login and refresh requests." },
+    { "key": "refreshToken", "value": "", "description": "Latest refresh token, read from Set-Cookie." },
+    { "key": "previousRefreshToken", "value": "", "description": "Refresh token before rotation (reuse detection test)." },
+    { "key": "loggedOutAccessToken", "value": "", "description": "Access token revoked by the logout request." },
+    { "key": "loggedOutRefreshToken", "value": "", "description": "Refresh token revoked by the logout request." }
+  ]
+}
