@@ -1,7 +1,7 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/dependabot.yml
-# Version: 1.0.0
+# Version: 1.1.0
 # Description: Dependabot configuration
 # Author: Erickson Vergara
 # Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -24,11 +24,15 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   # --------------------------------------------------------------------------
-  # Backend - Maven (Spring Boot)
+  # Backend - Gradle (Spring Boot)
   # --------------------------------------------------------------------------
-  - package-ecosystem: "maven"
+  - package-ecosystem: "gradle"
     directory: "/backend"
     schedule:
       interval: "weekly"
@@ -38,6 +42,10 @@ updates:
     labels:
       - "dependencies"
       - "backend"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   # --------------------------------------------------------------------------
   # Frontend - npm (React)
@@ -52,20 +60,25 @@ updates:
     labels:
       - "dependencies"
       - "frontend"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   # --------------------------------------------------------------------------
   # Docker
   # --------------------------------------------------------------------------
   - package-ecosystem: "docker"
-    directory: "/"
+    directories:
+      - "/backend"
+      - "/frontend"
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "docker"
-
-ignore:
-  - dependency-name: "*"
-    update-types:
-      - "version-update:semver-major"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
