@@ -1,12 +1,14 @@
-# ============================================================================
-# Portfolio Manager
-# File: .github/pull_request_template.md
-# Version: 1.0.0
-# Description: Pull Request Template
-# Author: Erickson Vergara
-# Repository: https://github.com/ericksonvergara/portfolio-manager
-# License: MIT
-# ============================================================================
+<!--
+============================================================================
+Portfolio Manager
+File: .github/pull_request_template.md
+Version: 1.0.1
+Description: Pull Request Template
+Author: Erickson Vergara
+Repository: https://github.com/ericksonvergara/portfolio-manager
+License: MIT
+============================================================================
+-->
 
 ## 📋 Summary
 
