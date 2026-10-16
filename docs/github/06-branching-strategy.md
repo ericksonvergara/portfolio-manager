@@ -4,7 +4,7 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.0
+  Versión     1.1
   Fecha       2026-10-16
   Estado      Aprobado
 
@@ -20,15 +20,38 @@ requerimiento **RNF017 - Versionamiento**.
 
 # Estrategia
 
-El proyecto utiliza **GitHub Flow** (variante ligera de Trunk-Based
-Development):
+El proyecto utiliza un **flujo de promoción por entornos** (variante
+simplificada de GitFlow) con tres ramas permanentes:
 
--   `main` es la única rama permanente y siempre debe estar estable.
--   Todo cambio se desarrolla en una **rama de corta duración** creada
-    desde `main`.
--   Los cambios se integran mediante **Pull Request** con el CI en verde.
--   La rama se elimina automáticamente después del merge; la historia
-    queda en `main` y en el Pull Request.
+  Rama      Entorno       Contenido
+  --------- ------------- ----------------------------------------------
+  develop   Integración   Historias terminadas y revisadas. Base de todo
+                          el trabajo diario.
+  qa        Pruebas       Versión candidata en pruebas funcionales y de
+                          regresión.
+  main      Producción    Solo código validado en qa. Siempre estable.
+
+    feature/HU007-...  ──PR──▶  develop  ──PR──▶  qa  ──PR──▶  main
+    fix/BUG003-...     ──PR──▶  develop
+    hotfix/BUG005-...  ──PR──▶  main  ──PR──▶  qa / develop (sincronizar)
+
+## Reglas del flujo
+
+1.  Las ramas de trabajo (`feature`, `fix`, `refactor`, `chore`, `docs`)
+    se crean **desde `develop`** y vuelven a `develop` mediante Pull
+    Request.
+2.  `develop` se promueve a `qa` mediante un Pull Request
+    `develop → qa` cuando hay un conjunto de historias listo para
+    probar.
+3.  `qa` se promueve a `main` mediante un Pull Request `qa → main`
+    (release) cuando las pruebas son exitosas.
+4.  Un `hotfix` se crea **desde `main`**, vuelve a `main` y después se
+    sincroniza con Pull Requests `main → qa` y `main → develop`.
+5.  Nadie hace push directo a `develop`, `qa` ni `main`.
+
+El flujo se valida automáticamente en cada Pull Request (workflow
+`branch-name.yml`): por ejemplo, un Pull Request `feature/... → main` es
+rechazado.
 
 ------------------------------------------------------------------------
 
@@ -46,17 +69,16 @@ Ejemplos:
 
 ## Tipos
 
-  Tipo       Uso                                      Issue asociada
-  ---------- ---------------------------------------- -----------------
-  feature    Nueva funcionalidad o habilitador         User Story (HU),
-                                                       Technical Story
-                                                       (HT)
-  fix        Corrección de un defecto                  Bug (BUG)
-  hotfix     Corrección urgente sobre producción       Bug (BUG)
-  refactor   Mejora interna sin cambio funcional       Task (TASK)
-  chore      Configuración, dependencias, CI/CD        Task (TASK)
-  docs       Solo documentación                        Task (TASK) u
-                                                       opcional
+  Tipo       Uso                                Origen    Destino
+  ---------- ---------------------------------- --------- ---------
+  feature    Nueva funcionalidad (HU, HT)       develop   develop
+  fix        Corrección de un defecto (BUG)     develop   develop
+  hotfix     Corrección urgente en producción   main      main
+  refactor   Mejora interna sin cambio          develop   develop
+             funcional
+  chore      Configuración, dependencias,       develop   develop
+             CI/CD
+  docs       Solo documentación                 develop   develop
 
 ## Reglas
 
@@ -68,10 +90,8 @@ Ejemplos:
     (kebab-case), de 2 a 5 palabras.
 4.  Solo caracteres **ASCII**: sin tildes, sin `ñ`, sin espacios
     (`iniciar-sesion`, no `iniciar-sesión`).
-5.  Las ramas de Dependabot (`dependabot/...`) quedan exentas.
-
-La convención se valida automáticamente en cada Pull Request
-(workflow `branch-name.yml`).
+5.  Las ramas de Dependabot (`dependabot/...`) quedan exentas y apuntan
+    a `develop`.
 
 ------------------------------------------------------------------------
 
@@ -80,14 +100,16 @@ La convención se valida automáticamente en cada Pull Request
 Crear la rama desde la Issue la deja enlazada en la sección
 **Development** de la tarjeta.
 
-**Web:** Issue → *Development* → **Create a branch**. GitHub propone
-`<número>-<título>` (por ejemplo `16-iniciar-sesión`): **editar el
-nombre** en ese diálogo antes de confirmar.
+**Web:** Issue → *Development* → **Create a branch**:
+
+-   **Branch source:** cambiar a `develop` (`main` solo para `hotfix`).
+-   **Nombre:** GitHub propone `<número>-<título>` (por ejemplo
+    `16-iniciar-sesión`): **editarlo** antes de confirmar.
 
 **CLI:**
 
 ``` bash
-gh issue develop <número> --name feature/HU007-iniciar-sesion --base main --checkout
+gh issue develop <número> --name feature/HU007-iniciar-sesion --base develop --checkout
 ```
 
 ------------------------------------------------------------------------
@@ -117,22 +139,56 @@ Ejemplos:
 
 # Pull Requests
 
-1.  Base: `main` (salvo ramas apiladas, ver abajo).
+## Rama de trabajo → develop
+
+1.  Base: `develop`.
 2.  Título: `<tipo>(<ID>): <título de la Issue>`.
-3.  Descripción: incluir `Closes #<número>` para enlazar y cerrar la
-    Issue al hacer merge.
-4.  El CI debe estar en verde antes del merge.
-5.  Merge mediante **Create a merge commit** (no *Squash*), para
-    conservar los commits de la rama.
-6.  La rama se elimina automáticamente tras el merge
-    (*Settings → Automatically delete head branches*).
+3.  Descripción: `Refs #<número>`. GitHub solo cierra Issues
+    automáticamente cuando el cambio llega a `main`, por lo que aquí se
+    enlaza sin cerrar. La tarjeta pasa a **🧪 Testing**.
+
+## develop → qa
+
+-   Título: `release: promote develop to qa`.
+-   Descripción: lista de historias incluidas (`Refs #…`).
+
+## qa → main (release)
+
+-   Título: `release: vX.Y.Z`.
+-   Descripción: `Closes #<número>` por cada historia incluida. Al hacer
+    merge las Issues se cierran y las tarjetas pasan a **✅ Done**.
+
+## Reglas comunes
+
+1.  El CI y la validación de ramas deben estar en verde antes del merge.
+2.  Merge mediante **Create a merge commit** (no *Squash*), para
+    conservar los commits y que `develop`, `qa` y `main` compartan
+    historia.
+3.  Las ramas de trabajo se eliminan automáticamente tras el merge
+    (*Settings → Automatically delete head branches*). `develop` y `qa`
+    no se eliminan porque están protegidas con *Restrict deletions*.
 
 ## Ramas apiladas
 
-Si una historia depende de otra que aún no está en `main`, su rama se
+Si una historia depende de otra que aún no está en `develop`, su rama se
 crea desde la rama de la dependencia y su Pull Request apunta a ella.
-Al hacer merge de la dependencia, GitHub cambia la base a `main`
+Al hacer merge de la dependencia, GitHub cambia la base a `develop`
 automáticamente.
+
+------------------------------------------------------------------------
+
+# Protección de ramas
+
+Ruleset **Protect long-lived branches** (*Settings → Rules →
+Rulesets*), con objetivo **solo** `main`, `qa` y `develop` (nunca *All
+branches*):
+
+-   Restrict deletions.
+-   Block force pushes.
+-   Require a pull request before merging (0 aprobaciones; método
+    *Merge*).
+-   Require status checks to pass: `Validate branch name` y
+    `Quality Gate`.
 
 ------------------------------------------------------------------------
 
@@ -143,3 +199,6 @@ automáticamente.
   1.0       2026-10-16   Definición de la estrategia de ramas, la
                          convención de nombres y el flujo de Pull
                          Requests.
+  1.1       2026-10-16   Ramas permanentes develop y qa, flujo de
+                         promoción develop → qa → main, hotfix y
+                         protección de ramas.
