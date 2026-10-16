@@ -23,6 +23,8 @@ vi.mock('./authApi', () => ({
     authApi.calls.push(credentials)
     return authApi.respond()
   },
+  // No refresh cookie: every test starts without a session to restore.
+  refresh: () => Promise.reject(httpError(401)),
 }))
 
 function respondWith(roles: string[]) {
@@ -83,6 +85,8 @@ function renderApp(path = '/login') {
 
 async function fillAndSubmit(email: string, password: string) {
   const user = userEvent.setup()
+  // The form appears once the attempt to restore a previous session is over.
+  await screen.findByLabelText('Correo electrónico')
   if (email) await user.type(screen.getByLabelText('Correo electrónico'), email)
   if (password) await user.type(screen.getByLabelText('Contraseña'), password)
   await user.click(screen.getByRole('button', { name: 'Ingresar' }))
@@ -176,11 +180,11 @@ describe('LoginPage', () => {
 })
 
 describe('ProtectedRoute', () => {
-  it('redirects anonymous visitors to the login page', () => {
+  it('redirects anonymous visitors to the login page', async () => {
     renderApp('/admin')
 
     expect(
-      screen.getByRole('heading', { name: 'Iniciar sesión' }),
+      await screen.findByRole('heading', { name: 'Iniciar sesión' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Panel admin')).not.toBeInTheDocument()
   })

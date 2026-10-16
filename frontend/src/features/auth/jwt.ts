@@ -3,6 +3,7 @@ export interface AccessTokenClaims {
   email: string
   name: string
   roles: string[]
+  iat: number
   exp: number
 }
 
@@ -27,6 +28,7 @@ export function decodeAccessToken(token: string): AccessTokenClaims {
     email: claims.email ?? '',
     name: claims.name ?? '',
     roles: Array.isArray(claims.roles) ? claims.roles : [],
+    iat: claims.iat ?? 0,
     exp: claims.exp ?? 0,
   }
 }

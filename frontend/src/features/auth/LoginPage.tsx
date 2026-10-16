@@ -8,6 +8,7 @@ import {
   PASSWORD_POLICY_MESSAGE,
   PASSWORD_POLICY_PATTERN,
 } from './passwordPolicy'
+import { SessionRestoring } from './SessionRestoring'
 import { useAuth } from './useAuth'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -27,7 +28,8 @@ function toErrorMessage(error: unknown): string {
 }
 
 export function LoginPage() {
-  const { login, isAuthenticated, isAdmin } = useAuth()
+  const { login, isAuthenticated, isAdmin, isRestoring, sessionExpired } =
+    useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -39,6 +41,10 @@ export function LoginPage() {
 
   const redirectTo =
     (location.state as { from?: string } | null)?.from ?? DEFAULT_REDIRECT
+
+  if (isRestoring) {
+    return <SessionRestoring />
+  }
 
   if (isAuthenticated && isAdmin) {
     return <Navigate to={redirectTo} replace />
@@ -76,6 +82,15 @@ export function LoginPage() {
             className="mb-4 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-300"
           >
             {submitError}
+          </p>
+        )}
+
+        {sessionExpired && !submitError && (
+          <p
+            role="status"
+            className="mb-4 rounded-lg border border-amber-800 bg-amber-950 px-3 py-2 text-sm text-amber-200"
+          >
+            Tu sesión expiró. Vuelve a iniciar sesión.
           </p>
         )}
 
