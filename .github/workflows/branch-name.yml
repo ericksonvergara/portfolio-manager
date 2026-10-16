@@ -1,8 +1,9 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/workflows/branch-name.yml
-# Version: 1.0.0
-# Description: Validates the branch naming convention on Pull Requests
+# Version: 1.1.0
+# Description: Validates the branch naming convention and the promotion flow
+#              feature -> develop -> qa -> main on Pull Requests
 #              (see docs/github/06-branching-strategy.md)
 # Author: Erickson Vergara
 # Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -13,12 +14,19 @@ name: Branch Name
 
 on:
   pull_request:
+    # "edited" re-validates when the PR base branch is changed.
+    types: [opened, synchronize, reopened, edited]
     branches:
       - main
+      - qa
       - develop
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
 
@@ -27,22 +35,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check naming convention
+      - name: Check naming convention and promotion flow
         env:
-          # Passed through an env var, never interpolated into the script.
+          # Passed through env vars, never interpolated into the script.
           BRANCH: ${{ github.head_ref }}
+          BASE: ${{ github.base_ref }}
         run: |
           ID='(HU|HT|BUG|TASK)[0-9]{3}'
           SLUG='[a-z0-9]+(-[a-z0-9]+)*'
 
-          if [[ "$BRANCH" =~ ^dependabot/ ]]; then
-            echo "✅ Dependabot branch: '$BRANCH' is exempt."
-          elif [[ "$BRANCH" =~ ^(feature|fix|hotfix)/${ID}-${SLUG}$ ]] \
-            || [[ "$BRANCH" =~ ^(refactor|chore|docs)/(${ID}-)?${SLUG}$ ]]; then
-            echo "✅ '$BRANCH' follows the convention."
-          else
-            echo "::error::Branch '$BRANCH' does not follow <tipo>/<ID>-<descripcion-corta>."
-            echo "Examples: feature/HU007-iniciar-sesion, fix/BUG003-token-no-expira, docs/branch-naming-convention"
-            echo "Lowercase ASCII only (no accents, no ñ). See docs/github/06-branching-strategy.md"
+          is_hotfix()      { [[ "$BRANCH" =~ ^hotfix/${ID}-${SLUG}$ ]]; }
+          is_work_branch() {
+            [[ "$BRANCH" =~ ^(feature|fix)/${ID}-${SLUG}$ ]] \
+              || [[ "$BRANCH" =~ ^(refactor|chore|docs)/(${ID}-)?${SLUG}$ ]] \
+              || [[ "$BRANCH" =~ ^dependabot/ ]]
+          }
+
+          fail() {
+            echo "::error::$1"
+            echo "Flow: feature/fix/refactor/chore/docs -> develop -> qa -> main (hotfix/* -> main)."
+            echo "See docs/github/06-branching-strategy.md"
             exit 1
-          fi
+          }
+
+          case "$BASE" in
+            main)
+              # Releases come from qa; urgent fixes from hotfix/*.
+              [[ "$BRANCH" == "qa" ]] || is_hotfix \
+                || fail "Only 'qa' or 'hotfix/<ID>-<descripcion>' can be merged into main (got '$BRANCH')."
+              ;;
+            qa)
+              # Promotion from develop; hotfix/* or main to keep qa in sync after a hotfix.
+              [[ "$BRANCH" == "develop" || "$BRANCH" == "main" ]] || is_hotfix \
+                || fail "Only 'develop', 'main' or 'hotfix/*' can be merged into qa (got '$BRANCH')."
+              ;;
+            develop)
+              # Day-to-day work; main or qa to bring hotfixes back.
+              [[ "$BRANCH" == "main" || "$BRANCH" == "qa" ]] || is_work_branch || is_hotfix \
+                || fail "Branch '$BRANCH' does not follow <tipo>/<ID>-<descripcion-corta> (lowercase ASCII, e.g. feature/HU007-iniciar-sesion)."
+              ;;
+          esac
+
+          echo "✅ '$BRANCH' -> '$BASE' is allowed."
