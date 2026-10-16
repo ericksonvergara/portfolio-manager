@@ -1,8 +1,9 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/dependabot.yml
-# Version: 1.1.0
-# Description: Dependabot configuration
+# Version: 1.2.0
+# Description: Dependabot configuration. Minor and patch updates are grouped
+#              into one Pull Request per ecosystem; major versions are ignored.
 # Author: Erickson Vergara
 # Repository: https://github.com/ericksonvergara/portfolio-manager
 # License: MIT
@@ -24,6 +25,9 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      github-actions:
+        patterns: ["*"]
     ignore:
       - dependency-name: "*"
         update-types:
@@ -42,6 +46,9 @@ updates:
     labels:
       - "dependencies"
       - "backend"
+    groups:
+      backend-dependencies:
+        patterns: ["*"]
     ignore:
       - dependency-name: "*"
         update-types:
@@ -60,6 +67,9 @@ updates:
     labels:
       - "dependencies"
       - "frontend"
+    groups:
+      frontend-dependencies:
+        patterns: ["*"]
     ignore:
       - dependency-name: "*"
         update-types:
@@ -78,6 +88,9 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+    groups:
+      docker-images:
+        patterns: ["*"]
     ignore:
       - dependency-name: "*"
         update-types:
