@@ -14,6 +14,8 @@ name: Branch Name
 
 on:
   pull_request:
+    # "edited" re-validates when the PR base branch is changed.
+    types: [opened, synchronize, reopened, edited]
     branches:
       - main
       - qa
