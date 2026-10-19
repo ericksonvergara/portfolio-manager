@@ -1,20 +1,58 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, type AxiosResponse } from 'axios'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Profile, Technology } from '../features/landing/landingApi'
+import type {
+  Profile,
+  ProjectCard,
+  Technology,
+} from '../features/landing/landingApi'
 import { HomePage } from './HomePage'
 
 /* Plain functions instead of vi.fn(), for the same reason as in LoginPage.test.tsx. */
 const landingApi = vi.hoisted(() => ({
   profile: (): Promise<Profile> => Promise.reject(new Error('not set')),
   technologies: (): Promise<Technology[]> => Promise.resolve([]),
+  projects: (): Promise<ProjectCard[]> => Promise.resolve([]),
 }))
 
 vi.mock('../features/landing/landingApi', () => ({
   getProfile: () => landingApi.profile(),
   getTechnologies: () => landingApi.technologies(),
+  getProjects: () => landingApi.projects(),
 }))
+
+function renderHome() {
+  render(
+    <MemoryRouter>
+      <HomePage />
+    </MemoryRouter>,
+  )
+}
+
+const PROJECTS: ProjectCard[] = [
+  {
+    slug: 'portfolio-manager',
+    name: 'Portfolio Manager',
+    shortDescription: 'Portafolio con panel administrativo seguro.',
+    coverImageUrl: '/demo/projects/portfolio-manager.svg',
+    projectUrl: 'https://example.com',
+    repositoryUrl: 'https://github.com/ericksonvergara/portfolio-manager',
+    featured: true,
+    technologies: ['Java', 'Spring Boot', 'React'],
+  },
+  {
+    slug: 'agenda-de-citas',
+    name: 'Agenda de Citas',
+    shortDescription: 'Reserva de citas en línea.',
+    coverImageUrl: '/demo/projects/agenda-de-citas.svg',
+    projectUrl: null,
+    repositoryUrl: null,
+    featured: false,
+    technologies: [],
+  },
+]
 
 const PROFILE: Profile = {
   fullName: 'Erickson Vergara',
@@ -50,11 +88,90 @@ function httpError(status: number) {
 beforeEach(() => {
   landingApi.profile = () => Promise.resolve(PROFILE)
   landingApi.technologies = () => Promise.resolve(TECHNOLOGIES)
+  landingApi.projects = () => Promise.resolve(PROJECTS)
+})
+
+describe('HomePage projects (HU002)', () => {
+  it('shows a card for every published project', async () => {
+    renderHome()
+
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+    const cards = within(portfolio).getAllByRole('article')
+    expect(cards).toHaveLength(2)
+
+    const first = within(cards[0])
+    expect(
+      first.getByRole('heading', { name: 'Portfolio Manager' }),
+    ).toBeInTheDocument()
+    expect(
+      first.getByText('Portafolio con panel administrativo seguro.'),
+    ).toBeInTheDocument()
+    expect(first.getByText('Destacado')).toBeInTheDocument()
+    expect(
+      within(
+        first.getByRole('list', { name: 'Tecnologías de Portfolio Manager' }),
+      )
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Java', 'Spring Boot', 'React'])
+    expect(
+      within(portfolio).getByRole('img', {
+        name: 'Imagen del proyecto Portfolio Manager',
+      }),
+    ).toHaveAttribute('src', '/demo/projects/portfolio-manager.svg')
+  })
+
+  it('links each card to its detail page and its repository', async () => {
+    renderHome()
+
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+    expect(
+      within(portfolio).getByRole('link', {
+        name: 'Ver proyecto Portfolio Manager',
+      }),
+    ).toHaveAttribute('href', '/proyectos/portfolio-manager')
+
+    const repository = within(portfolio).getByRole('link', {
+      name: 'Repositorio de Portfolio Manager',
+    })
+    expect(repository).toHaveAttribute(
+      'href',
+      'https://github.com/ericksonvergara/portfolio-manager',
+    )
+    expect(repository).toHaveAttribute('target', '_blank')
+  })
+
+  it('hides the repository button when the project has none', async () => {
+    renderHome()
+
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+    expect(
+      within(portfolio).getByRole('link', {
+        name: 'Ver proyecto Agenda de Citas',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(portfolio).queryByRole('link', {
+        name: 'Repositorio de Agenda de Citas',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows an empty state when nothing is published yet', async () => {
+    landingApi.projects = () => Promise.resolve([])
+    renderHome()
+
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+    expect(
+      within(portfolio).getByText('Los proyectos publicados aparecerán aquí.'),
+    ).toBeInTheDocument()
+    expect(within(portfolio).queryByRole('article')).not.toBeInTheDocument()
+  })
 })
 
 describe('HomePage (HU001)', () => {
   it('shows the personal presentation and photo without logging in', async () => {
-    render(<HomePage />)
+    renderHome()
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Cargando portafolio...',
@@ -75,7 +192,7 @@ describe('HomePage (HU001)', () => {
   })
 
   it('groups the technologies by category', async () => {
-    render(<HomePage />)
+    renderHome()
 
     const section = await screen.findByRole('region', { name: 'Tecnologías' })
     const backend = within(section)
@@ -93,7 +210,7 @@ describe('HomePage (HU001)', () => {
   })
 
   it('links the social networks and the contact email', async () => {
-    render(<HomePage />)
+    renderHome()
 
     const contact = await screen.findByRole('region', { name: 'Contacto' })
     expect(
@@ -110,7 +227,7 @@ describe('HomePage (HU001)', () => {
   })
 
   it('offers navigation to every section', async () => {
-    render(<HomePage />)
+    renderHome()
 
     const nav = await screen.findByRole('navigation', { name: 'Secciones' })
     expect(
@@ -122,7 +239,7 @@ describe('HomePage (HU001)', () => {
 
   it('shows a placeholder while the profile is not set up', async () => {
     landingApi.profile = () => Promise.reject(httpError(404))
-    render(<HomePage />)
+    renderHome()
 
     expect(
       await screen.findByRole('heading', {
@@ -140,7 +257,7 @@ describe('HomePage (HU001)', () => {
   it('lets the visitor retry when the server is unreachable', async () => {
     landingApi.profile = () =>
       Promise.reject(new AxiosError('Network Error', 'ERR_NETWORK'))
-    render(<HomePage />)
+    renderHome()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No se pudo cargar el portafolio.',

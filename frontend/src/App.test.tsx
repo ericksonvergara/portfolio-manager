@@ -14,6 +14,7 @@ vi.mock('./features/landing/landingApi', () => ({
       socialLinks: [],
     }),
   getTechnologies: () => Promise.resolve([]),
+  getProjects: () => Promise.resolve([]),
 }))
 
 describe('App', () => {
