@@ -37,6 +37,16 @@ export function refresh(): Promise<TokenResponse> {
   return refreshInFlight
 }
 
+/**
+ * Revokes the session on the backend: the refresh token in the cookie, which the response clears,
+ * and the access token sent as Bearer. It runs after any refresh in progress, so a refresh cannot
+ * hand out a new cookie once the session is closed.
+ */
+export async function logout(): Promise<void> {
+  await refreshInFlight?.catch(() => undefined)
+  await withRefreshLock(() => api.post('/api/auth/logout'))
+}
+
 function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
   return 'locks' in navigator
     ? navigator.locks.request(REFRESH_LOCK, task)

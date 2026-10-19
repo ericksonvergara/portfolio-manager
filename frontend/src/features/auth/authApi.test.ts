@@ -1,7 +1,7 @@
 import type { AxiosAdapter } from 'axios'
 import { afterEach, describe, expect, it } from 'vitest'
 import { api } from '../../services/api'
-import { refresh } from './authApi'
+import { logout, refresh } from './authApi'
 
 const originalAdapter = api.defaults.adapter
 
@@ -47,5 +47,32 @@ describe('refresh', () => {
 
     expect(requests.count).toBe(2)
     expect(later.accessToken).toBe('token-2')
+  })
+})
+
+describe('logout', () => {
+  afterEach(() => {
+    api.defaults.adapter = originalAdapter
+  })
+
+  it('waits for a refresh in progress before closing the session', async () => {
+    const sent: string[] = []
+    let finishRefresh = () => {}
+    api.defaults.adapter = async (config) => {
+      sent.push(config.url ?? '')
+      if (config.url === '/api/auth/refresh') {
+        await new Promise<void>((resolve) => (finishRefresh = resolve))
+      }
+      return { data: {}, status: 200, statusText: 'OK', headers: {}, config }
+    }
+
+    const refreshing = refresh()
+    const loggingOut = logout()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(sent).toEqual(['/api/auth/refresh'])
+
+    finishRefresh()
+    await Promise.all([refreshing, loggingOut])
+    expect(sent).toEqual(['/api/auth/refresh', '/api/auth/logout'])
   })
 })
