@@ -1,12 +1,14 @@
 package com.portafolio_manager.backend.infrastructure.config;
 
 import com.portafolio_manager.backend.application.port.in.profile.GetPublicProfileUseCase;
+import com.portafolio_manager.backend.application.port.in.project.GetPublishedProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListPublishedProjectsUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.ListTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
 import com.portafolio_manager.backend.application.service.profile.GetPublicProfileService;
+import com.portafolio_manager.backend.application.service.project.GetPublishedProjectService;
 import com.portafolio_manager.backend.application.service.project.ListPublishedProjectsService;
 import com.portafolio_manager.backend.application.service.technology.ListTechnologiesService;
 import org.springframework.context.annotation.Bean;
@@ -31,5 +33,10 @@ public class PortfolioConfig {
     @Bean
     ListPublishedProjectsUseCase listPublishedProjectsUseCase(ProjectRepositoryPort projectRepository) {
         return new ListPublishedProjectsService(projectRepository);
+    }
+
+    @Bean
+    GetPublishedProjectUseCase getPublishedProjectUseCase(ProjectRepositoryPort projectRepository) {
+        return new GetPublishedProjectService(projectRepository);
     }
 }

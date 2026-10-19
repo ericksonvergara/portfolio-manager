@@ -1,7 +1,9 @@
 package com.portafolio_manager.backend.infrastructure.web.project;
 
+import com.portafolio_manager.backend.application.port.in.project.GetPublishedProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListPublishedProjectsUseCase;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -12,14 +14,25 @@ import java.util.List;
 class PublicProjectController implements PublicProjectApi {
 
     private final ListPublishedProjectsUseCase listPublishedProjectsUseCase;
+    private final GetPublishedProjectUseCase getPublishedProjectUseCase;
 
-    PublicProjectController(ListPublishedProjectsUseCase listPublishedProjectsUseCase) {
+    PublicProjectController(
+            ListPublishedProjectsUseCase listPublishedProjectsUseCase,
+            GetPublishedProjectUseCase getPublishedProjectUseCase
+    ) {
         this.listPublishedProjectsUseCase = listPublishedProjectsUseCase;
+        this.getPublishedProjectUseCase = getPublishedProjectUseCase;
     }
 
     @Override
     @GetMapping
     public List<ProjectCardResponse> listProjects() {
         return listPublishedProjectsUseCase.execute(null).stream().map(ProjectCardResponse::from).toList();
+    }
+
+    @Override
+    @GetMapping("/{slug}")
+    public ProjectDetailResponse getProject(@PathVariable String slug) {
+        return ProjectDetailResponse.from(getPublishedProjectUseCase.execute(slug));
     }
 }

@@ -1,4 +1,13 @@
-import type { SocialPlatform, TechnologyCategory } from './landingApi'
+import type {
+  ProjectStatus,
+  SocialPlatform,
+  TechnologyCategory,
+} from './landingApi'
+
+export const STATUS_LABELS: Record<ProjectStatus, string> = {
+  IN_PROGRESS: 'En desarrollo',
+  COMPLETED: 'Finalizado',
+}
 
 export const SOCIAL_LABELS: Record<SocialPlatform, string> = {
   GITHUB: 'GitHub',

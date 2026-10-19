@@ -66,6 +66,49 @@ class PublicProjectIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldReturnTheDetailOfAnActiveProject() throws Exception {
+        long project = insertProject("Sistema ERP", true, false, 1);
+        jdbcTemplate.update("""
+                UPDATE projects
+                SET project_url = 'https://erp.example.com', video_url = 'https://youtu.be/abc123',
+                    status = 'IN_PROGRESS', developed_on = DATE '2026-10-01'
+                WHERE id = ?
+                """, project);
+        jdbcTemplate.update("""
+                INSERT INTO project_images (project_id, image_url, alt_text, display_order)
+                VALUES (?, '/images/second.png', NULL, 2), (?, '/images/first.png', 'Pantalla principal', 1)
+                """, project, project);
+        long java = insertTechnology("Java", 1);
+        jdbcTemplate.update("INSERT INTO project_technologies VALUES (?, ?)", project, java);
+
+        jdbcTemplate.update("UPDATE projects SET slug = 'sistema-erp' WHERE id = ?", project);
+
+        mockMvc.perform(get("/api/public/projects/sistema-erp"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Sistema ERP"))
+                .andExpect(jsonPath("$.description").value("Descripción completa"))
+                .andExpect(jsonPath("$.projectUrl").value("https://erp.example.com"))
+                .andExpect(jsonPath("$.repositoryUrl").doesNotExist())
+                .andExpect(jsonPath("$.videoUrl").value("https://youtu.be/abc123"))
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.developedOn").value("2026-10-01"))
+                .andExpect(jsonPath("$.gallery[*].url").value(contains("/images/first.png", "/images/second.png")))
+                .andExpect(jsonPath("$.gallery[0].altText").value("Pantalla principal"))
+                .andExpect(jsonPath("$.technologies").value(contains("Java")));
+    }
+
+    @Test
+    void shouldHideInactiveAndUnknownProjects() throws Exception {
+        insertProject("Oculto", false, false, 1);
+
+        mockMvc.perform(get("/api/public/projects/oculto"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+        mockMvc.perform(get("/api/public/projects/no-existe"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void shouldRejectPublishingAProjectWithoutCoverImage() {
         assertThatThrownBy(() -> jdbcTemplate.update("""
                 INSERT INTO projects (name, slug, short_description, description, active)
