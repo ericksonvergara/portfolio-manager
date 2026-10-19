@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ListPublishedProjectsServiceTest {
 
@@ -24,7 +26,8 @@ class ListPublishedProjectsServiceTest {
                 true,
                 List.of(new Technology("Java", TechnologyCategory.BACKEND))
         ));
-        ProjectRepositoryPort repository = () -> published;
+        ProjectRepositoryPort repository = mock(ProjectRepositoryPort.class);
+        when(repository.findPublishedSummaries()).thenReturn(published);
 
         assertThat(new ListPublishedProjectsService(repository).execute(null)).containsExactlyElementsOf(published);
     }

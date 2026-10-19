@@ -64,5 +64,11 @@ class LandingSeedIntegrationTest {
                 .andExpect(jsonPath("$[*].slug").value(contains(
                         "portfolio-manager", "sistema-de-inventario", "agenda-de-citas")))
                 .andExpect(jsonPath("$[0].technologies", not(emptyIterable())));
+
+        mockMvc.perform(get("/api/public/projects/portfolio-manager"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gallery", not(emptyIterable())));
+        mockMvc.perform(get("/api/public/projects/prototipo-oculto"))
+                .andExpect(status().isNotFound());
     }
 }

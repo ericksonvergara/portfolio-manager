@@ -351,7 +351,7 @@
     },
     {
       "name": "Público",
-      "description": "Contenido de la Landing Page (HU001, HU002). Accesible sin autenticación.",
+      "description": "Contenido de la Landing Page (HU001-HU003). Accesible sin autenticación. Ejecutar en orden: el detalle usa el proyecto que devuelve el listado.",
       "item": [
         {
           "name": "Perfil público → 200",
@@ -443,7 +443,9 @@
                   "  if (firstNotFeatured >= 0) {",
                   "    pm.expect(projects.slice(firstNotFeatured).some((project) => project.featured)).to.be.false;",
                   "  }",
-                  "});"
+                  "});",
+                  "// The detail request uses the first published project, if there is one.",
+                  "pm.collectionVariables.set('projectSlug', projects.length > 0 ? projects[0].slug : '');"
                 ]
               }
             }
@@ -452,7 +454,77 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/public/projects",
-            "description": "Solo proyectos activos (RN008), destacados primero y luego por orden de aparición."
+            "description": "Solo proyectos activos (RN008), destacados primero y luego por orden de aparición. Guarda el primer `slug` en `projectSlug`."
+          }
+        },
+        {
+          "name": "Detalle de un proyecto publicado → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Without published projects there is no detail to ask for.",
+                  "if (!pm.collectionVariables.get('projectSlug')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye todo lo que muestra el detalle (HU003)', () => {",
+                  "  const project = pm.response.json();",
+                  "  pm.expect(project.slug).to.eql(pm.collectionVariables.get('projectSlug'));",
+                  "  pm.expect(project.name).to.be.a('string').and.not.empty;",
+                  "  pm.expect(project.description).to.be.a('string').and.not.empty;",
+                  "  pm.expect(project.status).to.be.oneOf(['IN_PROGRESS', 'COMPLETED']);",
+                  "  pm.expect(project.gallery).to.be.an('array');",
+                  "  project.gallery.forEach((image) => pm.expect(image.url).to.be.a('string').and.not.empty);",
+                  "  pm.expect(project.technologies).to.be.an('array');",
+                  "  if (project.developedOn !== null) {",
+                  "    pm.expect(project.developedOn).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/projects/{{projectSlug}}",
+            "description": "Usa el primer proyecto de la petición anterior; se omite si no hay ninguno publicado."
+          }
+        },
+        {
+          "name": "Detalle de un proyecto inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Usa el formato de error de la API', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql(404);",
+                  "  pm.expect(body.path).to.eql('/api/public/projects/proyecto-que-no-existe');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/projects/proyecto-que-no-existe",
+            "description": "Un proyecto inactivo responde igual, para no revelar que existe."
           }
         },
         {
@@ -519,6 +591,7 @@
     { "key": "refreshToken", "value": "", "description": "Latest refresh token, read from Set-Cookie." },
     { "key": "previousRefreshToken", "value": "", "description": "Refresh token before rotation (reuse detection test)." },
     { "key": "loggedOutAccessToken", "value": "", "description": "Access token revoked by the logout request." },
-    { "key": "loggedOutRefreshToken", "value": "", "description": "Refresh token revoked by the logout request." }
+    { "key": "loggedOutRefreshToken", "value": "", "description": "Refresh token revoked by the logout request." },
+    { "key": "projectSlug", "value": "", "description": "First published project, set by the project listing request." }
   ]
 }

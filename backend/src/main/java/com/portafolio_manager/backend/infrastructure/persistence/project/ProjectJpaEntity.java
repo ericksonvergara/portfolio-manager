@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
@@ -79,6 +80,11 @@ public class ProjectJpaEntity {
     @OrderBy("displayOrder ASC, name ASC")
     private List<TechnologyJpaEntity> technologies = new ArrayList<>();
 
+    @OneToMany
+    @JoinColumn(name = "project_id")
+    @OrderBy("displayOrder ASC, id ASC")
+    private List<ProjectImageJpaEntity> images = new ArrayList<>();
+
     protected ProjectJpaEntity() {
     }
 
@@ -132,5 +138,9 @@ public class ProjectJpaEntity {
 
     public List<TechnologyJpaEntity> getTechnologies() {
         return technologies;
+    }
+
+    public List<ProjectImageJpaEntity> getImages() {
+        return images;
     }
 }

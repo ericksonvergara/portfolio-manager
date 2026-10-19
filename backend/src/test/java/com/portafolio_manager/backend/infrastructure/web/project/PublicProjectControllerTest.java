@@ -1,7 +1,12 @@
 package com.portafolio_manager.backend.infrastructure.web.project;
 
+import com.portafolio_manager.backend.application.port.in.project.GetPublishedProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListPublishedProjectsUseCase;
 import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
+import com.portafolio_manager.backend.domain.project.ProjectDetail;
+import com.portafolio_manager.backend.domain.project.ProjectImage;
+import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
+import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.domain.project.ProjectSummary;
 import com.portafolio_manager.backend.domain.technology.Technology;
 import com.portafolio_manager.backend.domain.technology.TechnologyCategory;
@@ -14,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.hamcrest.Matchers.contains;
@@ -33,7 +39,50 @@ class PublicProjectControllerTest {
     private ListPublishedProjectsUseCase listPublishedProjectsUseCase;
 
     @MockitoBean
+    private GetPublishedProjectUseCase getPublishedProjectUseCase;
+
+    @MockitoBean
     private RevokedAccessTokenRepositoryPort revokedAccessTokenRepository;
+
+    @Test
+    void shouldReturnTheProjectDetailToAnonymousVisitors() throws Exception {
+        when(getPublishedProjectUseCase.execute("sistema-erp")).thenReturn(new ProjectDetail(
+                "sistema-erp",
+                "Sistema ERP",
+                "Descripción completa del sistema.",
+                "/images/erp.png",
+                "https://erp.example.com",
+                null,
+                "https://www.youtube.com/watch?v=abc123",
+                ProjectStatus.COMPLETED,
+                LocalDate.of(2026, 10, 1),
+                List.of(new ProjectImage("/images/erp-1.png", "Panel de facturación")),
+                List.of(new Technology("Java", TechnologyCategory.BACKEND))
+        ));
+
+        mockMvc.perform(get("/api/public/projects/sistema-erp"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slug").value("sistema-erp"))
+                .andExpect(jsonPath("$.description").value("Descripción completa del sistema."))
+                .andExpect(jsonPath("$.projectUrl").value("https://erp.example.com"))
+                .andExpect(jsonPath("$.repositoryUrl").doesNotExist())
+                .andExpect(jsonPath("$.videoUrl").value("https://www.youtube.com/watch?v=abc123"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.developedOn").value("2026-10-01"))
+                .andExpect(jsonPath("$.gallery[0].url").value("/images/erp-1.png"))
+                .andExpect(jsonPath("$.gallery[0].altText").value("Panel de facturación"))
+                .andExpect(jsonPath("$.technologies").value(contains("Java")));
+    }
+
+    @Test
+    void shouldAnswerNotFoundForAnUnknownOrInactiveProject() throws Exception {
+        when(getPublishedProjectUseCase.execute("oculto")).thenThrow(new ProjectNotFoundException("oculto"));
+
+        mockMvc.perform(get("/api/public/projects/oculto"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.path").value("/api/public/projects/oculto"));
+    }
 
     @Test
     void shouldReturnTheProjectCardsToAnonymousVisitors() throws Exception {
