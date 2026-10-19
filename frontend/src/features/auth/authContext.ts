@@ -34,6 +34,8 @@ export interface AuthContextValue {
   /** True when the backend stopped accepting the session and the user has to log in again. */
   sessionExpired: boolean
   login: (credentials: LoginCredentials) => Promise<void>
+  /** Ends the session on the backend and in every tab; it never fails. */
+  logout: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

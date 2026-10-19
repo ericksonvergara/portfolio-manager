@@ -9,6 +9,7 @@ import {
 import { setAccessToken, setSessionRenewer } from '../../services/api'
 import {
   login as loginRequest,
+  logout as logoutRequest,
   refresh as refreshRequest,
   type LoginCredentials,
   type TokenResponse,
@@ -21,6 +22,7 @@ import {
   type AuthSession,
 } from './authContext'
 import { decodeAccessToken } from './jwt'
+import { announceLogout, onLogoutInAnotherTab } from './sessionSync'
 import { renewalDelayMs } from './sessionTiming'
 
 function toSession(response: TokenResponse): AuthSession {
@@ -89,6 +91,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [startSession],
   )
 
+  const clearSession = useCallback(() => {
+    setAccessToken(null)
+    setSession(null)
+    setSessionExpired(false)
+  }, [])
+
+  const logout = useCallback(async () => {
+    // Dropping the session first stops the background renewal and leaves the protected routes at
+    // once; the access token stays set until the request, which needs it to revoke it, is sent.
+    setSession(null)
+    setSessionExpired(false)
+    try {
+      await logoutRequest()
+    } catch {
+      // The backend could not be reached: the session still ends in this browser.
+    } finally {
+      setAccessToken(null)
+      announceLogout()
+    }
+  }, [])
+
+  useEffect(() => onLogoutInAnotherTab(clearSession), [clearSession])
+
   // The access token is gone after a reload; the refresh cookie survives it and restores the session.
   useEffect(() => {
     refreshRequest()
@@ -123,8 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isRestoring,
       sessionExpired,
       login,
+      logout,
     }),
-    [session, isRestoring, sessionExpired, login],
+    [session, isRestoring, sessionExpired, login, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
