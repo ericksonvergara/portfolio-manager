@@ -2,6 +2,7 @@ package com.portafolio_manager.backend.infrastructure.web;
 
 import com.portafolio_manager.backend.domain.auth.InvalidCredentialsException;
 import com.portafolio_manager.backend.domain.auth.InvalidRefreshTokenException;
+import com.portafolio_manager.backend.domain.profile.ProfileNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({InvalidCredentialsException.class, InvalidRefreshTokenException.class})
     ResponseEntity<ApiErrorResponse> handleAuthenticationFailure(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(ProfileNotFoundException.class)
+    ResponseEntity<ApiErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
+        return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
