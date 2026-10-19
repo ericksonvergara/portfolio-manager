@@ -43,7 +43,7 @@ export function HomePage() {
     )
   }
 
-  const { profile, technologies } = content
+  const { profile, technologies, projects } = content
   const owner = profile?.fullName ?? DEFAULT_BRAND
 
   return (
@@ -53,7 +53,7 @@ export function HomePage() {
         <HeroSection profile={profile} />
         {profile && <AboutSection profile={profile} />}
         <TechnologiesSection technologies={technologies} />
-        <PortfolioSection />
+        <PortfolioSection projects={projects} />
         {profile && <ContactSection profile={profile} />}
       </main>
       <LandingFooter owner={owner} />

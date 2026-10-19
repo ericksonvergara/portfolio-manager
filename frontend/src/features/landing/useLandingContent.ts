@@ -2,8 +2,10 @@ import { isAxiosError } from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import {
   getProfile,
+  getProjects,
   getTechnologies,
   type Profile,
+  type ProjectCard,
   type Technology,
 } from './landingApi'
 
@@ -15,6 +17,7 @@ export type LandingContent =
       /** Null while the owner has not set up the profile yet (the API answers 404). */
       profile: Profile | null
       technologies: Technology[]
+      projects: ProjectCard[]
     }
 
 async function loadProfile(): Promise<Profile | null> {
@@ -39,10 +42,10 @@ export function useLandingContent(): LandingContent {
 
   useEffect(() => {
     let active = true
-    Promise.all([loadProfile(), getTechnologies()])
-      .then(([profile, technologies]) => {
+    Promise.all([loadProfile(), getTechnologies(), getProjects()])
+      .then(([profile, technologies, projects]) => {
         if (active) {
-          setContent({ status: 'ready', profile, technologies })
+          setContent({ status: 'ready', profile, technologies, projects })
         }
       })
       .catch(() => {

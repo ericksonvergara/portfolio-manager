@@ -10,6 +10,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -54,5 +55,14 @@ class LandingSeedIntegrationTest {
         mockMvc.perform(get("/api/public/technologies"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Java"));
+    }
+
+    @Test
+    void shouldPublishTheActiveDemoProjectsOnly() throws Exception {
+        mockMvc.perform(get("/api/public/projects"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].slug").value(contains(
+                        "portfolio-manager", "sistema-de-inventario", "agenda-de-citas")))
+                .andExpect(jsonPath("$[0].technologies", not(emptyIterable())));
     }
 }

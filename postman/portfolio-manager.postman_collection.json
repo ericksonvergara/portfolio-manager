@@ -351,7 +351,7 @@
     },
     {
       "name": "Público",
-      "description": "Contenido de la Landing Page (HU001). Accesible sin autenticación.",
+      "description": "Contenido de la Landing Page (HU001, HU002). Accesible sin autenticación.",
       "item": [
         {
           "name": "Perfil público → 200",
@@ -418,6 +418,44 @@
           }
         },
         {
+          "name": "Proyectos publicados → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "const projects = pm.response.json();",
+                  "pm.test('Cada tarjeta trae lo que muestra la Landing Page (HU002)', () => {",
+                  "  pm.expect(projects).to.be.an('array');",
+                  "  projects.forEach((project) => {",
+                  "    pm.expect(project.slug).to.match(/^[a-z0-9-]+$/);",
+                  "    pm.expect(project.name).to.be.a('string').and.not.empty;",
+                  "    pm.expect(project.shortDescription).to.be.a('string').and.not.empty;",
+                  "    pm.expect(project.coverImageUrl, 'RN004: imagen principal').to.be.a('string').and.not.empty;",
+                  "    pm.expect(project.technologies).to.be.an('array');",
+                  "    pm.expect(project.featured).to.be.a('boolean');",
+                  "  });",
+                  "});",
+                  "pm.test('Los destacados van primero', () => {",
+                  "  const firstNotFeatured = projects.findIndex((project) => !project.featured);",
+                  "  if (firstNotFeatured >= 0) {",
+                  "    pm.expect(projects.slice(firstNotFeatured).some((project) => project.featured)).to.be.false;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/projects",
+            "description": "Solo proyectos activos (RN008), destacados primero y luego por orden de aparición."
+          }
+        },
+        {
           "name": "Perfil público con token inválido → no 401",
           "event": [
             {
@@ -460,6 +498,7 @@
                   "  pm.expect(spec.paths).to.have.property('/api/auth/login');",
                   "  pm.expect(spec.paths).to.have.property('/api/public/profile');",
                   "  pm.expect(spec.paths).to.have.property('/api/public/technologies');",
+                  "  pm.expect(spec.paths).to.have.property('/api/public/projects');",
                   "  pm.expect(spec.components.securitySchemes).to.have.property('bearerAuth');",
                   "});"
                 ]
