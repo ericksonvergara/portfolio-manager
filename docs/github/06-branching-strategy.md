@@ -4,8 +4,8 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.2
-  Fecha       2026-10-19
+  Versión     1.3
+  Fecha       2026-10-20
   Estado      Aprobado
 
 ------------------------------------------------------------------------
@@ -143,9 +143,9 @@ Ejemplos:
 
 1.  Base: `develop`.
 2.  Título: `<tipo>(<ID>): <título de la Issue>`.
-3.  Descripción: `Refs #<número>`. GitHub solo cierra Issues
-    automáticamente cuando el cambio llega a `main`, por lo que aquí se
-    enlaza sin cerrar. La tarjeta pasa a **🧪 Testing**.
+3.  Descripción: `Closes #<número>`. Al hacer merge la Issue se cierra
+    y la tarjeta pasa a **🧪 Testing** (ver *Cierre de Issues y
+    tablero*).
 
 ## develop → qa
 
@@ -159,11 +159,34 @@ Ejemplos:
 ## qa → main (release)
 
 -   Título: `release: vX.Y.Z`.
--   Descripción: plantilla `release.md`, con `Closes #<número>` por
-    cada historia incluida y la evidencia de QA. Al hacer merge las
-    Issues se cierran y las tarjetas pasan a **✅ Done**.
+-   Descripción: plantilla `release.md`, con `Refs #<número>` por cada
+    historia incluida y la evidencia de QA. Las Issues ya están
+    cerradas desde su merge en `develop`.
+-   Tras el merge: crear el tag `vX.Y.Z` y mover las tarjetas incluidas
+    de **🧪 Testing** a **✅ Done**.
 -   Abrir con la plantilla (cambiar `vX.Y.Z` en el título):
     <https://github.com/ericksonvergara/portfolio-manager/compare/main...qa?quick_pull=1&template=release.md&title=release:+vX.Y.Z>
+
+## Cierre de Issues y tablero
+
+`develop` es la rama por defecto del repositorio, y GitHub cierra una
+Issue cuando un Pull Request enlazado se mergea en la rama por defecto.
+El enlace se crea con `Closes #<número>` en la descripción o al crear
+la rama desde la Issue (*Development*). Por eso:
+
+  Merge                   Issue     Tarjeta
+  ----------------------- --------- -------------------------
+  trabajo → develop       Cerrada   🧪 Testing (automático)
+  develop → qa            Cerrada   🧪 Testing
+  qa → main (release)     Cerrada   ✅ Done (manual)
+
+Para que una Issue cerrada no pase directamente a Done, el workflow
+integrado del GitHub Project **Item closed** (*Project → ⋯ →
+Workflows*) fija el estado **🧪 Testing** en lugar de **✅ Done**. Las
+promociones y el release usan `Refs`, nunca `Closes`.
+
+Un `hotfix` se mergea en `main`, que no es la rama por defecto: su Issue
+no se cierra sola y se cierra manualmente tras el merge.
 
 ## Plantillas de Pull Request
 
@@ -224,3 +247,6 @@ branches*):
                          protección de ramas.
   1.2       2026-10-19   Plantillas de Pull Request para las
                          promociones develop → qa y qa → main.
+  1.3       2026-10-20   Cierre de Issues al mergear en develop (rama
+                         por defecto); las tarjetas pasan a Done en el
+                         release.

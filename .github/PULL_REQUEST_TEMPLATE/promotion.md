@@ -2,7 +2,7 @@
 ============================================================================
 Portfolio Manager
 File: .github/PULL_REQUEST_TEMPLATE/promotion.md
-Version: 1.0.0
+Version: 1.0.1
 Description: Pull Request Template for the develop -> qa promotion
 Author: Erickson Vergara
 Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -34,7 +34,7 @@ Validate in QA <what the sprint delivers> before releasing it to `main` as **vX.
 
 ## 🔗 Related Issues
 
-<!-- Refs, not Closes: issues are closed by the qa -> main release. -->
+<!-- Refs, not Closes: the Issues were closed by their PRs to develop (the default branch). -->
 
 Refs #, #
 
