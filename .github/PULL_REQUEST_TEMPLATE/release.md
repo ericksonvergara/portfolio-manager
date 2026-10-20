@@ -2,7 +2,7 @@
 ============================================================================
 Portfolio Manager
 File: .github/PULL_REQUEST_TEMPLATE/release.md
-Version: 1.0.0
+Version: 1.1.0
 Description: Pull Request Template for the qa -> main release
 Author: Erickson Vergara
 Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -37,10 +37,9 @@ Release <the sprint goal> to `main`. The work was validated in QA and is ready f
 
 ## 🔗 Related Issues
 
-<!-- One Closes per story: merging into main closes them and moves the cards to Done. -->
+<!-- Refs, not Closes: the Issues were closed by their PRs to develop (the default branch). -->
 
-Closes #
-Closes #
+Refs #, #
 
 Promotion to QA: #
 
@@ -84,8 +83,8 @@ Deployment notes (new environment variables, migrations, runtime versions):
 
 After merging:
 
-1. Create the tag/release **vX.Y.Z** on `main` (Releases → Draft a new release).
-2. Check that the Issues closed and their cards moved to **✅ Done**.
+1. Create the annotated tag **vX.Y.Z** on `main` and push it; `release.yml` creates the GitHub release.
+2. Move the cards of the included stories from **🧪 Testing** to **✅ Done**.
 3. Close the sprint in the GitHub Project.
 
 ---
@@ -95,5 +94,5 @@ After merging:
 - [ ] QA passed and its evidence is attached above.
 - [ ] `qa` is identical to what was tested (no merges after QA).
 - [ ] No known critical defects remain.
-- [ ] One `Closes #` per included story.
+- [ ] Every included story is linked with `Refs #`.
 - [ ] Version number decided (vX.Y.Z).
