@@ -4,8 +4,8 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.1
-  Fecha       2026-10-16
+  Versión     1.2
+  Fecha       2026-10-19
   Estado      Aprobado
 
 ------------------------------------------------------------------------
@@ -150,13 +150,33 @@ Ejemplos:
 ## develop → qa
 
 -   Título: `release: promote develop to qa`.
--   Descripción: lista de historias incluidas (`Refs #…`).
+-   Descripción: plantilla `promotion.md`, con la lista de Pull
+    Requests e historias incluidas (`Refs #…`) y el plan de pruebas en
+    QA.
+-   Abrir con la plantilla:
+    <https://github.com/ericksonvergara/portfolio-manager/compare/qa...develop?quick_pull=1&template=promotion.md&title=release:+promote+develop+to+qa>
 
 ## qa → main (release)
 
 -   Título: `release: vX.Y.Z`.
--   Descripción: `Closes #<número>` por cada historia incluida. Al hacer
-    merge las Issues se cierran y las tarjetas pasan a **✅ Done**.
+-   Descripción: plantilla `release.md`, con `Closes #<número>` por
+    cada historia incluida y la evidencia de QA. Al hacer merge las
+    Issues se cierran y las tarjetas pasan a **✅ Done**.
+-   Abrir con la plantilla (cambiar `vX.Y.Z` en el título):
+    <https://github.com/ericksonvergara/portfolio-manager/compare/main...qa?quick_pull=1&template=release.md&title=release:+vX.Y.Z>
+
+## Plantillas de Pull Request
+
+  Plantilla                                      Uso
+  ---------------------------------------------- ------------------------
+  `.github/pull_request_template.md`             Por defecto: ramas de
+                                                 trabajo → develop.
+  `.github/PULL_REQUEST_TEMPLATE/promotion.md`   develop → qa.
+  `.github/PULL_REQUEST_TEMPLATE/release.md`     qa → main.
+
+GitHub solo aplica una plantilla de la carpeta `PULL_REQUEST_TEMPLATE/`
+cuando la URL del Pull Request incluye `template=<archivo>`; por eso
+las promociones se abren con los enlaces anteriores.
 
 ## Reglas comunes
 
@@ -202,3 +222,5 @@ branches*):
   1.1       2026-10-16   Ramas permanentes develop y qa, flujo de
                          promoción develop → qa → main, hotfix y
                          protección de ramas.
+  1.2       2026-10-19   Plantillas de Pull Request para las
+                         promociones develop → qa y qa → main.
