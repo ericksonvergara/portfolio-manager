@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Portfolio Manager API",
-    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
+    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -350,6 +350,209 @@
       ]
     },
     {
+      "name": "Público",
+      "description": "Contenido de la Landing Page (HU001-HU003). Accesible sin autenticación. Ejecutar en orden: el detalle usa el proyecto que devuelve el listado.",
+      "item": [
+        {
+          "name": "Perfil público → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde sin autenticación: 200 con el perfil, o 404 si aún no se configuró', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Incluye presentación, contacto y redes sociales', () => {",
+                  "    const profile = pm.response.json();",
+                  "    pm.expect(profile.fullName).to.be.a('string').and.not.empty;",
+                  "    pm.expect(profile.headline).to.be.a('string');",
+                  "    pm.expect(profile.about).to.be.a('string');",
+                  "    pm.expect(profile.email).to.include('@');",
+                  "    pm.expect(profile.socialLinks).to.be.an('array');",
+                  "    profile.socialLinks.forEach((link) => {",
+                  "      pm.expect(link.platform).to.be.oneOf(['GITHUB', 'LINKEDIN', 'X', 'INSTAGRAM', 'YOUTUBE', 'WEBSITE']);",
+                  "      pm.expect(link.url).to.match(/^https?:\\/\\//);",
+                  "    });",
+                  "  });",
+                  "} else {",
+                  "  pm.test('El 404 usa el formato de error de la API', () => pm.expect(pm.response.json().status).to.eql(404));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/profile"
+          }
+        },
+        {
+          "name": "Tecnologías → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "pm.test('Es una lista de tecnologías con categoría válida', () => {",
+                  "  const technologies = pm.response.json();",
+                  "  pm.expect(technologies).to.be.an('array');",
+                  "  technologies.forEach((tech) => {",
+                  "    pm.expect(tech.name).to.be.a('string').and.not.empty;",
+                  "    pm.expect(tech.category).to.be.oneOf(['BACKEND', 'FRONTEND', 'DATABASE', 'DEVOPS', 'MOBILE', 'TOOLS']);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/technologies"
+          }
+        },
+        {
+          "name": "Proyectos publicados → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "const projects = pm.response.json();",
+                  "pm.test('Cada tarjeta trae lo que muestra la Landing Page (HU002)', () => {",
+                  "  pm.expect(projects).to.be.an('array');",
+                  "  projects.forEach((project) => {",
+                  "    pm.expect(project.slug).to.match(/^[a-z0-9-]+$/);",
+                  "    pm.expect(project.name).to.be.a('string').and.not.empty;",
+                  "    pm.expect(project.shortDescription).to.be.a('string').and.not.empty;",
+                  "    pm.expect(project.coverImageUrl, 'RN004: imagen principal').to.be.a('string').and.not.empty;",
+                  "    pm.expect(project.technologies).to.be.an('array');",
+                  "    pm.expect(project.featured).to.be.a('boolean');",
+                  "  });",
+                  "});",
+                  "pm.test('Los destacados van primero', () => {",
+                  "  const firstNotFeatured = projects.findIndex((project) => !project.featured);",
+                  "  if (firstNotFeatured >= 0) {",
+                  "    pm.expect(projects.slice(firstNotFeatured).some((project) => project.featured)).to.be.false;",
+                  "  }",
+                  "});",
+                  "// The detail request uses the first published project, if there is one.",
+                  "pm.collectionVariables.set('projectSlug', projects.length > 0 ? projects[0].slug : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/projects",
+            "description": "Solo proyectos activos (RN008), destacados primero y luego por orden de aparición. Guarda el primer `slug` en `projectSlug`."
+          }
+        },
+        {
+          "name": "Detalle de un proyecto publicado → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Without published projects there is no detail to ask for.",
+                  "if (!pm.collectionVariables.get('projectSlug')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye todo lo que muestra el detalle (HU003)', () => {",
+                  "  const project = pm.response.json();",
+                  "  pm.expect(project.slug).to.eql(pm.collectionVariables.get('projectSlug'));",
+                  "  pm.expect(project.name).to.be.a('string').and.not.empty;",
+                  "  pm.expect(project.description).to.be.a('string').and.not.empty;",
+                  "  pm.expect(project.status).to.be.oneOf(['IN_PROGRESS', 'COMPLETED']);",
+                  "  pm.expect(project.gallery).to.be.an('array');",
+                  "  project.gallery.forEach((image) => pm.expect(image.url).to.be.a('string').and.not.empty);",
+                  "  pm.expect(project.technologies).to.be.an('array');",
+                  "  if (project.developedOn !== null) {",
+                  "    pm.expect(project.developedOn).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/projects/{{projectSlug}}",
+            "description": "Usa el primer proyecto de la petición anterior; se omite si no hay ninguno publicado."
+          }
+        },
+        {
+          "name": "Detalle de un proyecto inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Usa el formato de error de la API', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql(404);",
+                  "  pm.expect(body.path).to.eql('/api/public/projects/proyecto-que-no-existe');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/projects/proyecto-que-no-existe",
+            "description": "Un proyecto inactivo responde igual, para no revelar que existe."
+          }
+        },
+        {
+          "name": "Perfil público con token inválido → no 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ignora un Bearer caducado o inválido en las rutas públicas', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer expired-or-garbage" }
+            ],
+            "url": "{{baseUrl}}/api/public/profile"
+          }
+        }
+      ]
+    },
+    {
       "name": "Documentación",
       "item": [
         {
@@ -365,6 +568,9 @@
                   "  const spec = pm.response.json();",
                   "  pm.expect(spec.openapi).to.match(/^3\\./);",
                   "  pm.expect(spec.paths).to.have.property('/api/auth/login');",
+                  "  pm.expect(spec.paths).to.have.property('/api/public/profile');",
+                  "  pm.expect(spec.paths).to.have.property('/api/public/technologies');",
+                  "  pm.expect(spec.paths).to.have.property('/api/public/projects');",
                   "  pm.expect(spec.components.securitySchemes).to.have.property('bearerAuth');",
                   "});"
                 ]
@@ -385,6 +591,7 @@
     { "key": "refreshToken", "value": "", "description": "Latest refresh token, read from Set-Cookie." },
     { "key": "previousRefreshToken", "value": "", "description": "Refresh token before rotation (reuse detection test)." },
     { "key": "loggedOutAccessToken", "value": "", "description": "Access token revoked by the logout request." },
-    { "key": "loggedOutRefreshToken", "value": "", "description": "Refresh token revoked by the logout request." }
+    { "key": "loggedOutRefreshToken", "value": "", "description": "Refresh token revoked by the logout request." },
+    { "key": "projectSlug", "value": "", "description": "First published project, set by the project listing request." }
   ]
 }

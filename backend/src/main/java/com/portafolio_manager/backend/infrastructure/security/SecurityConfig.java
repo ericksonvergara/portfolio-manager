@@ -37,7 +37,7 @@ public class SecurityConfig {
 
     static final String ADMIN_ROLE = "ADMIN";
 
-    private static final String AUTH_ENDPOINTS_PREFIX = "/api/auth/";
+    private static final List<String> TOKENLESS_ENDPOINT_PREFIXES = List.of("/api/auth/", "/api/public/");
 
     static final String[] PUBLIC_ENDPOINTS = {
             "/error",
@@ -85,12 +85,14 @@ public class SecurityConfig {
     }
 
     /**
-     * Auth endpoints are public and handle tokens themselves: an expired access token sent to
-     * logout must not turn the request into a 401 before the refresh cookie is revoked and cleared.
+     * Auth and public endpoints ignore the Bearer header. Auth endpoints handle tokens themselves:
+     * an expired access token sent to logout must not turn the request into a 401 before the
+     * refresh cookie is revoked and cleared. Public content must load for an administrator whose
+     * access token has just expired.
      */
     private static BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
-        return request -> request.getRequestURI().startsWith(AUTH_ENDPOINTS_PREFIX)
+        return request -> TOKENLESS_ENDPOINT_PREFIXES.stream().anyMatch(request.getRequestURI()::startsWith)
                 ? null
                 : defaultResolver.resolve(request);
     }

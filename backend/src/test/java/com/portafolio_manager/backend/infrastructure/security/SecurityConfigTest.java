@@ -81,6 +81,12 @@ class SecurityConfigTest {
     }
 
     @Test
+    void shouldIgnoreBearerTokenOnPublicEndpoints() throws Exception {
+        mockMvc.perform(get("/api/public/ping").header(HttpHeaders.AUTHORIZATION, "Bearer expired-or-garbage"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void shouldAllowAdminBearerToken() throws Exception {
         String token = TestJwt.token(jwtEncoder, TestJwt.ISSUER, Instant.now().plusSeconds(60), "ADMIN");
 
