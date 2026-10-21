@@ -1,4 +1,3 @@
-import { isAxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import {
   createProject,
@@ -9,23 +8,11 @@ import {
   LoadingState,
 } from '../../features/admin/projects/AdminStates'
 import { ProjectForm } from '../../features/admin/projects/ProjectForm'
-import { ProjectFormError } from '../../features/admin/projects/projectFormModel'
+import { toProjectFormError } from '../../features/admin/projects/projectFormModel'
 import { useAdminData } from '../../features/admin/projects/useAdminData'
 import { getTechnologies } from '../../features/landing/landingApi'
 
 const LIST = '/admin/proyectos'
-
-function toFormError(error: unknown): ProjectFormError {
-  if (isAxiosError(error) && error.response?.status === 409) {
-    return new ProjectFormError('Ya existe un proyecto con ese nombre.', 'name')
-  }
-  if (isAxiosError(error) && error.response?.status === 400) {
-    return new ProjectFormError('Revisa los datos ingresados.')
-  }
-  return new ProjectFormError(
-    'No se pudo guardar el proyecto. Inténtalo de nuevo.',
-  )
-}
 
 /** Registers a new project (HU015). */
 export function NewProjectPage() {
@@ -37,7 +24,7 @@ export function NewProjectPage() {
       const project = await createProject(input)
       navigate(LIST, { state: { created: project.name } })
     } catch (error) {
-      throw toFormError(error)
+      throw toProjectFormError(error)
     }
   }
 

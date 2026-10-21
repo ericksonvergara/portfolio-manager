@@ -554,7 +554,7 @@
     },
     {
       "name": "Administración - Proyectos",
-      "description": "Gestión de proyectos (HU015). Inicia sesión con `adminEmail` y `adminPassword`. Cada ejecución registra un proyecto inactivo con nombre único (`Postman <timestamp>`); se podrá limpiar cuando exista la eliminación (HU017).",
+      "description": "Gestión de proyectos (HU015, HU016). Inicia sesión con `adminEmail` y `adminPassword`. Cada ejecución registra un proyecto inactivo con nombre único (`Postman <timestamp>`); se podrá limpiar cuando exista la eliminación (HU017).",
       "item": [
         {
           "name": "01 · Login (administración) → 200",
@@ -762,7 +762,94 @@
           }
         },
         {
-          "name": "09 · El proyecto inactivo no está en la Landing Page",
+          "name": "09 · Consultar proyecto → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve el proyecto inactivo con sus datos', () => {",
+                  "  const project = pm.response.json();",
+                  "  pm.expect(project.id).to.eql(Number(pm.collectionVariables.get('adminProjectId')));",
+                  "  pm.expect(project.name).to.eql(pm.collectionVariables.get('adminProjectName'));",
+                  "  pm.expect(project.active).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}"
+          }
+        },
+        {
+          "name": "10 · Editar proyecto → 200 (regenera el slug)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.collectionVariables.set('adminProjectName', `${pm.collectionVariables.get('adminProjectName')} editado`);"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const project = pm.response.json();",
+                  "pm.test('Aplica los cambios y conserva la publicación', () => {",
+                  "  pm.expect(project.name).to.eql(pm.collectionVariables.get('adminProjectName'));",
+                  "  pm.expect(project.featured).to.be.true;",
+                  "  pm.expect(project.repositoryUrl).to.be.null;",
+                  "  pm.expect(project.active).to.be.false;",
+                  "});",
+                  "pm.test('El slug sigue al nombre nuevo', () => pm.expect(project.slug).to.match(/^postman-\\d+-editado$/));",
+                  "pm.collectionVariables.set('adminProjectSlug', project.slug);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminProjectName}}\",\n  \"shortDescription\": \"Proyecto editado por la colección de Postman.\",\n  \"description\": \"Descripción completa actualizada.\",\n  \"projectUrl\": \"https://example.com\",\n  \"repositoryUrl\": null,\n  \"status\": \"COMPLETED\",\n  \"developedOn\": null,\n  \"displayOrder\": 98,\n  \"featured\": true,\n  \"technologyIds\": [{{technologyId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}"
+          }
+        },
+        {
+          "name": "11 · Editar proyecto inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 404 Not Found', () => pm.response.to.have.status(404));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Proyecto inexistente\",\n  \"shortDescription\": \"Proyecto editado por la colección de Postman.\",\n  \"description\": \"Descripción completa actualizada.\",\n  \"projectUrl\": \"https://example.com\",\n  \"repositoryUrl\": null,\n  \"status\": \"COMPLETED\",\n  \"developedOn\": null,\n  \"displayOrder\": 98,\n  \"featured\": true,\n  \"technologyIds\": [{{technologyId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects/999999999"
+          }
+        },
+        {
+          "name": "12 · El proyecto inactivo no está en la Landing Page",
           "event": [
             {
               "listen": "test",

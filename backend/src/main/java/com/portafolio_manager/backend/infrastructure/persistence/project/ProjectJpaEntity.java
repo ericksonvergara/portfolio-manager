@@ -17,12 +17,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by the admin panel (HU015); the images are managed apart (HU019).
+ * Created (HU015) and edited (HU016) by the admin panel; the images are managed apart (HU019).
  */
 @Entity
 @Table(name = "projects")
@@ -72,6 +73,9 @@ public class ProjectJpaEntity {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @ManyToMany
     @JoinTable(
             name = "project_technologies",
@@ -92,20 +96,27 @@ public class ProjectJpaEntity {
     /** A new project starts inactive: it has no cover image yet (RN004). */
     static ProjectJpaEntity newProject(ProjectDraft draft, List<TechnologyJpaEntity> technologies) {
         ProjectJpaEntity entity = new ProjectJpaEntity();
-        entity.name = draft.name();
-        entity.slug = draft.slug();
-        entity.shortDescription = draft.shortDescription();
-        entity.description = draft.description();
-        entity.projectUrl = draft.projectUrl();
-        entity.repositoryUrl = draft.repositoryUrl();
-        entity.videoUrl = draft.videoUrl();
-        entity.status = draft.status();
-        entity.developedOn = draft.developedOn();
-        entity.displayOrder = draft.displayOrder();
-        entity.featured = draft.featured();
         entity.active = false;
-        entity.technologies = new ArrayList<>(technologies);
+        entity.apply(draft, technologies);
         return entity;
+    }
+
+    /** Replaces the editable data and the slug; publication and images stay as they are. */
+    void apply(ProjectDraft draft, List<TechnologyJpaEntity> technologies) {
+        name = draft.name();
+        slug = draft.slug();
+        shortDescription = draft.shortDescription();
+        description = draft.description();
+        projectUrl = draft.projectUrl();
+        repositoryUrl = draft.repositoryUrl();
+        videoUrl = draft.videoUrl();
+        status = draft.status();
+        developedOn = draft.developedOn();
+        displayOrder = draft.displayOrder();
+        featured = draft.featured();
+        this.technologies.clear();
+        this.technologies.addAll(technologies);
+        updatedAt = Instant.now();
     }
 
     public Long getId() {

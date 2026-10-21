@@ -21,7 +21,7 @@ export interface AdminProject {
   technologies: { id: number; name: string }[]
 }
 
-/** What the project form sends (HU015). Images are managed apart (HU019). */
+/** What the project form sends (HU015, HU016). Images are managed apart (HU019). */
 export interface ProjectInput {
   name: string
   shortDescription: string
@@ -45,5 +45,21 @@ export async function createProject(
   input: ProjectInput,
 ): Promise<AdminProject> {
   const { data } = await api.post<AdminProject>('/api/admin/projects', input)
+  return data
+}
+
+export async function getAdminProject(id: number): Promise<AdminProject> {
+  const { data } = await api.get<AdminProject>(`/api/admin/projects/${id}`)
+  return data
+}
+
+export async function updateProject(
+  id: number,
+  input: ProjectInput,
+): Promise<AdminProject> {
+  const { data } = await api.put<AdminProject>(
+    `/api/admin/projects/${id}`,
+    input,
+  )
   return data
 }

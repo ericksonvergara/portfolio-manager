@@ -76,7 +76,7 @@ class PublicProjectControllerTest {
 
     @Test
     void shouldAnswerNotFoundForAnUnknownOrInactiveProject() throws Exception {
-        when(getPublishedProjectUseCase.execute("oculto")).thenThrow(new ProjectNotFoundException("oculto"));
+        when(getPublishedProjectUseCase.execute("oculto")).thenThrow(ProjectNotFoundException.withSlug("oculto"));
 
         mockMvc.perform(get("/api/public/projects/oculto"))
                 .andExpect(status().isNotFound())

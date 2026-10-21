@@ -1,5 +1,6 @@
+import { isAxiosError } from 'axios'
 import type { ProjectStatus } from '../../landing/landingApi'
-import type { ProjectInput } from './adminProjectsApi'
+import type { AdminProject, ProjectInput } from './adminProjectsApi'
 
 /** Same rule as the backend: an absolute http(s) URL with a host (RN002, RN003). */
 export function isWebUrl(value: string): boolean {
@@ -66,5 +67,35 @@ export class ProjectFormError extends Error {
   constructor(message: string, field?: keyof ProjectFormValues) {
     super(message)
     this.field = field
+  }
+}
+
+/** Turns a failed save into the message the form shows (409: the name is taken, RN001). */
+export function toProjectFormError(error: unknown): ProjectFormError {
+  if (isAxiosError(error) && error.response?.status === 409) {
+    return new ProjectFormError('Ya existe un proyecto con ese nombre.', 'name')
+  }
+  if (isAxiosError(error) && error.response?.status === 400) {
+    return new ProjectFormError('Revisa los datos ingresados.')
+  }
+  return new ProjectFormError(
+    'No se pudo guardar el proyecto. Inténtalo de nuevo.',
+  )
+}
+
+/** The form values of an existing project (HU016). */
+export function fromAdminProject(project: AdminProject): ProjectFormValues {
+  return {
+    name: project.name,
+    shortDescription: project.shortDescription,
+    description: project.description,
+    projectUrl: project.projectUrl ?? '',
+    repositoryUrl: project.repositoryUrl ?? '',
+    videoUrl: project.videoUrl ?? '',
+    status: project.status,
+    developedOn: project.developedOn ?? '',
+    displayOrder: String(project.displayOrder),
+    featured: project.featured,
+    technologyIds: project.technologies.map((t) => String(t.id)),
   }
 }
