@@ -4,7 +4,7 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.3
+  Versión     1.4
   Fecha       2026-10-20
   Estado      Aprobado
 
@@ -231,7 +231,9 @@ branches*):
 -   Require a pull request before merging (0 aprobaciones; método
     *Merge*).
 -   Require status checks to pass: `Validate branch name` y
-    `Quality Gate`.
+    `Quality Gate`. `Quality Gate` solo pasa si pasan `Backend`,
+    `Frontend` y `Smoke Test - Docker & Postman` (stack completo con
+    Docker Compose y la colección de Postman con Newman).
 
 ------------------------------------------------------------------------
 
@@ -250,3 +252,5 @@ branches*):
   1.3       2026-10-20   Cierre de Issues al mergear en develop (rama
                          por defecto); las tarjetas pasan a Done en el
                          release.
+  1.4       2026-10-20   Prueba de humo (Docker Compose + Newman) en el
+                         CI como parte del Quality Gate.
