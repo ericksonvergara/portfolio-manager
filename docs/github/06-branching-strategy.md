@@ -4,8 +4,8 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.5
-  Fecha       2026-10-20
+  Versión     1.6
+  Fecha       2026-10-21
   Estado      Aprobado
 
 ------------------------------------------------------------------------
@@ -236,6 +236,22 @@ actualizar el Pull Request y otra vez cuando termina el CI.
 La versión siguiente sube la menor si hay historias `feat` o breaking
 changes, y el parche si solo hay mantenimiento (`v0.4.0` → `v0.4.1`).
 
+También completa la barra lateral del Pull Request:
+
+-   **Assignees:** el autor, si no hay nadie asignado.
+-   **Labels:** las de las Issues enlazadas (en promociones y releases,
+    las de todos los Pull Requests incluidos) y las que corresponden a
+    los archivos cambiados: `backend`, `frontend`, `database`, `docker`,
+    `nginx`, `ci`, `documentation` y `testing`. Solo añade etiquetas que
+    ya existen y nunca quita ninguna.
+-   **Milestone:** el de la Issue enlazada; en promociones y releases,
+    `Sprint N` según el roadmap. Solo si el Pull Request no tiene uno.
+-   **Development:** se completa con el `Closes #` de la descripción.
+
+*Projects* y *Reviewers* no se rellenan: el token del workflow no puede
+escribir en un Project de usuario, y GitHub no permite pedir revisión al
+autor.
+
 Se escriben a mano: el *Summary* y el *Objective* de los Pull Requests
 de trabajo, la redacción final del resumen de la promoción, las pruebas
 manuales (criterios de aceptación, regresión de interfaz, responsive) y
@@ -300,3 +316,5 @@ branches*):
   1.5       2026-10-20   Descripción automática de los Pull Requests
                          de trabajo, promociones y releases (PR
                          Autofill).
+  1.6       2026-10-21   PR Autofill completa assignee, labels y
+                         milestone.

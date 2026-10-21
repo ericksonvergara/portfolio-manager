@@ -1,8 +1,9 @@
 // ============================================================================
 // Portfolio Manager
 // File: .github/scripts/pr-autofill.js
-// Version: 1.0.0
-// Description: Fills the auto-generated parts of the Pull Request descriptions:
+// Version: 1.1.0
+// Description: Fills the auto-generated parts of the Pull Requests (description,
+//              assignee, labels and milestone):
 //              work branch -> develop, develop -> qa (promotion) and
 //              qa -> main (release)
 // Author: Erickson Vergara
@@ -30,6 +31,18 @@ const LONG_LIVED = ['develop', 'qa', 'main']
 const MIGRATION = /^backend\/src\/main\/resources\/db\/migration\/(V[^/]+\.sql)$/
 const UNIT_TEST = /^backend\/src\/test\/.+(?<!IntegrationTest)\.java$|\.test\.tsx?$/
 const INTEGRATION_TEST = /^backend\/src\/test\/.+IntegrationTest\.java$|^postman\//
+
+// Labels added from the files changed; only labels that already exist in the repository are used.
+const FILE_LABELS = [
+  { label: 'backend', files: /^backend\// },
+  { label: 'frontend', files: /^frontend\// },
+  { label: 'database', files: /^backend\/src\/main\/resources\/db\// },
+  { label: 'docker', files: /(^|\/)Dockerfile$|^docker-compose\.yaml$/ },
+  { label: 'nginx', files: /^nginx\// },
+  { label: 'ci', files: /^\.github\/workflows\// },
+  { label: 'documentation', files: /^docs\/|\.md$/ },
+  { label: 'testing', files: /^backend\/src\/test\/|\.test\.tsx?$|^postman\// },
+]
 
 // A type is ticked by a conventional prefix (PR titles, commits) or by the files changed.
 const TYPES = [
@@ -102,6 +115,8 @@ async function fill(api, pr, run) {
   const data =
     flow.kind === 'work' ? await collectWork(api, pr) : await collectPromotion(api, pr, flow)
   body = flow.kind === 'work' ? renderWork(body, data, ci) : renderPromotion(body, data, ci, flow)
+
+  await fillSidebar(api, pr, flow, data)
 
   let title = pr.title
   if (data.version) {
@@ -229,7 +244,10 @@ async function isUpToDate(api, pr, compareFromPrBase) {
 async function fetchPulls(api, numbers) {
   if (!numbers.length) return []
   const fields = `number title headRefName author { login } labels(first: 20) { nodes { name } }
-    closingIssuesReferences(first: 10) { nodes { number title } } body mergeCommit { oid }
+    closingIssuesReferences(first: 10) {
+      nodes { number title labels(first: 20) { nodes { name } } milestone { number title } }
+    }
+    body mergeCommit { oid }
     commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }`
   const query = `query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) {
     ${numbers.map((n) => `pr${n}: pullRequest(number: ${n}) { ${fields} }`).join('\n')}
@@ -269,6 +287,9 @@ function describePull(pr) {
     storyTitle: [...issues.values()].find(Boolean) || null,
     issues: [...issues.keys()],
     dependabot,
+    labels: pr.labels.nodes.map((l) => l.name),
+    issueLabels: pr.closingIssuesReferences.nodes.flatMap((i) => i.labels.nodes.map((l) => l.name)),
+    issueMilestone: pr.closingIssuesReferences.nodes.find((i) => i.milestone)?.milestone || null,
     ciGreen: rollup === 'SUCCESS',
     mergeCommit: pr.mergeCommit?.oid || null,
   }
@@ -387,6 +408,58 @@ function envKeys(files) {
   return {
     added: [...plus].filter((k) => !minus.has(k)),
     removed: [...minus].filter((k) => !plus.has(k)),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar: assignee, labels and milestone
+// ---------------------------------------------------------------------------
+
+// Only adds: labels are never removed, and the assignee and milestone are set only when empty.
+async function fillSidebar(api, pr, flow, data) {
+  const { github, owner, repo } = api
+  const issue = { owner, repo, issue_number: pr.number }
+
+  const author = pr.user?.login
+  if (!pr.assignees?.length && author && pr.user.type !== 'Bot') {
+    await github.rest.issues.addAssignees({ ...issue, assignees: [author] })
+    api.core.info(`#${pr.number}: assigned to ${author}.`)
+  }
+
+  const existing = new Set(
+    (
+      await github.paginate(github.rest.issues.listLabelsForRepo, { owner, repo, per_page: 100 })
+    ).map((l) => l.name),
+  )
+  const current = new Set((pr.labels || []).map((l) => l.name))
+  const files = data.files.map((f) => f.filename)
+  const wanted = [
+    ...(flow.kind === 'work'
+      ? data.pull.issueLabels
+      : data.pulls.flatMap((p) => [...p.labels, ...p.issueLabels])),
+    ...FILE_LABELS.filter(({ files: re }) => files.some((f) => re.test(f))).map((l) => l.label),
+  ]
+  const missing = [...new Set(wanted)].filter((l) => existing.has(l) && !current.has(l))
+  if (missing.length) {
+    await github.rest.issues.addLabels({ ...issue, labels: missing })
+    api.core.info(`#${pr.number}: labels added: ${missing.join(', ')}.`)
+  }
+
+  if (pr.milestone) return
+  let milestone = flow.kind === 'work' ? data.pull.issueMilestone : null
+  if (flow.kind !== 'work' && data.sprints[0]) {
+    const title = `Sprint ${data.sprints[0].number}`
+    const milestones = await github.paginate(github.rest.issues.listMilestones, {
+      owner,
+      repo,
+      state: 'all',
+      per_page: 100,
+    })
+    milestone = milestones.find((m) => m.title === title) || null
+  }
+  if (milestone) {
+    await github.rest.issues.update({ ...issue, milestone: milestone.number })
+    api.core.info(`#${pr.number}: milestone ${milestone.title}.`)
   }
 }
 

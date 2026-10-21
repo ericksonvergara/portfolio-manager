@@ -1,7 +1,7 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/workflows/pr-autofill.yml
-# Version: 1.0.0
+# Version: 1.1.0
 # Description: Fills the Pull Request descriptions: work branch -> develop,
 #              develop -> qa (promotion) and qa -> main (release)
 # Author: Erickson Vergara
@@ -28,7 +28,7 @@ permissions:
   contents: read
   pull-requests: write
   actions: read
-  issues: read
+  issues: write
 
 # Both triggers edit the same description: run them one after the other.
 concurrency:
