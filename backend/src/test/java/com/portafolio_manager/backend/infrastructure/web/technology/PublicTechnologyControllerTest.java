@@ -36,12 +36,13 @@ class PublicTechnologyControllerTest {
     @Test
     void shouldReturnTheTechnologyCatalogToAnonymousVisitors() throws Exception {
         when(listTechnologiesUseCase.execute(null)).thenReturn(List.of(
-                new Technology("Java", TechnologyCategory.BACKEND),
-                new Technology("React", TechnologyCategory.FRONTEND)
+                new Technology(1L, "Java", TechnologyCategory.BACKEND),
+                new Technology(2L, "React", TechnologyCategory.FRONTEND)
         ));
 
         mockMvc.perform(get("/api/public/technologies"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Java"))
                 .andExpect(jsonPath("$[0].category").value("BACKEND"))
                 .andExpect(jsonPath("$[1].name").value("React"));

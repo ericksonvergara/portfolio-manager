@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend.infrastructure.persistence.project;
 
+import com.portafolio_manager.backend.domain.project.ProjectDraft;
 import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.infrastructure.persistence.technology.TechnologyJpaEntity;
 import jakarta.persistence.Column;
@@ -21,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Read-only for now: projects become editable with the project management stories (Sprint 4).
+ * Created by the admin panel (HU015); the images are managed apart (HU019).
  */
 @Entity
 @Table(name = "projects")
@@ -88,6 +89,29 @@ public class ProjectJpaEntity {
     protected ProjectJpaEntity() {
     }
 
+    /** A new project starts inactive: it has no cover image yet (RN004). */
+    static ProjectJpaEntity newProject(ProjectDraft draft, List<TechnologyJpaEntity> technologies) {
+        ProjectJpaEntity entity = new ProjectJpaEntity();
+        entity.name = draft.name();
+        entity.slug = draft.slug();
+        entity.shortDescription = draft.shortDescription();
+        entity.description = draft.description();
+        entity.projectUrl = draft.projectUrl();
+        entity.repositoryUrl = draft.repositoryUrl();
+        entity.videoUrl = draft.videoUrl();
+        entity.status = draft.status();
+        entity.developedOn = draft.developedOn();
+        entity.displayOrder = draft.displayOrder();
+        entity.featured = draft.featured();
+        entity.active = false;
+        entity.technologies = new ArrayList<>(technologies);
+        return entity;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }
@@ -134,6 +158,10 @@ public class ProjectJpaEntity {
 
     public boolean isFeatured() {
         return featured;
+    }
+
+    public int getDisplayOrder() {
+        return displayOrder;
     }
 
     public List<TechnologyJpaEntity> getTechnologies() {

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Portfolio Manager API",
-    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
+    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra un proyecto inactivo de prueba en cada ejecución (HU015).\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -553,6 +553,236 @@
       ]
     },
     {
+      "name": "Administración - Proyectos",
+      "description": "Gestión de proyectos (HU015). Inicia sesión con `adminEmail` y `adminPassword`. Cada ejecución registra un proyecto inactivo con nombre único (`Postman <timestamp>`); se podrá limpiar cuando exista la eliminación (HU017).",
+      "item": [
+        {
+          "name": "01 · Login (administración) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "02 · Listar proyectos sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));"] }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/admin/projects" }
+        },
+        {
+          "name": "03 · Catálogo de tecnologías (id para el formulario) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const technologies = pm.response.json();",
+                  "pm.test('Cada tecnología trae su id', () => {",
+                  "  pm.expect(technologies).to.be.an('array').that.is.not.empty;",
+                  "  technologies.forEach((tech) => pm.expect(tech.id).to.be.a('number'));",
+                  "});",
+                  "pm.collectionVariables.set('technologyId', technologies[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/technologies" }
+        },
+        {
+          "name": "04 · Registrar proyecto sin tecnologías → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('adminProjectName', `Postman ${Date.now()}`);"] }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica que falta la tecnología (RN005)', () => pm.expect(pm.response.json().message).to.include('technologyIds'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Descripción completa del proyecto de prueba.\",\n  \"projectUrl\": \"https://example.com\",\n  \"repositoryUrl\": \"https://github.com/usuario/postman\",\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "05 · Registrar proyecto con URL inválida → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Rechaza la URL del proyecto (RN002)', () => pm.expect(pm.response.json().message).to.include('projectUrl'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Descripción completa del proyecto de prueba.\",\n  \"projectUrl\": \"example.com\",\n  \"repositoryUrl\": \"https://github.com/usuario/postman\",\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{technologyId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "06 · Registrar proyecto → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', () => pm.response.to.have.status(201));",
+                  "const project = pm.response.json();",
+                  "pm.test('Indica la ubicación del recurso', () => pm.expect(pm.response.headers.get('Location')).to.eql(`/api/admin/projects/${project.id}`));",
+                  "pm.test('Queda inactivo, sin imagen y con slug generado', () => {",
+                  "  pm.expect(project.active).to.be.false;",
+                  "  pm.expect(project.coverImageUrl).to.be.null;",
+                  "  pm.expect(project.slug).to.match(/^postman-\\d+$/);",
+                  "  pm.expect(project.technologies.map((t) => t.id)).to.include(Number(pm.collectionVariables.get('technologyId')));",
+                  "});",
+                  "pm.collectionVariables.set('adminProjectId', project.id);",
+                  "pm.collectionVariables.set('adminProjectSlug', project.slug);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Descripción completa del proyecto de prueba.\",\n  \"projectUrl\": \"https://example.com\",\n  \"repositoryUrl\": \"https://github.com/usuario/postman\",\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{technologyId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "07 · Registrar proyecto con nombre repetido → 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Same name in upper case: RN001 ignores case.",
+                  "pm.collectionVariables.set('adminProjectNameUpper', pm.collectionVariables.get('adminProjectName').toUpperCase());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 409 Conflict (RN001)', () => pm.response.to.have.status(409));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminProjectNameUpper}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Descripción completa del proyecto de prueba.\",\n  \"projectUrl\": \"https://example.com\",\n  \"repositoryUrl\": \"https://github.com/usuario/postman\",\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{technologyId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "08 · Listar proyectos → 200 (incluye inactivos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye el proyecto inactivo recién creado', () => {",
+                  "  const created = pm.response.json().find((p) => p.id === Number(pm.collectionVariables.get('adminProjectId')));",
+                  "  pm.expect(created, 'proyecto creado').to.exist;",
+                  "  pm.expect(created.active).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "09 · El proyecto inactivo no está en la Landing Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('No aparece en el listado público (RN008)', () => {",
+                  "  const slugs = pm.response.json().map((p) => p.slug);",
+                  "  pm.expect(slugs).to.not.include(pm.collectionVariables.get('adminProjectSlug'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects" }
+        }
+      ]
+    },
+    {
       "name": "Documentación",
       "item": [
         {
@@ -571,6 +801,7 @@
                   "  pm.expect(spec.paths).to.have.property('/api/public/profile');",
                   "  pm.expect(spec.paths).to.have.property('/api/public/technologies');",
                   "  pm.expect(spec.paths).to.have.property('/api/public/projects');",
+                "  pm.expect(spec.paths).to.have.property('/api/admin/projects');",
                   "  pm.expect(spec.components.securitySchemes).to.have.property('bearerAuth');",
                   "});"
                 ]
@@ -592,6 +823,11 @@
     { "key": "previousRefreshToken", "value": "", "description": "Refresh token before rotation (reuse detection test)." },
     { "key": "loggedOutAccessToken", "value": "", "description": "Access token revoked by the logout request." },
     { "key": "loggedOutRefreshToken", "value": "", "description": "Refresh token revoked by the logout request." },
-    { "key": "projectSlug", "value": "", "description": "First published project, set by the project listing request." }
+    { "key": "projectSlug", "value": "", "description": "First published project, set by the project listing request." },
+    { "key": "technologyId", "value": "", "description": "First technology of the catalog, set by the admin folder." },
+    { "key": "adminProjectName", "value": "", "description": "Unique name of the project created by the admin folder." },
+    { "key": "adminProjectNameUpper", "value": "", "description": "Same name in upper case (duplicate name test)." },
+    { "key": "adminProjectId", "value": "", "description": "Id of the project created by the admin folder." },
+    { "key": "adminProjectSlug", "value": "", "description": "Slug of the project created by the admin folder." }
   ]
 }
