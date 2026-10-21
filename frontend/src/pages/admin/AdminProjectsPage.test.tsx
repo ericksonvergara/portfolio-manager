@@ -36,7 +36,7 @@ const PROJECT: AdminProject = {
   ],
 }
 
-function renderPage(state?: { created: string }) {
+function renderPage(state?: { created?: string; updated?: string }) {
   render(
     <MemoryRouter initialEntries={[{ pathname: '/admin/proyectos', state }]}>
       <AdminProjectsPage />
@@ -61,6 +61,9 @@ describe('AdminProjectsPage', () => {
     expect(within(row).getByText('Inactivo')).toBeInTheDocument()
     expect(within(row).getByText('Java, React')).toBeInTheDocument()
     expect(
+      within(row).getByRole('link', { name: 'Editar Sistema ERP' }),
+    ).toHaveAttribute('href', '/admin/proyectos/7/editar')
+    expect(
       screen.getByRole('link', { name: 'Registrar proyecto' }),
     ).toHaveAttribute('href', '/admin/proyectos/nuevo')
   })
@@ -73,6 +76,15 @@ describe('AdminProjectsPage', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(
       'Proyecto «Sistema ERP» registrado.',
+    )
+  })
+
+  it('confirms an edited project', async () => {
+    adminApi.answers.push(() => Promise.resolve([PROJECT]))
+    renderPage({ updated: 'Sistema ERP' })
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Proyecto «Sistema ERP» actualizado.',
     )
   })
 

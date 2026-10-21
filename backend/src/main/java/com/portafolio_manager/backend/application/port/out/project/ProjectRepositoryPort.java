@@ -5,6 +5,7 @@ import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
 import com.portafolio_manager.backend.domain.project.ProjectSummary;
+import com.portafolio_manager.backend.domain.project.ProjectUpdate;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +24,21 @@ public interface ProjectRepositoryPort extends PersistencePort {
     /** Whether a project already uses that name (ignoring case) or that slug. */
     boolean existsByNameOrSlug(String name, String slug);
 
+    /** Whether a project other than {@code id} uses that name (ignoring case) or that slug. */
+    boolean existsOtherByNameOrSlug(Long id, String name, String slug);
+
+    /** The project with that id, active or not. */
+    Optional<AdminProject> findForAdmin(Long id);
+
     /**
      * Stores a new inactive project. Throws {@code DuplicateProjectNameException} if the name or
      * slug was taken concurrently.
      */
     AdminProject create(ProjectDraft draft);
+
+    /**
+     * Replaces the data of the project, keeping its publication and images; empty if it does not
+     * exist. Throws {@code DuplicateProjectNameException} if the name or slug was taken concurrently.
+     */
+    Optional<AdminProject> update(ProjectUpdate update);
 }

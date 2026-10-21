@@ -5,11 +5,7 @@ import com.portafolio_manager.backend.application.port.out.project.ProjectReposi
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
 import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
-import com.portafolio_manager.backend.domain.project.InvalidProjectException;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
-
-import java.util.Set;
-import java.util.TreeSet;
 
 public class CreateProjectService implements CreateProjectUseCase {
 
@@ -27,11 +23,7 @@ public class CreateProjectService implements CreateProjectUseCase {
             throw new DuplicateProjectNameException(draft.name());
         }
 
-        Set<Long> unknown = new TreeSet<>(draft.technologyIds());
-        unknown.removeAll(technologyRepository.findExistingIds(draft.technologyIds()));
-        if (!unknown.isEmpty()) {
-            throw new InvalidProjectException("Unknown technologies: " + unknown);
-        }
+        ProjectTechnologies.requireKnown(draft.technologyIds(), technologyRepository);
 
         return projectRepository.create(draft);
     }

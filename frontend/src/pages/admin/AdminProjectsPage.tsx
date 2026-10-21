@@ -10,10 +10,13 @@ import { STATUS_LABELS } from '../../features/landing/labels'
 const PRIMARY_LINK =
   'inline-block rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-slate-950'
 
-/** Every project of the portfolio, active or not (HU015). */
+/** Every project of the portfolio, active or not (HU015), with access to its edition (HU016). */
 export function AdminProjectsPage() {
   const content = useAdminData(listAdminProjects)
-  const created = (useLocation().state as { created?: string } | null)?.created
+  const saved = useLocation().state as {
+    created?: string
+    updated?: string
+  } | null
 
   return (
     <section aria-labelledby="projects-title">
@@ -26,13 +29,14 @@ export function AdminProjectsPage() {
         </Link>
       </div>
 
-      {created && (
+      {(saved?.created || saved?.updated) && (
         <p
           role="status"
           className="mb-4 rounded-lg border border-emerald-800 bg-emerald-950 px-3 py-2 text-sm text-emerald-200"
         >
-          Proyecto «{created}» registrado. Queda inactivo hasta que tenga imagen
-          principal.
+          {saved.created
+            ? `Proyecto «${saved.created}» registrado. Queda inactivo hasta que tenga imagen principal.`
+            : `Proyecto «${saved.updated}» actualizado.`}
         </p>
       )}
 
@@ -71,6 +75,9 @@ export function AdminProjectsPage() {
                 <th scope="col" className="px-4 py-3 font-medium">
                   Tecnologías
                 </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -103,6 +110,15 @@ export function AdminProjectsPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-300">
                     {project.technologies.map((t) => t.name).join(', ')}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      to={`/admin/proyectos/${project.id}/editar`}
+                      aria-label={`Editar ${project.name}`}
+                      className="rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                    >
+                      Editar
+                    </Link>
                   </td>
                 </tr>
               ))}

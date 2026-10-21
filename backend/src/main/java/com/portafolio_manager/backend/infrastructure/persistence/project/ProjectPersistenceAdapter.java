@@ -7,6 +7,7 @@ import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
 import com.portafolio_manager.backend.domain.project.ProjectImage;
 import com.portafolio_manager.backend.domain.project.ProjectSummary;
+import com.portafolio_manager.backend.domain.project.ProjectUpdate;
 import com.portafolio_manager.backend.domain.technology.Technology;
 import com.portafolio_manager.backend.infrastructure.persistence.technology.TechnologyJpaEntity;
 import jakarta.persistence.EntityManager;
@@ -57,19 +58,56 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean existsOtherByNameOrSlug(Long id, String name, String slug) {
+        return projectRepository.existsOtherByNameOrSlug(id, name, slug);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<AdminProject> findForAdmin(Long id) {
+        return projectRepository.findWithTechnologiesById(id).map(ProjectPersistenceAdapter::toAdminProject);
+    }
+
+    @Override
     @Transactional
     public AdminProject create(ProjectDraft draft) {
-        List<TechnologyJpaEntity> technologies = draft.technologyIds().stream()
-                .map(id -> entityManager.getReference(TechnologyJpaEntity.class, id))
-                .toList();
         try {
-            ProjectJpaEntity saved = projectRepository.saveAndFlush(ProjectJpaEntity.newProject(draft, technologies));
-            // Reload so the technologies come back complete and in display order.
-            entityManager.refresh(saved);
-            return toAdminProject(saved);
+            ProjectJpaEntity saved = projectRepository.saveAndFlush(
+                    ProjectJpaEntity.newProject(draft, technologyReferences(draft)));
+            return reloaded(saved);
         } catch (DataIntegrityViolationException exception) {
             throw new DuplicateProjectNameException(draft.name());
         }
+    }
+
+    @Override
+    @Transactional
+    public Optional<AdminProject> update(ProjectUpdate update) {
+        Optional<ProjectJpaEntity> found = projectRepository.findById(update.id());
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        ProjectJpaEntity entity = found.get();
+        entity.apply(update.draft(), technologyReferences(update.draft()));
+        try {
+            projectRepository.saveAndFlush(entity);
+            return Optional.of(reloaded(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw new DuplicateProjectNameException(update.draft().name());
+        }
+    }
+
+    private List<TechnologyJpaEntity> technologyReferences(ProjectDraft draft) {
+        return draft.technologyIds().stream()
+                .map(id -> entityManager.getReference(TechnologyJpaEntity.class, id))
+                .toList();
+    }
+
+    /** Reloads the project so its technologies come back complete and in display order. */
+    private AdminProject reloaded(ProjectJpaEntity entity) {
+        entityManager.refresh(entity);
+        return toAdminProject(entity);
     }
 
     private static AdminProject toAdminProject(ProjectJpaEntity entity) {

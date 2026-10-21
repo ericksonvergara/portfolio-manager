@@ -18,15 +18,17 @@ import org.springframework.test.web.servlet.ResultActions;
 import java.time.Instant;
 import java.util.Arrays;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Project registration (HU015) against the real schema.
+ * Project registration (HU015) and edition (HU016) against the real schema.
  */
 @SpringBootTest(properties = TestJwt.SECRET_PROPERTY)
 @AutoConfigureMockMvc
@@ -93,23 +95,84 @@ class AdminProjectIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
+    @Test
+    void shouldEditAProjectKeepingItsPublicationAndRegeneratingTheSlug() throws Exception {
+        long id = createdId("Sistema ERP", java, react);
+        jdbcTemplate.update("UPDATE projects SET active = TRUE, cover_image_url = '/uploads/erp.png' WHERE id = ?", id);
+
+        update(id, "Sistema ERP Cloud", react)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Sistema ERP Cloud"))
+                .andExpect(jsonPath("$.slug").value("sistema-erp-cloud"))
+                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.coverImageUrl").value("/uploads/erp.png"))
+                .andExpect(jsonPath("$.technologies[*].name").value(contains("React")));
+
+        // The public URL follows the new name.
+        mockMvc.perform(get("/api/public/projects/sistema-erp-cloud")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/public/projects/sistema-erp")).andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/admin/projects/" + id).header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Sistema ERP Cloud"));
+        Boolean touched = jdbcTemplate.queryForObject(
+                "SELECT updated_at > created_at FROM projects WHERE id = ?", Boolean.class, id);
+        assertThat(touched).isTrue();
+    }
+
+    @Test
+    void shouldKeepItsOwnNameButRejectTheNameOfAnotherProject() throws Exception {
+        long erp = createdId("Sistema ERP", java);
+        createdId("Gestión de Inventario", java);
+
+        // RN001 ignores the project being edited...
+        update(erp, "SISTEMA ERP", java).andExpect(status().isOk());
+        // ...but not the others.
+        update(erp, "Gestion de inventario", java).andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldAnswerNotFoundForAnUnknownProject() throws Exception {
+        mockMvc.perform(get("/api/admin/projects/999999").header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(status().isNotFound());
+        update(999_999L, "Sistema ERP", java).andExpect(status().isNotFound());
+    }
+
     private ResultActions create(String name, long... technologyIds) throws Exception {
-        String ids = String.join(", ", Arrays.stream(technologyIds).mapToObj(String::valueOf).toList());
         return mockMvc.perform(post("/api/admin/projects")
                 .header(HttpHeaders.AUTHORIZATION, adminToken())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                        {
-                          "name": "%s",
-                          "shortDescription": "Control de existencias.",
-                          "description": "Descripción completa.",
-                          "repositoryUrl": "https://github.com/usuario/inventario",
-                          "status": "IN_PROGRESS",
-                          "displayOrder": 1,
-                          "featured": false,
-                          "technologyIds": [%s]
-                        }
-                        """.formatted(name, ids)));
+                .content(body(name, technologyIds)));
+    }
+
+    private long createdId(String name, long... technologyIds) throws Exception {
+        String response = create(name, technologyIds)
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return Long.parseLong(response.replaceAll("(?s).*?\"id\":(\\d+).*", "$1"));
+    }
+
+    private ResultActions update(long id, String name, long... technologyIds) throws Exception {
+        return mockMvc.perform(put("/api/admin/projects/" + id)
+                .header(HttpHeaders.AUTHORIZATION, adminToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body(name, technologyIds)));
+    }
+
+    private static String body(String name, long... technologyIds) {
+        String ids = String.join(", ", Arrays.stream(technologyIds).mapToObj(String::valueOf).toList());
+        return """
+                {
+                  "name": "%s",
+                  "shortDescription": "Control de existencias.",
+                  "description": "Descripción completa.",
+                  "repositoryUrl": "https://github.com/usuario/inventario",
+                  "status": "IN_PROGRESS",
+                  "displayOrder": 1,
+                  "featured": false,
+                  "technologyIds": [%s]
+                }
+                """.formatted(name, ids);
     }
 
     private String adminToken() {

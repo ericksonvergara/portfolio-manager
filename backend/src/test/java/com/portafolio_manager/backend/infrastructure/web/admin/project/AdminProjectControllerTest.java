@@ -1,12 +1,16 @@
 package com.portafolio_manager.backend.infrastructure.web.admin.project;
 
 import com.portafolio_manager.backend.application.port.in.project.CreateProjectUseCase;
+import com.portafolio_manager.backend.application.port.in.project.GetAdminProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListAdminProjectsUseCase;
+import com.portafolio_manager.backend.application.port.in.project.UpdateProjectUseCase;
 import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
 import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
+import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectStatus;
+import com.portafolio_manager.backend.domain.project.ProjectUpdate;
 import com.portafolio_manager.backend.domain.technology.Technology;
 import com.portafolio_manager.backend.domain.technology.TechnologyCategory;
 import com.portafolio_manager.backend.infrastructure.security.SecurityConfig;
@@ -26,10 +30,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,6 +75,12 @@ class AdminProjectControllerTest {
 
     @MockitoBean
     private CreateProjectUseCase createProjectUseCase;
+
+    @MockitoBean
+    private GetAdminProjectUseCase getAdminProjectUseCase;
+
+    @MockitoBean
+    private UpdateProjectUseCase updateProjectUseCase;
 
     @MockitoBean
     private RevokedAccessTokenRepositoryPort revokedAccessTokenRepository;
@@ -140,6 +152,46 @@ class AdminProjectControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.path").value("/api/admin/projects"));
+    }
+
+    @Test
+    void shouldReturnOneProjectOrNotFound() throws Exception {
+        when(getAdminProjectUseCase.execute(7L)).thenReturn(CREATED);
+        when(getAdminProjectUseCase.execute(8L)).thenThrow(ProjectNotFoundException.withId(8L));
+
+        mockMvc.perform(get("/api/admin/projects/7").header(HttpHeaders.AUTHORIZATION, bearer("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Descripción completa."));
+        mockMvc.perform(get("/api/admin/projects/8").header(HttpHeaders.AUTHORIZATION, bearer("ADMIN")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No project with id 8"));
+    }
+
+    @Test
+    void shouldUpdateAProject() throws Exception {
+        when(updateProjectUseCase.execute(argThat((ProjectUpdate u) -> u.id() == 7L && u.draft().featured())))
+                .thenReturn(CREATED);
+
+        mockMvc.perform(put("/api/admin/projects/7")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7));
+    }
+
+    @Test
+    void shouldValidateTheUpdateLikeTheRegistration() throws Exception {
+        mockMvc.perform(put("/api/admin/projects/7")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY.replace("\"Sistema ERP\"", "\"\"")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("name: must not be blank"));
+        mockMvc.perform(put("/api/admin/projects/7").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(updateProjectUseCase);
     }
 
     private String bearer(String role) {

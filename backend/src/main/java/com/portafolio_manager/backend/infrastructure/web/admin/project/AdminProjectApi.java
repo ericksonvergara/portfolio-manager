@@ -2,6 +2,7 @@ package com.portafolio_manager.backend.infrastructure.web.admin.project;
 
 import com.portafolio_manager.backend.infrastructure.web.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,4 +40,32 @@ interface AdminProjectApi {
     @ApiResponse(responseCode = "409", description = "Ya existe un proyecto con ese nombre (RN001)",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     ResponseEntity<AdminProjectResponse> createProject(ProjectRequest request);
+
+    @Operation(
+            summary = "Consultar un proyecto",
+            description = "Activo o inactivo, con los datos que edita el formulario."
+    )
+    @ApiResponse(responseCode = "200", description = "Proyecto encontrado")
+    @ApiResponse(responseCode = "404", description = "No existe un proyecto con ese id",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    AdminProjectResponse getProject(@Parameter(description = "Id del proyecto", example = "7") Long id);
+
+    @Operation(
+            summary = "Editar un proyecto",
+            description = "Reemplaza los datos del proyecto con las mismas validaciones que el registro. "
+                    + "Si cambia el nombre, el slug de la URL pública se regenera. La publicación y las "
+                    + "imágenes no cambian."
+    )
+    @ApiResponse(responseCode = "200", description = "Proyecto actualizado")
+    @ApiResponse(responseCode = "400", description = "Datos inválidos: campos obligatorios, URLs (RN002, RN003) "
+            + "o tecnologías (RN005)",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "No existe un proyecto con ese id",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Otro proyecto ya tiene ese nombre (RN001)",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    AdminProjectResponse updateProject(
+            @Parameter(description = "Id del proyecto", example = "7") Long id,
+            ProjectRequest request
+    );
 }
