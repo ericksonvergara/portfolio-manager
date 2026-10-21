@@ -4,7 +4,7 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.4
+  Versión     1.5
   Fecha       2026-10-20
   Estado      Aprobado
 
@@ -199,7 +199,50 @@ no se cierra sola y se cierra manualmente tras el merge.
 
 GitHub solo aplica una plantilla de la carpeta `PULL_REQUEST_TEMPLATE/`
 cuando la URL del Pull Request incluye `template=<archivo>`; por eso
-las promociones se abren con los enlaces anteriores.
+las promociones se abren con los enlaces anteriores. Si se abren con
+**New pull request** y cargan la plantilla por defecto, el workflow
+*PR Autofill* la sustituye por la que corresponde.
+
+## Descripción automática de los Pull Requests
+
+El workflow `pr-autofill.yml` (lógica en `.github/scripts/pr-autofill.js`)
+rellena los bloques marcados con `auto:<nombre>` y marca las casillas del
+checklist que se pueden comprobar con la API. Se ejecuta al abrir o
+actualizar el Pull Request y otra vez cuando termina el CI.
+
+  Pull Request          Qué se rellena solo
+  --------------------- ---------------------------------------------
+  trabajo → develop     `Closes #` y la historia enlazada, tipos de
+                        cambio, Unit / Integration Tests (según los
+                        tests modificados), resultado del CI por job,
+                        Regression Tests (colección de Postman en la
+                        prueba de humo), breaking changes, notas de
+                        despliegue y las casillas *Tests executed*,
+                        *Branch is up to date* y *Related Issue(s)
+                        linked*.
+  develop → qa          Sprint y objetivo (según
+                        `docs/Sprint_Development_Roadmap.md`), Pull
+                        Requests incluidos, `Refs #`, tipos de
+                        cambio, historias para los criterios de
+                        aceptación, prueba de humo, Postman y
+                        regresión de la API, breaking changes, notas
+                        de despliegue, versión siguiente y las
+                        casillas *CI green* y *Refs*.
+  qa → main             Lo mismo, más la promoción validada y las
+                        casillas *qa idéntico a lo probado*, *sin
+                        bugs críticos* (Issues abiertas con `bug` y
+                        `critical`), *Refs* y *versión decidida*.
+
+La versión siguiente sube la menor si hay historias `feat` o breaking
+changes, y el parche si solo hay mantenimiento (`v0.4.0` → `v0.4.1`).
+
+Se escriben a mano: el *Summary* y el *Objective* de los Pull Requests
+de trabajo, la redacción final del resumen de la promoción, las pruebas
+manuales (criterios de aceptación, regresión de interfaz, responsive) y
+las casillas que requieren criterio humano. Las casillas marcadas a mano
+se conservan; una casilla del checklist nunca se desmarca sola. Una
+descripción sin bloques `auto:` no se modifica, y los Pull Requests de
+Dependabot conservan la suya.
 
 ## Reglas comunes
 
@@ -254,3 +297,6 @@ branches*):
                          release.
   1.4       2026-10-20   Prueba de humo (Docker Compose + Newman) en el
                          CI como parte del Quality Gate.
+  1.5       2026-10-20   Descripción automática de los Pull Requests
+                         de trabajo, promociones y releases (PR
+                         Autofill).

@@ -2,12 +2,17 @@
 ============================================================================
 Portfolio Manager
 File: .github/pull_request_template.md
-Version: 1.0.1
+Version: 1.1.0
 Description: Pull Request Template
 Author: Erickson Vergara
 Repository: https://github.com/ericksonvergara/portfolio-manager
 License: MIT
 ============================================================================
+
+Blocks between the "auto:<name>" marks, and the checklist items that can be
+verified through the API, are filled by the PR Autofill workflow
+(.github/workflows/pr-autofill.yml) when the PR is opened or updated and
+when the CI finishes. Boxes ticked by hand stay ticked.
 -->
 
 ## 📋 Summary
@@ -24,19 +29,19 @@ Describe the objective of this implementation and the value it provides.
 
 ## 🔗 Related Issues
 
+<!-- auto:issues -->
 Closes #
 
 Related Issues:
 
 - HU###
-- HT###
-- TASK###
-- BUG###
+<!-- /auto:issues -->
 
 ---
 
 ## 📦 Type of Change
 
+<!-- auto:types -->
 - [ ] ✨ New Feature
 - [ ] 🐞 Bug Fix
 - [ ] ♻️ Refactoring
@@ -45,6 +50,7 @@ Related Issues:
 - [ ] 🔒 Security
 - [ ] 🛠️ Build / DevOps
 - [ ] 🧪 Tests
+<!-- /auto:types -->
 
 ---
 
@@ -52,12 +58,18 @@ Related Issues:
 
 Describe the tests performed.
 
+<!-- auto:testing -->
 - [ ] Unit Tests
 - [ ] Integration Tests
 - [ ] Manual Tests
 - [ ] Regression Tests
+<!-- /auto:testing -->
 
 Test Evidence:
+
+<!-- auto:evidence -->
+- CI: waiting for the run of the latest commit.
+<!-- /auto:evidence -->
 
 <!-- Add screenshots, logs or links if applicable -->
 
@@ -71,9 +83,17 @@ Attach screenshots or recordings demonstrating the implemented functionality.
 
 ## ⚠️ Breaking Changes
 
+<!-- auto:breaking -->
 - [ ] This Pull Request introduces breaking changes.
+<!-- /auto:breaking -->
 
 If yes, describe them below.
+
+Deployment notes:
+
+<!-- auto:deploy -->
+-
+<!-- /auto:deploy -->
 
 ---
 
