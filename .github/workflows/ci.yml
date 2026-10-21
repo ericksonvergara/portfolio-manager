@@ -1,7 +1,7 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/workflows/ci.yml
-# Version: 1.1.0
+# Version: 1.2.0
 # Description: Continuous Integration Workflow
 # Author: Erickson Vergara
 # Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -95,13 +95,90 @@ jobs:
       - name: Build Application
         run: npm run build
 
+  smoke:
+    name: Smoke Test - Docker & Postman
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      BASE_URL: http://localhost:8081
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # The example values include the local demo seed, so the public endpoints have content.
+      - name: Prepare Environment
+        run: |
+          cp .env.example .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')|" .env
+
+      - name: Start the Stack
+        run: docker compose up -d --build
+
+      - name: Wait for the Backend
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fs -o /dev/null "$BASE_URL/api/public/profile"; then
+              echo "Backend ready after $attempt attempt(s)."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::The backend was not ready through nginx after 3 minutes."
+          exit 1
+
+      - name: Check the Pages
+        run: |
+          failed=0
+          for path in / /login /admin /proyectos/portfolio-manager; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$path")
+            echo "$path -> $status"
+            if [ "$status" != "200" ]; then failed=1; fi
+          done
+          exit $failed
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run the Postman Collection
+        run: |
+          set -a; . ./.env; set +a
+          npx --yes newman@6.2.1 run postman/portfolio-manager.postman_collection.json \
+            --environment postman/portfolio-manager-local.postman_environment.json \
+            --env-var "baseUrl=$BASE_URL" \
+            --env-var "adminEmail=$ADMIN_EMAIL" \
+            --env-var "adminPassword=$ADMIN_PASSWORD" \
+            --reporters cli,junit \
+            --reporter-junit-export newman/results.xml \
+            --color off
+
+      - name: Upload Newman Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-results
+          path: newman/results.xml
+          if-no-files-found: ignore
+
+      - name: Show Container Logs
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+
+      - name: Stop the Stack
+        if: always()
+        run: docker compose down -v
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
     needs:
       - backend
       - frontend
+      - smoke
 
     steps:
       - name: Quality Gate Passed
-        run: echo "✅ Backend and Frontend completed successfully."
+        run: echo "✅ Backend, Frontend and Smoke Test completed successfully."
