@@ -17,4 +17,9 @@ interface ProjectJpaRepository extends JpaRepository<ProjectJpaEntity, Long> {
      */
     @EntityGraph(attributePaths = "technologies")
     Optional<ProjectJpaEntity> findBySlugAndActiveTrue(String slug);
+
+    @EntityGraph(attributePaths = "technologies")
+    List<ProjectJpaEntity> findAllByOrderByDisplayOrderAscNameAsc();
+
+    boolean existsByNameIgnoreCaseOrSlug(String name, String slug);
 }

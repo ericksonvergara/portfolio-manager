@@ -11,7 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Read-only for now: the catalog becomes editable with the technology management story.
+ * Read-only for now: the catalog becomes editable with the technology management story. Projects
+ * reference it by id (HU015).
  */
 @Entity
 @Table(name = "technologies")
@@ -32,6 +33,10 @@ public class TechnologyJpaEntity {
     private int displayOrder;
 
     protected TechnologyJpaEntity() {
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getName() {

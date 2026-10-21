@@ -68,9 +68,9 @@ const PROFILE: Profile = {
 }
 
 const TECHNOLOGIES: Technology[] = [
-  { name: 'Java', category: 'BACKEND' },
-  { name: 'React', category: 'FRONTEND' },
-  { name: 'Spring Boot', category: 'BACKEND' },
+  { id: 1, name: 'Java', category: 'BACKEND' },
+  { id: 2, name: 'React', category: 'FRONTEND' },
+  { id: 3, name: 'Spring Boot', category: 'BACKEND' },
 ]
 
 function httpError(status: number) {
