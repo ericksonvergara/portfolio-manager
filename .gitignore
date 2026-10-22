@@ -46,3 +46,6 @@ test-results/
 # OS
 .DS_Store
 Thumbs.db
+
+# PostgreSQL
+docker-compose.override.yml
