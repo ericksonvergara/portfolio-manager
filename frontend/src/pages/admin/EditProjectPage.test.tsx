@@ -39,6 +39,7 @@ const PROJECT: AdminProject = {
   featured: false,
   active: true,
   technologies: [{ id: 1, name: 'Java' }],
+  gallery: [],
 }
 
 vi.mock('../../features/admin/projects/adminProjectsApi', () => ({

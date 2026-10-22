@@ -44,9 +44,9 @@ function httpError(status: number) {
   )
 }
 
-function ListPage() {
+function EditPage() {
   const state = useLocation().state as { created?: string } | null
-  return <p>Listado: {state?.created}</p>
+  return <p>Edición: {state?.created}</p>
 }
 
 function renderPage() {
@@ -54,7 +54,7 @@ function renderPage() {
     <MemoryRouter initialEntries={['/admin/proyectos/nuevo']}>
       <Routes>
         <Route path="/admin/proyectos/nuevo" element={<NewProjectPage />} />
-        <Route path="/admin/proyectos" element={<ListPage />} />
+        <Route path="/admin/proyectos/:id/editar" element={<EditPage />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -114,8 +114,9 @@ describe('NewProjectPage', () => {
     expect(api.created).toHaveLength(0)
   })
 
-  it('registers the project and returns to the list', async () => {
-    api.respond = () => Promise.resolve({ name: 'Sistema ERP' } as AdminProject)
+  it('registers the project and opens it to add its images', async () => {
+    api.respond = () =>
+      Promise.resolve({ id: 7, name: 'Sistema ERP' } as AdminProject)
     renderPage()
     const user = await fillRequiredFields()
     await user.type(
@@ -126,7 +127,7 @@ describe('NewProjectPage', () => {
     await user.click(screen.getByLabelText(/Destacado/))
     await user.click(screen.getByRole('button', { name: 'Registrar proyecto' }))
 
-    expect(await screen.findByText('Listado: Sistema ERP')).toBeInTheDocument()
+    expect(await screen.findByText('Edición: Sistema ERP')).toBeInTheDocument()
     expect(api.created).toEqual([
       {
         name: 'Sistema ERP',

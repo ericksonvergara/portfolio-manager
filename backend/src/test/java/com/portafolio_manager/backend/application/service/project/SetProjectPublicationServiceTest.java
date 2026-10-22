@@ -74,7 +74,7 @@ class SetProjectPublicationServiceTest {
     private static AdminProject project(String cover, boolean active) {
         return new AdminProject(
                 7L, "sistema-erp", "Sistema ERP", "Corta", "Completa", cover, null, null, null,
-                ProjectStatus.COMPLETED, null, 1, false, active, List.of()
+                ProjectStatus.COMPLETED, null, 1, false, active, List.of(), List.of()
         );
     }
 }

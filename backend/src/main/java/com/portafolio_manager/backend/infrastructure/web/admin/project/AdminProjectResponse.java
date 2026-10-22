@@ -23,11 +23,20 @@ record AdminProjectResponse(
         @Schema(example = "1") int displayOrder,
         @Schema(example = "false") boolean featured,
         @Schema(example = "false", description = "Solo los activos aparecen en la Landing Page (RN008)") boolean active,
-        List<TechnologyRef> technologies
+        List<TechnologyRef> technologies,
+        @Schema(description = "Galería, en orden de aparición") List<ImageRef> gallery
 ) {
 
     @Schema(description = "Tecnología asociada al proyecto")
     record TechnologyRef(@Schema(example = "1") Long id, @Schema(example = "Java") String name) {
+    }
+
+    @Schema(description = "Imagen de la galería")
+    record ImageRef(
+            @Schema(example = "12") Long id,
+            @Schema(example = "/uploads/3f2a.png") String url,
+            @Schema(example = "Panel de facturación", nullable = true) String altText
+    ) {
     }
 
     static AdminProjectResponse from(AdminProject project) {
@@ -48,6 +57,9 @@ record AdminProjectResponse(
                 project.active(),
                 project.technologies().stream()
                         .map(technology -> new TechnologyRef(technology.id(), technology.name()))
+                        .toList(),
+                project.gallery().stream()
+                        .map(image -> new ImageRef(image.id(), image.url(), image.altText()))
                         .toList()
         );
     }

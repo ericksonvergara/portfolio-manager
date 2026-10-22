@@ -15,6 +15,9 @@ public class ProjectImageJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
+
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
@@ -25,6 +28,19 @@ public class ProjectImageJpaEntity {
     private int displayOrder;
 
     protected ProjectImageJpaEntity() {
+    }
+
+    static ProjectImageJpaEntity newImage(Long projectId, String imageUrl, String altText, int displayOrder) {
+        ProjectImageJpaEntity image = new ProjectImageJpaEntity();
+        image.projectId = projectId;
+        image.imageUrl = imageUrl;
+        image.altText = altText;
+        image.displayOrder = displayOrder;
+        return image;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getImageUrl() {
