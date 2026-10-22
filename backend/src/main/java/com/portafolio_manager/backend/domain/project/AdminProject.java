@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A project as the admin panel sees it: active or not, with everything the form edits.
+ * A project as the admin panel sees it: active or not, with everything the form edits and its
+ * images (HU019).
  */
 public record AdminProject(
         Long id,
@@ -24,7 +25,8 @@ public record AdminProject(
         int displayOrder,
         boolean featured,
         boolean active,
-        List<Technology> technologies
+        List<Technology> technologies,
+        List<GalleryImage> gallery
 ) {
 
     public AdminProject {
@@ -33,5 +35,6 @@ public record AdminProject(
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(status, "status must not be null");
         technologies = List.copyOf(Objects.requireNonNull(technologies, "technologies must not be null"));
+        gallery = List.copyOf(Objects.requireNonNull(gallery, "gallery must not be null"));
     }
 }

@@ -3,6 +3,7 @@ package com.portafolio_manager.backend.infrastructure.persistence.project;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
+import com.portafolio_manager.backend.domain.project.GalleryImage;
 import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
 import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
@@ -23,10 +24,16 @@ import java.util.Optional;
 class ProjectPersistenceAdapter implements ProjectRepositoryPort {
 
     private final ProjectJpaRepository projectRepository;
+    private final ProjectImageJpaRepository imageRepository;
     private final EntityManager entityManager;
 
-    ProjectPersistenceAdapter(ProjectJpaRepository projectRepository, EntityManager entityManager) {
+    ProjectPersistenceAdapter(
+            ProjectJpaRepository projectRepository,
+            ProjectImageJpaRepository imageRepository,
+            EntityManager entityManager
+    ) {
         this.projectRepository = projectRepository;
+        this.imageRepository = imageRepository;
         this.entityManager = entityManager;
     }
 
@@ -112,9 +119,46 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
             // The schema also enforces RN004 (projects_published_with_cover).
             projectRepository.saveAndFlush(entity);
         } catch (DataIntegrityViolationException exception) {
-            throw new ProjectNotPublishableException(entity.getName());
+            throw ProjectNotPublishableException.withoutCover(entity.getName());
         }
         return Optional.of(reloaded(entity));
+    }
+
+    @Override
+    @Transactional
+    public Optional<AdminProject> setCover(Long id, String coverImageUrl) {
+        Optional<ProjectJpaEntity> found = projectRepository.findById(id);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        ProjectJpaEntity entity = found.get();
+        entity.setCoverImageUrl(coverImageUrl);
+        try {
+            // The schema also enforces RN004 (projects_published_with_cover).
+            projectRepository.saveAndFlush(entity);
+        } catch (DataIntegrityViolationException exception) {
+            throw ProjectNotPublishableException.activeKeepsCover(entity.getName());
+        }
+        return Optional.of(reloaded(entity));
+    }
+
+    @Override
+    @Transactional
+    public Optional<AdminProject> addGalleryImage(Long projectId, String url, String altText) {
+        if (!projectRepository.existsById(projectId)) {
+            return Optional.empty();
+        }
+        int order = imageRepository.findLastDisplayOrder(projectId) + 1;
+        imageRepository.saveAndFlush(ProjectImageJpaEntity.newImage(projectId, url, altText, order));
+        return findForAdmin(projectId);
+    }
+
+    @Override
+    @Transactional
+    public Optional<String> removeGalleryImage(Long projectId, Long imageId) {
+        Optional<ProjectImageJpaEntity> image = imageRepository.findByIdAndProjectId(imageId, projectId);
+        image.ifPresent(imageRepository::delete);
+        return image.map(ProjectImageJpaEntity::getImageUrl);
     }
 
     @Override
@@ -151,7 +195,10 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
                 entity.getDisplayOrder(),
                 entity.isFeatured(),
                 entity.isActive(),
-                toTechnologies(entity.getTechnologies())
+                toTechnologies(entity.getTechnologies()),
+                entity.getImages().stream()
+                        .map(image -> new GalleryImage(image.getId(), image.getImageUrl(), image.getAltText()))
+                        .toList()
         );
     }
 

@@ -85,8 +85,9 @@ public class ProjectJpaEntity {
     @OrderBy("displayOrder ASC, name ASC")
     private List<TechnologyJpaEntity> technologies = new ArrayList<>();
 
+    // Read-only side: gallery images are inserted and deleted through their own repository (HU019).
     @OneToMany
-    @JoinColumn(name = "project_id")
+    @JoinColumn(name = "project_id", insertable = false, updatable = false)
     @OrderBy("displayOrder ASC, id ASC")
     private List<ProjectImageJpaEntity> images = new ArrayList<>();
 
@@ -99,6 +100,11 @@ public class ProjectJpaEntity {
         entity.active = false;
         entity.apply(draft, technologies);
         return entity;
+    }
+
+    void setCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
+        updatedAt = Instant.now();
     }
 
     void setActive(boolean active) {

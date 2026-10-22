@@ -38,7 +38,7 @@ class UpdateProjectServiceTest {
     void shouldUpdateTheProject() {
         AdminProject updated = new AdminProject(
                 7L, "sistema-erp-v2", "Sistema ERP v2", "Corta", "Completa", null, null, null, null,
-                ProjectStatus.COMPLETED, null, 1, false, true, List.of()
+                ProjectStatus.COMPLETED, null, 1, false, true, List.of(), List.of()
         );
         when(technologyRepository.findExistingIds(Set.of(1L))).thenReturn(Set.of(1L));
         when(projectRepository.update(update)).thenReturn(Optional.of(updated));

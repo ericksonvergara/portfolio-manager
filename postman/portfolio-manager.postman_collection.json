@@ -554,7 +554,7 @@
     },
     {
       "name": "Administración - Proyectos",
-      "description": "Gestión de proyectos (HU015-HU018). Inicia sesión con `adminEmail` y `adminPassword`. Registra un proyecto inactivo con nombre único (`Postman <timestamp>`), lo consulta, lo edita, comprueba que no se puede publicar sin imagen y al final lo elimina. Si hay un proyecto publicado con portada (por ejemplo del seed), lo oculta y lo vuelve a publicar, así que cada ejecución deja la base como estaba.",
+      "description": "Gestión de proyectos (HU015-HU019). Inicia sesión con `adminEmail` y `adminPassword`. Registra un proyecto inactivo con nombre único (`Postman <timestamp>`), lo consulta, lo edita, comprueba que no se puede publicar sin imagen, le sube una imagen principal y una de galería (archivos de `postman/fixtures/`), lo publica y al final lo elimina con sus archivos. En la app de Postman, las subidas necesitan *Settings → General → Working directory* apuntando a la raíz del repo; Newman las resuelve desde la carpeta en la que se ejecuta. Si hay un proyecto publicado con portada (por ejemplo del seed), lo oculta y lo vuelve a publicar, así que cada ejecución deja la base como estaba.",
       "item": [
         {
           "name": "01 · Login (administración) → 200",
@@ -873,7 +873,186 @@
           }
         },
         {
-          "name": "13 · Ocultar un proyecto publicado → 200",
+          "name": "13 · Subir un archivo que no es una imagen → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Detecta el contenido real del archivo (RF011)', () => pm.expect(pm.response.json().message).to.include('not a JPG or PNG'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "postman/fixtures/no-es-imagen.png" }] },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/cover"
+          }
+        },
+        {
+          "name": "14 · Subir imagen principal → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const project = pm.response.json();",
+                  "pm.test('Se guarda con un nombre único (RN007)', () => pm.expect(project.coverImageUrl).to.match(/^\\/uploads\\/[0-9a-f-]{36}\\.png$/));",
+                  "pm.collectionVariables.set('adminCoverUrl', project.coverImageUrl);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "postman/fixtures/portada.png" }] },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/cover"
+          }
+        },
+        {
+          "name": "15 · nginx sirve la imagen subida → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Es una imagen PNG', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png'));",
+                  "pm.test('Se puede cachear', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('immutable'));"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}{{adminCoverUrl}}" }
+        },
+        {
+          "name": "16 · Publicar con imagen principal → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK (RN004 cumplida)', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda activo', () => pm.expect(pm.response.json().active).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"active\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/publication"
+          }
+        },
+        {
+          "name": "17 · Quitar la imagen de un proyecto publicado → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 409 Conflict (RN004)', () => pm.response.to.have.status(409));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/cover"
+          }
+        },
+        {
+          "name": "18 · Agregar imagen a la galería → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', () => pm.response.to.have.status(201));",
+                  "const gallery = pm.response.json().gallery;",
+                  "pm.test('Queda en la galería con su texto alternativo', () => {",
+                  "  pm.expect(gallery).to.have.lengthOf(1);",
+                  "  pm.expect(gallery[0].altText).to.eql('Portada de prueba');",
+                  "});",
+                  "pm.collectionVariables.set('adminImageId', gallery[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "postman/fixtures/portada.png" },
+                { "key": "altText", "value": "Portada de prueba", "type": "text" }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/images"
+          }
+        },
+        {
+          "name": "19 · Quitar imagen de la galería → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('La galería queda vacía', () => pm.expect(pm.response.json().gallery).to.be.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/images/{{adminImageId}}"
+          }
+        },
+        {
+          "name": "20 · Desactivar el proyecto de prueba → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda inactivo', () => pm.expect(pm.response.json().active).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"active\": false\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/publication"
+          }
+        },
+        {
+          "name": "21 · Ocultar un proyecto publicado → 200",
           "event": [
             {
               "listen": "prerequest",
@@ -909,7 +1088,7 @@
           }
         },
         {
-          "name": "14 · El proyecto oculto no está en la Landing Page",
+          "name": "22 · El proyecto oculto no está en la Landing Page",
           "event": [
             {
               "listen": "prerequest",
@@ -934,7 +1113,7 @@
           "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects" }
         },
         {
-          "name": "15 · Volver a publicar el proyecto → 200",
+          "name": "23 · Volver a publicar el proyecto → 200",
           "event": [
             {
               "listen": "prerequest",
@@ -963,7 +1142,7 @@
           }
         },
         {
-          "name": "16 · El proyecto inactivo no está en la Landing Page",
+          "name": "24 · El proyecto inactivo no está en la Landing Page",
           "event": [
             {
               "listen": "test",
@@ -982,7 +1161,7 @@
           "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects" }
         },
         {
-          "name": "17 · Eliminar proyecto → 204",
+          "name": "25 · Eliminar proyecto → 204",
           "event": [
             {
               "listen": "test",
@@ -997,7 +1176,7 @@
           }
         },
         {
-          "name": "18 · Eliminar el mismo proyecto otra vez → 404",
+          "name": "26 · Eliminar el mismo proyecto otra vez → 404",
           "event": [
             {
               "listen": "test",
@@ -1012,7 +1191,7 @@
           }
         },
         {
-          "name": "19 · Consultar el proyecto eliminado → 404",
+          "name": "27 · Consultar el proyecto eliminado → 404",
           "event": [
             {
               "listen": "test",
@@ -1076,6 +1255,8 @@
     { "key": "adminProjectId", "value": "", "description": "Id of the project created by the admin folder." },
     { "key": "adminProjectSlug", "value": "", "description": "Slug of the project created by the admin folder." },
     { "key": "publishedProjectId", "value": "", "description": "A published project with a cover image, hidden and published again by the admin folder." },
-    { "key": "publishedProjectSlug", "value": "", "description": "Slug of that published project." }
+    { "key": "publishedProjectSlug", "value": "", "description": "Slug of that published project." },
+    { "key": "adminCoverUrl", "value": "", "description": "Cover image uploaded by the admin folder." },
+    { "key": "adminImageId", "value": "", "description": "Gallery image uploaded by the admin folder." }
   ]
 }

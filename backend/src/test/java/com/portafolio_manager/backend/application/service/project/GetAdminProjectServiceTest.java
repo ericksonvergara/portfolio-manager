@@ -23,7 +23,7 @@ class GetAdminProjectServiceTest {
     void shouldReturnTheProjectEvenWhenInactive() {
         AdminProject project = new AdminProject(
                 7L, "sistema-erp", "Sistema ERP", "Corta", "Completa", null, null, null, null,
-                ProjectStatus.COMPLETED, null, 1, false, false, List.of()
+                ProjectStatus.COMPLETED, null, 1, false, false, List.of(), List.of()
         );
         when(projectRepository.findForAdmin(7L)).thenReturn(Optional.of(project));
 

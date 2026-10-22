@@ -50,4 +50,16 @@ public interface ProjectRepositoryPort extends PersistencePort {
      * {@code ProjectNotPublishableException} if it has no cover image when activated (RN004).
      */
     Optional<AdminProject> setActive(Long id, boolean active);
+
+    /**
+     * Sets or removes ({@code null}) the cover image; empty if the project does not exist. Throws
+     * {@code ProjectNotPublishableException} if an active project would lose it (RN004).
+     */
+    Optional<AdminProject> setCover(Long id, String coverImageUrl);
+
+    /** Adds an image at the end of the gallery; empty if the project does not exist. */
+    Optional<AdminProject> addGalleryImage(Long projectId, String url, String altText);
+
+    /** Removes an image of the gallery and returns its URL; empty if the project has no such image. */
+    Optional<String> removeGalleryImage(Long projectId, Long imageId);
 }

@@ -14,7 +14,7 @@ import { getTechnologies } from '../../features/landing/landingApi'
 
 const LIST = '/admin/proyectos'
 
-/** Registers a new project (HU015). */
+/** Registers a new project (HU015) and opens it to add its images. */
 export function NewProjectPage() {
   const navigate = useNavigate()
   const technologies = useAdminData(getTechnologies)
@@ -22,7 +22,10 @@ export function NewProjectPage() {
   const save = async (input: ProjectInput) => {
     try {
       const project = await createProject(input)
-      navigate(LIST, { state: { created: project.name } })
+      // Next step: its images, so it can be published (HU019, RN004).
+      navigate(`${LIST}/${project.id}/editar`, {
+        state: { created: project.name },
+      })
     } catch (error) {
       throw toProjectFormError(error)
     }

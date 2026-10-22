@@ -10,6 +10,7 @@ export default defineConfig({
     // so the HttpOnly refresh cookie works exactly as in production.
     proxy: {
       '/api': 'http://localhost:8081',
+      '/uploads': 'http://localhost:8081',
     },
   },
 })

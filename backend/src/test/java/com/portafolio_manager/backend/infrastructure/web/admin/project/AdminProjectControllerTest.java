@@ -69,7 +69,7 @@ class AdminProjectControllerTest {
     private static final AdminProject CREATED = new AdminProject(
             7L, "sistema-erp", "Sistema ERP", "Gestión de inventario.", "Descripción completa.", null,
             "https://erp.example.com", null, null, ProjectStatus.COMPLETED, LocalDate.of(2026, 10, 1), 1,
-            true, false, List.of(new Technology(1L, "Java", TechnologyCategory.BACKEND))
+            true, false, List.of(new Technology(1L, "Java", TechnologyCategory.BACKEND)), List.of()
     );
 
     @Autowired
@@ -244,7 +244,7 @@ class AdminProjectControllerTest {
     @Test
     void shouldAnswerConflictWhenTheProjectHasNoCoverImage() throws Exception {
         when(setProjectPublicationUseCase.execute(new ProjectPublication(7L, true)))
-                .thenThrow(new ProjectNotPublishableException("Sistema ERP"));
+                .thenThrow(ProjectNotPublishableException.withoutCover("Sistema ERP"));
 
         mockMvc.perform(patch("/api/admin/projects/7/publication")
                         .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))

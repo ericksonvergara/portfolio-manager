@@ -2,9 +2,12 @@ package com.portafolio_manager.backend.infrastructure.web;
 
 import com.portafolio_manager.backend.domain.auth.InvalidCredentialsException;
 import com.portafolio_manager.backend.domain.auth.InvalidRefreshTokenException;
+import com.portafolio_manager.backend.domain.image.ImageTooLargeException;
+import com.portafolio_manager.backend.domain.image.InvalidImageException;
 import com.portafolio_manager.backend.domain.profile.ProfileNotFoundException;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.InvalidProjectException;
+import com.portafolio_manager.backend.domain.project.ProjectImageNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +17,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.util.stream.Collectors;
 
@@ -25,12 +30,28 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
     }
 
-    @ExceptionHandler({ProfileNotFoundException.class, ProjectNotFoundException.class})
+    @ExceptionHandler({ProfileNotFoundException.class, ProjectNotFoundException.class, ProjectImageNotFoundException.class})
     ResponseEntity<ApiErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
     }
 
-    @ExceptionHandler(InvalidProjectException.class)
+    @ExceptionHandler(ImageTooLargeException.class)
+    ResponseEntity<ApiErrorResponse> handleTooLarge(RuntimeException exception, HttpServletRequest request) {
+        return error(HttpStatus.CONTENT_TOO_LARGE, exception.getMessage(), request);
+    }
+
+    /** The multipart limit (UPLOAD_MAX_SIZE) is checked before the request reaches a controller. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiErrorResponse> handleUploadTooLarge(HttpServletRequest request) {
+        return error(HttpStatus.CONTENT_TOO_LARGE, "The file exceeds the maximum upload size", request);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    ResponseEntity<ApiErrorResponse> handleMissingFile(MissingServletRequestPartException exception, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, "Missing file part '" + exception.getRequestPartName() + "'", request);
+    }
+
+    @ExceptionHandler({InvalidProjectException.class, InvalidImageException.class})
     ResponseEntity<ApiErrorResponse> handleInvalidData(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }

@@ -48,6 +48,7 @@ const PROJECT: AdminProject = {
     { id: 1, name: 'Java' },
     { id: 2, name: 'React' },
   ],
+  gallery: [],
 }
 
 function renderPage(state?: { created?: string; updated?: string }) {

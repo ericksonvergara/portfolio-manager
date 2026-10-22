@@ -35,7 +35,7 @@ class CreateProjectServiceTest {
     void shouldCreateTheProject() {
         AdminProject created = new AdminProject(
                 7L, "sistema-erp", "Sistema ERP", "Corta", "Completa", null, null, null, null,
-                ProjectStatus.COMPLETED, null, 1, false, false, List.of()
+                ProjectStatus.COMPLETED, null, 1, false, false, List.of(), List.of()
         );
         when(technologyRepository.findExistingIds(Set.of(1L, 2L))).thenReturn(Set.of(1L, 2L));
         when(projectRepository.create(draft)).thenReturn(created);

@@ -20,7 +20,7 @@ public class SetProjectPublicationService implements SetProjectPublicationUseCas
         AdminProject project = projectRepository.findForAdmin(publication.id())
                 .orElseThrow(() -> ProjectNotFoundException.withId(publication.id()));
         if (publication.active() && project.coverImageUrl() == null) {
-            throw new ProjectNotPublishableException(project.name());
+            throw ProjectNotPublishableException.withoutCover(project.name());
         }
         if (project.active() == publication.active()) {
             return project;

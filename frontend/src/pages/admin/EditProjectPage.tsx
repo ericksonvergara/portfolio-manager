@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   getAdminProject,
   updateProject,
+  type AdminProject,
   type ProjectInput,
 } from '../../features/admin/projects/adminProjectsApi'
 import {
@@ -10,6 +11,7 @@ import {
   LoadingState,
 } from '../../features/admin/projects/AdminStates'
 import { ProjectForm } from '../../features/admin/projects/ProjectForm'
+import { ProjectImages } from '../../features/admin/projects/ProjectImages'
 import {
   fromAdminProject,
   toProjectFormError,
@@ -19,9 +21,11 @@ import { getTechnologies } from '../../features/landing/landingApi'
 
 const LIST = '/admin/proyectos'
 
-/** Edits the data of an existing project (HU016). Publication and images are managed apart. */
+/** Edits the data (HU016) and the images (HU019) of an existing project. */
 export function EditProjectPage() {
   const navigate = useNavigate()
+  const created = (useLocation().state as { created?: string } | null)?.created
+  const [images, setImages] = useState<AdminProject | null>(null)
   const id = Number(useParams().id)
   const load = useCallback(
     () =>
@@ -68,6 +72,15 @@ export function EditProjectPage() {
       )}
       {content.status === 'ready' && (
         <>
+          {created && (
+            <p
+              role="status"
+              className="mb-4 rounded-lg border border-emerald-800 bg-emerald-950 px-3 py-2 text-sm text-emerald-200"
+            >
+              Proyecto «{created}» registrado. Agrega su imagen principal para
+              poder publicarlo.
+            </p>
+          )}
           <p className="mb-6 text-sm text-slate-400">
             URL pública:{' '}
             <code className="text-slate-200">
@@ -81,6 +94,10 @@ export function EditProjectPage() {
             submitLabel="Guardar cambios"
             onSubmit={save}
             onCancel={() => navigate(LIST)}
+          />
+          <ProjectImages
+            project={images ?? content.data[0]}
+            onChange={setImages}
           />
         </>
       )}
