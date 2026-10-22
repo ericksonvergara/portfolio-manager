@@ -1,12 +1,14 @@
 package com.portafolio_manager.backend.infrastructure.web.admin.project;
 
 import com.portafolio_manager.backend.application.port.in.project.CreateProjectUseCase;
+import com.portafolio_manager.backend.application.port.in.project.DeleteProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.GetAdminProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListAdminProjectsUseCase;
 import com.portafolio_manager.backend.application.port.in.project.UpdateProjectUseCase;
 import com.portafolio_manager.backend.domain.project.ProjectUpdate;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,17 +28,20 @@ class AdminProjectController implements AdminProjectApi {
     private final CreateProjectUseCase createProjectUseCase;
     private final GetAdminProjectUseCase getAdminProjectUseCase;
     private final UpdateProjectUseCase updateProjectUseCase;
+    private final DeleteProjectUseCase deleteProjectUseCase;
 
     AdminProjectController(
             ListAdminProjectsUseCase listAdminProjectsUseCase,
             CreateProjectUseCase createProjectUseCase,
             GetAdminProjectUseCase getAdminProjectUseCase,
-            UpdateProjectUseCase updateProjectUseCase
+            UpdateProjectUseCase updateProjectUseCase,
+            DeleteProjectUseCase deleteProjectUseCase
     ) {
         this.listAdminProjectsUseCase = listAdminProjectsUseCase;
         this.createProjectUseCase = createProjectUseCase;
         this.getAdminProjectUseCase = getAdminProjectUseCase;
         this.updateProjectUseCase = updateProjectUseCase;
+        this.deleteProjectUseCase = deleteProjectUseCase;
     }
 
     @Override
@@ -62,5 +67,12 @@ class AdminProjectController implements AdminProjectApi {
     @PutMapping("/{id}")
     public AdminProjectResponse updateProject(@PathVariable Long id, @Valid @RequestBody ProjectRequest request) {
         return AdminProjectResponse.from(updateProjectUseCase.execute(new ProjectUpdate(id, request.toDraft())));
+    }
+
+    @Override
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+        deleteProjectUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

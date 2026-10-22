@@ -1,6 +1,7 @@
 package com.portafolio_manager.backend.infrastructure.web.admin.project;
 
 import com.portafolio_manager.backend.application.port.in.project.CreateProjectUseCase;
+import com.portafolio_manager.backend.application.port.in.project.DeleteProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.GetAdminProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListAdminProjectsUseCase;
 import com.portafolio_manager.backend.application.port.in.project.UpdateProjectUseCase;
@@ -31,8 +32,11 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -81,6 +85,9 @@ class AdminProjectControllerTest {
 
     @MockitoBean
     private UpdateProjectUseCase updateProjectUseCase;
+
+    @MockitoBean
+    private DeleteProjectUseCase deleteProjectUseCase;
 
     @MockitoBean
     private RevokedAccessTokenRepositoryPort revokedAccessTokenRepository;
@@ -192,6 +199,27 @@ class AdminProjectControllerTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(updateProjectUseCase);
+    }
+
+    @Test
+    void shouldDeleteAProjectOrAnswerNotFound() throws Exception {
+        doThrow(ProjectNotFoundException.withId(8L)).when(deleteProjectUseCase).execute(8L);
+
+        mockMvc.perform(delete("/api/admin/projects/7").header(HttpHeaders.AUTHORIZATION, bearer("ADMIN")))
+                .andExpect(status().isNoContent());
+        verify(deleteProjectUseCase).execute(7L);
+
+        mockMvc.perform(delete("/api/admin/projects/8").header(HttpHeaders.AUTHORIZATION, bearer("ADMIN")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldOnlyLetAnAdministratorDelete() throws Exception {
+        mockMvc.perform(delete("/api/admin/projects/7")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/api/admin/projects/7").header(HttpHeaders.AUTHORIZATION, bearer("USER")))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(deleteProjectUseCase);
     }
 
     private String bearer(String role) {

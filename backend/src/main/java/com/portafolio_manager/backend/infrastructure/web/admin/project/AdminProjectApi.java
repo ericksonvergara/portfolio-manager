@@ -68,4 +68,14 @@ interface AdminProjectApi {
             @Parameter(description = "Id del proyecto", example = "7") Long id,
             ProjectRequest request
     );
+
+    @Operation(
+            summary = "Eliminar un proyecto",
+            description = "Elimina el proyecto con su galería y sus tecnologías asociadas. El panel pide "
+                    + "confirmación antes de llamarlo."
+    )
+    @ApiResponse(responseCode = "204", description = "Proyecto eliminado")
+    @ApiResponse(responseCode = "404", description = "No existe un proyecto con ese id",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    ResponseEntity<Void> deleteProject(@Parameter(description = "Id del proyecto", example = "7") Long id);
 }
