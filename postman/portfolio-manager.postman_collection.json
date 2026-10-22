@@ -928,7 +928,9 @@
                 "exec": [
                   "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('Es una imagen PNG', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png'));",
-                  "pm.test('Se puede cachear', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('immutable'));"
+                  "pm.test('Se puede cachear', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('immutable'));",
+                  "// HU020: served as uploaded, without recompression (postman/fixtures/portada.png is 8549 bytes).",
+                  "pm.test('Conserva la calidad: es el archivo original', () => pm.expect(pm.response.responseSize).to.eql(8549));"
                 ]
               }
             }

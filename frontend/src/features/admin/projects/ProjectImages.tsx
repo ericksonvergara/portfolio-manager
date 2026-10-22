@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { ConfirmDialog } from '../ConfirmDialog'
+import { ImagePreview } from './ImagePreview'
 import {
   addGalleryImage,
   removeCover,
@@ -28,8 +29,8 @@ interface ProjectImagesProps {
 type Message = { text: string; failed: boolean } | null
 
 /**
- * Cover image and gallery of a project (HU019). Each change is saved at once; the backend
- * validates the format, the real content and the size of every file (RF011).
+ * Cover image and gallery of a project (HU019). A selected file is previewed before it is saved
+ * (HU020); the backend validates the format, the real content and the size of every file (RF011).
  */
 export function ProjectImages({ project, onChange }: ProjectImagesProps) {
   const [message, setMessage] = useState<Message>(null)
@@ -65,6 +66,16 @@ export function ProjectImages({ project, onChange }: ProjectImagesProps) {
     keep(file && !problem ? file : null)
   }
 
+  const discardCover = () => {
+    setCover(null)
+    if (coverInput.current) coverInput.current.value = ''
+  }
+
+  const discardImage = () => {
+    setImage(null)
+    if (imageInput.current) imageInput.current.value = ''
+  }
+
   const saveCover = async () => {
     if (!cover) return
     const replaced = project.coverImageUrl !== null
@@ -76,8 +87,7 @@ export function ProjectImages({ project, onChange }: ProjectImagesProps) {
           : 'Imagen principal guardada.',
       )
     ) {
-      setCover(null)
-      if (coverInput.current) coverInput.current.value = ''
+      discardCover()
     }
   }
 
@@ -89,9 +99,8 @@ export function ProjectImages({ project, onChange }: ProjectImagesProps) {
         'Imagen agregada a la galería.',
       )
     ) {
-      setImage(null)
+      discardImage()
       setAltText('')
-      if (imageInput.current) imageInput.current.value = ''
     }
   }
 
@@ -159,6 +168,19 @@ export function ProjectImages({ project, onChange }: ProjectImagesProps) {
           className={FILE_INPUT}
           onChange={(event) => choose(event.target.files?.[0], setCover)}
         />
+        {cover && (
+          <ImagePreview
+            file={cover}
+            label={
+              project.coverImageUrl
+                ? 'Vista previa de la nueva imagen principal'
+                : 'Vista previa de la imagen principal'
+            }
+            disabled={busy}
+            onReplace={() => coverInput.current?.click()}
+            onDiscard={discardCover}
+          />
+        )}
         <div className="mt-3 flex flex-wrap gap-3">
           <button
             type="button"
@@ -268,6 +290,15 @@ export function ProjectImages({ project, onChange }: ProjectImagesProps) {
             />
           </div>
         </div>
+        {image && (
+          <ImagePreview
+            file={image}
+            label="Vista previa de la nueva imagen de la galería"
+            disabled={busy}
+            onReplace={() => imageInput.current?.click()}
+            onDiscard={discardImage}
+          />
+        )}
         <button
           type="button"
           disabled={!image || busy}

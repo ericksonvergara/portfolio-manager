@@ -71,7 +71,8 @@ class AdminProjectImageIntegrationTest extends AbstractPostgresIntegrationTest {
     @Test
     void shouldUploadACoverThatAllowsPublishingAndReplaceItsFile() throws Exception {
         String first = coverUrl(uploadCover(png("portada.png")).andExpect(status().isOk()));
-        assertThat(stored(first)).exists();
+        // HU020: the image keeps its quality, the stored file is the uploaded one, byte for byte.
+        assertThat(Files.readAllBytes(stored(first))).isEqualTo(TestImages.PNG);
 
         // RN004 satisfied: the project can now be published and its cover is public.
         publish(true).andExpect(status().isOk());
