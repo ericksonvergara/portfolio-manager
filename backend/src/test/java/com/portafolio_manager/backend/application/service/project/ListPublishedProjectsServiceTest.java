@@ -24,7 +24,7 @@ class ListPublishedProjectsServiceTest {
                 null,
                 "https://github.com/ericksonvergara/erp",
                 true,
-                List.of(new Technology("Java", TechnologyCategory.BACKEND))
+                List.of(new Technology(1L, "Java", TechnologyCategory.BACKEND))
         ));
         ProjectRepositoryPort repository = mock(ProjectRepositoryPort.class);
         when(repository.findPublishedSummaries()).thenReturn(published);

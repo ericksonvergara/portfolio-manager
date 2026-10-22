@@ -1,12 +1,20 @@
 package com.portafolio_manager.backend.domain.project;
 
 /**
- * No published project has that slug. An inactive project is reported the same way, so the
- * public API does not reveal that it exists.
+ * The project does not exist. On the public site an inactive project is reported the same way,
+ * so the public API does not reveal that it exists.
  */
 public class ProjectNotFoundException extends RuntimeException {
 
-    public ProjectNotFoundException(String slug) {
-        super("No published project with slug '" + slug + "'");
+    private ProjectNotFoundException(String message) {
+        super(message);
+    }
+
+    public static ProjectNotFoundException withSlug(String slug) {
+        return new ProjectNotFoundException("No published project with slug '" + slug + "'");
+    }
+
+    public static ProjectNotFoundException withId(Long id) {
+        return new ProjectNotFoundException("No project with id " + id);
     }
 }

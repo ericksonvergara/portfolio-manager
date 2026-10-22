@@ -57,7 +57,7 @@ class PublicProjectControllerTest {
                 ProjectStatus.COMPLETED,
                 LocalDate.of(2026, 10, 1),
                 List.of(new ProjectImage("/images/erp-1.png", "Panel de facturación")),
-                List.of(new Technology("Java", TechnologyCategory.BACKEND))
+                List.of(new Technology(1L, "Java", TechnologyCategory.BACKEND))
         ));
 
         mockMvc.perform(get("/api/public/projects/sistema-erp"))
@@ -76,7 +76,7 @@ class PublicProjectControllerTest {
 
     @Test
     void shouldAnswerNotFoundForAnUnknownOrInactiveProject() throws Exception {
-        when(getPublishedProjectUseCase.execute("oculto")).thenThrow(new ProjectNotFoundException("oculto"));
+        when(getPublishedProjectUseCase.execute("oculto")).thenThrow(ProjectNotFoundException.withSlug("oculto"));
 
         mockMvc.perform(get("/api/public/projects/oculto"))
                 .andExpect(status().isNotFound())
@@ -95,8 +95,8 @@ class PublicProjectControllerTest {
                 "https://github.com/ericksonvergara/erp",
                 true,
                 List.of(
-                        new Technology("Java", TechnologyCategory.BACKEND),
-                        new Technology("React", TechnologyCategory.FRONTEND)
+                        new Technology(2L, "Java", TechnologyCategory.BACKEND),
+                        new Technology(3L, "React", TechnologyCategory.FRONTEND)
                 )
         )));
 

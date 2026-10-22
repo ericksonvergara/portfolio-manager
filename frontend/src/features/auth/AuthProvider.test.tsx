@@ -8,7 +8,7 @@ import { fakeJwt } from '../../test/fakeJwt'
 import type { TokenResponse } from './authApi'
 import { AuthProvider } from './AuthProvider'
 import { LoginPage } from './LoginPage'
-import { AdminPage } from '../../pages/AdminPage'
+import { AdminLayout } from '../admin/AdminLayout'
 import { ProtectedRoute } from './ProtectedRoute'
 
 /*
@@ -100,7 +100,7 @@ function renderApp(path = '/admin') {
             path="/admin"
             element={
               <ProtectedRoute>
-                <AdminPage />
+                <AdminLayout />
               </ProtectedRoute>
             }
           />

@@ -22,6 +22,7 @@ export interface Profile {
 }
 
 export interface Technology {
+  id: number
   name: string
   category: TechnologyCategory
 }

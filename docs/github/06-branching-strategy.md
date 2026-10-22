@@ -4,8 +4,8 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.2
-  Fecha       2026-10-19
+  Versión     1.6
+  Fecha       2026-10-21
   Estado      Aprobado
 
 ------------------------------------------------------------------------
@@ -143,9 +143,9 @@ Ejemplos:
 
 1.  Base: `develop`.
 2.  Título: `<tipo>(<ID>): <título de la Issue>`.
-3.  Descripción: `Refs #<número>`. GitHub solo cierra Issues
-    automáticamente cuando el cambio llega a `main`, por lo que aquí se
-    enlaza sin cerrar. La tarjeta pasa a **🧪 Testing**.
+3.  Descripción: `Closes #<número>`. Al hacer merge la Issue se cierra
+    y la tarjeta pasa a **🧪 Testing** (ver *Cierre de Issues y
+    tablero*).
 
 ## develop → qa
 
@@ -159,11 +159,34 @@ Ejemplos:
 ## qa → main (release)
 
 -   Título: `release: vX.Y.Z`.
--   Descripción: plantilla `release.md`, con `Closes #<número>` por
-    cada historia incluida y la evidencia de QA. Al hacer merge las
-    Issues se cierran y las tarjetas pasan a **✅ Done**.
+-   Descripción: plantilla `release.md`, con `Refs #<número>` por cada
+    historia incluida y la evidencia de QA. Las Issues ya están
+    cerradas desde su merge en `develop`.
+-   Tras el merge: crear el tag `vX.Y.Z` y mover las tarjetas incluidas
+    de **🧪 Testing** a **✅ Done**.
 -   Abrir con la plantilla (cambiar `vX.Y.Z` en el título):
     <https://github.com/ericksonvergara/portfolio-manager/compare/main...qa?quick_pull=1&template=release.md&title=release:+vX.Y.Z>
+
+## Cierre de Issues y tablero
+
+`develop` es la rama por defecto del repositorio, y GitHub cierra una
+Issue cuando un Pull Request enlazado se mergea en la rama por defecto.
+El enlace se crea con `Closes #<número>` en la descripción o al crear
+la rama desde la Issue (*Development*). Por eso:
+
+  Merge                   Issue     Tarjeta
+  ----------------------- --------- -------------------------
+  trabajo → develop       Cerrada   🧪 Testing (automático)
+  develop → qa            Cerrada   🧪 Testing
+  qa → main (release)     Cerrada   ✅ Done (manual)
+
+Para que una Issue cerrada no pase directamente a Done, el workflow
+integrado del GitHub Project **Item closed** (*Project → ⋯ →
+Workflows*) fija el estado **🧪 Testing** en lugar de **✅ Done**. Las
+promociones y el release usan `Refs`, nunca `Closes`.
+
+Un `hotfix` se mergea en `main`, que no es la rama por defecto: su Issue
+no se cierra sola y se cierra manualmente tras el merge.
 
 ## Plantillas de Pull Request
 
@@ -176,7 +199,66 @@ Ejemplos:
 
 GitHub solo aplica una plantilla de la carpeta `PULL_REQUEST_TEMPLATE/`
 cuando la URL del Pull Request incluye `template=<archivo>`; por eso
-las promociones se abren con los enlaces anteriores.
+las promociones se abren con los enlaces anteriores. Si se abren con
+**New pull request** y cargan la plantilla por defecto, el workflow
+*PR Autofill* la sustituye por la que corresponde.
+
+## Descripción automática de los Pull Requests
+
+El workflow `pr-autofill.yml` (lógica en `.github/scripts/pr-autofill.js`)
+rellena los bloques marcados con `auto:<nombre>` y marca las casillas del
+checklist que se pueden comprobar con la API. Se ejecuta al abrir o
+actualizar el Pull Request y otra vez cuando termina el CI.
+
+  Pull Request          Qué se rellena solo
+  --------------------- ---------------------------------------------
+  trabajo → develop     `Closes #` y la historia enlazada, tipos de
+                        cambio, Unit / Integration Tests (según los
+                        tests modificados), resultado del CI por job,
+                        Regression Tests (colección de Postman en la
+                        prueba de humo), breaking changes, notas de
+                        despliegue y las casillas *Tests executed*,
+                        *Branch is up to date* y *Related Issue(s)
+                        linked*.
+  develop → qa          Sprint y objetivo (según
+                        `docs/Sprint_Development_Roadmap.md`), Pull
+                        Requests incluidos, `Refs #`, tipos de
+                        cambio, historias para los criterios de
+                        aceptación, prueba de humo, Postman y
+                        regresión de la API, breaking changes, notas
+                        de despliegue, versión siguiente y las
+                        casillas *CI green* y *Refs*.
+  qa → main             Lo mismo, más la promoción validada y las
+                        casillas *qa idéntico a lo probado*, *sin
+                        bugs críticos* (Issues abiertas con `bug` y
+                        `critical`), *Refs* y *versión decidida*.
+
+La versión siguiente sube la menor si hay historias `feat` o breaking
+changes, y el parche si solo hay mantenimiento (`v0.4.0` → `v0.4.1`).
+
+También completa la barra lateral del Pull Request:
+
+-   **Assignees:** el autor, si no hay nadie asignado.
+-   **Labels:** las de las Issues enlazadas (en promociones y releases,
+    las de todos los Pull Requests incluidos) y las que corresponden a
+    los archivos cambiados: `backend`, `frontend`, `database`, `docker`,
+    `nginx`, `ci`, `documentation` y `testing`. Solo añade etiquetas que
+    ya existen y nunca quita ninguna.
+-   **Milestone:** el de la Issue enlazada; en promociones y releases,
+    `Sprint N` según el roadmap. Solo si el Pull Request no tiene uno.
+-   **Development:** se completa con el `Closes #` de la descripción.
+
+*Projects* y *Reviewers* no se rellenan: el token del workflow no puede
+escribir en un Project de usuario, y GitHub no permite pedir revisión al
+autor.
+
+Se escriben a mano: el *Summary* y el *Objective* de los Pull Requests
+de trabajo, la redacción final del resumen de la promoción, las pruebas
+manuales (criterios de aceptación, regresión de interfaz, responsive) y
+las casillas que requieren criterio humano. Las casillas marcadas a mano
+se conservan; una casilla del checklist nunca se desmarca sola. Una
+descripción sin bloques `auto:` no se modifica, y los Pull Requests de
+Dependabot conservan la suya.
 
 ## Reglas comunes
 
@@ -208,7 +290,9 @@ branches*):
 -   Require a pull request before merging (0 aprobaciones; método
     *Merge*).
 -   Require status checks to pass: `Validate branch name` y
-    `Quality Gate`.
+    `Quality Gate`. `Quality Gate` solo pasa si pasan `Backend`,
+    `Frontend` y `Smoke Test - Docker & Postman` (stack completo con
+    Docker Compose y la colección de Postman con Newman).
 
 ------------------------------------------------------------------------
 
@@ -224,3 +308,13 @@ branches*):
                          protección de ramas.
   1.2       2026-10-19   Plantillas de Pull Request para las
                          promociones develop → qa y qa → main.
+  1.3       2026-10-20   Cierre de Issues al mergear en develop (rama
+                         por defecto); las tarjetas pasan a Done en el
+                         release.
+  1.4       2026-10-20   Prueba de humo (Docker Compose + Newman) en el
+                         CI como parte del Quality Gate.
+  1.5       2026-10-20   Descripción automática de los Pull Requests
+                         de trabajo, promociones y releases (PR
+                         Autofill).
+  1.6       2026-10-21   PR Autofill completa assignee, labels y
+                         milestone.

@@ -46,3 +46,9 @@ test-results/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local Docker Compose settings (for example the Postgres port for DBeaver)
+docker-compose.override.yml
+
+# Images uploaded while running the backend outside Docker (UPLOADS_DIR defaults to ./uploads)
+uploads/
