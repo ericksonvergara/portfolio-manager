@@ -63,3 +63,7 @@ export async function updateProject(
   )
   return data
 }
+
+export async function deleteProject(id: number): Promise<void> {
+  await api.delete(`/api/admin/projects/${id}`)
+}

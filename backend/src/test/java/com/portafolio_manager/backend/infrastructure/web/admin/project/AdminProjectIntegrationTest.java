@@ -21,6 +21,7 @@ import java.util.Arrays;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Project registration (HU015) and edition (HU016) against the real schema.
+ * Project registration (HU015), edition (HU016) and deletion (HU017) against the real schema.
  */
 @SpringBootTest(properties = TestJwt.SECRET_PROPERTY)
 @AutoConfigureMockMvc
@@ -136,6 +137,37 @@ class AdminProjectIntegrationTest extends AbstractPostgresIntegrationTest {
         mockMvc.perform(get("/api/admin/projects/999999").header(HttpHeaders.AUTHORIZATION, adminToken()))
                 .andExpect(status().isNotFound());
         update(999_999L, "Sistema ERP", java).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldDeleteAProjectWithItsGalleryAndTechnologyLinks() throws Exception {
+        long id = createdId("Sistema ERP", java, react);
+        long kept = createdId("Gestión de Inventario", java);
+        jdbcTemplate.update("""
+                UPDATE projects SET active = TRUE, slug = 'sistema-erp', cover_image_url = '/uploads/erp.png'
+                WHERE id = ?
+                """, id);
+        jdbcTemplate.update(
+                "INSERT INTO project_images (project_id, image_url, display_order) VALUES (?, '/uploads/1.png', 1)", id);
+
+        mockMvc.perform(delete("/api/admin/projects/" + id).header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(status().isNoContent());
+
+        assertThat(count("SELECT COUNT(*) FROM project_images WHERE project_id = ?", id)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM project_technologies WHERE project_id = ?", id)).isZero();
+        // The catalog and the other projects stay.
+        assertThat(count("SELECT COUNT(*) FROM technologies WHERE id IN (?, ?)", java, react)).isEqualTo(2);
+        assertThat(count("SELECT COUNT(*) FROM project_technologies WHERE project_id = ?", kept)).isEqualTo(1);
+
+        mockMvc.perform(get("/api/public/projects/sistema-erp")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/admin/projects/" + id).header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/admin/projects/" + id).header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(status().isNotFound());
+    }
+
+    private long count(String sql, Object... args) {
+        return jdbcTemplate.queryForObject(sql, Long.class, args);
     }
 
     private ResultActions create(String name, long... technologyIds) throws Exception {

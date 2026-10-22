@@ -2,6 +2,7 @@ package com.portafolio_manager.backend.infrastructure.config;
 
 import com.portafolio_manager.backend.application.port.in.profile.GetPublicProfileUseCase;
 import com.portafolio_manager.backend.application.port.in.project.CreateProjectUseCase;
+import com.portafolio_manager.backend.application.port.in.project.DeleteProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.GetAdminProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.GetPublishedProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListAdminProjectsUseCase;
@@ -13,6 +14,7 @@ import com.portafolio_manager.backend.application.port.out.project.ProjectReposi
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
 import com.portafolio_manager.backend.application.service.profile.GetPublicProfileService;
 import com.portafolio_manager.backend.application.service.project.CreateProjectService;
+import com.portafolio_manager.backend.application.service.project.DeleteProjectService;
 import com.portafolio_manager.backend.application.service.project.GetAdminProjectService;
 import com.portafolio_manager.backend.application.service.project.GetPublishedProjectService;
 import com.portafolio_manager.backend.application.service.project.ListAdminProjectsService;
@@ -72,5 +74,10 @@ public class PortfolioConfig {
             TechnologyRepositoryPort technologyRepository
     ) {
         return new UpdateProjectService(projectRepository, technologyRepository);
+    }
+
+    @Bean
+    DeleteProjectUseCase deleteProjectUseCase(ProjectRepositoryPort projectRepository) {
+        return new DeleteProjectService(projectRepository);
     }
 }

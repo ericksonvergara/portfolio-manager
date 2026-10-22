@@ -41,4 +41,7 @@ public interface ProjectRepositoryPort extends PersistencePort {
      * exist. Throws {@code DuplicateProjectNameException} if the name or slug was taken concurrently.
      */
     Optional<AdminProject> update(ProjectUpdate update);
+
+    /** Deletes the project with its gallery and technology links; false if it does not exist. */
+    boolean delete(Long id);
 }

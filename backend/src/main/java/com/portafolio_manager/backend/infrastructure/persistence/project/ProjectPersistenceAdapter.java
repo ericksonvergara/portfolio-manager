@@ -98,6 +98,12 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
         }
     }
 
+    @Override
+    @Transactional
+    public boolean delete(Long id) {
+        return projectRepository.deleteProjectById(id) > 0;
+    }
+
     private List<TechnologyJpaEntity> technologyReferences(ProjectDraft draft) {
         return draft.technologyIds().stream()
                 .map(id -> entityManager.getReference(TechnologyJpaEntity.class, id))
