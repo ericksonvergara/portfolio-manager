@@ -32,6 +32,10 @@ services:
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
       API_DOCS_ENABLED: "${API_DOCS_ENABLED:-true}"
       SPRING_FLYWAY_LOCATIONS: "${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration}"
+      UPLOADS_DIR: /app/uploads
+      UPLOAD_MAX_SIZE: "${UPLOAD_MAX_SIZE:-5MB}"
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,6 +72,7 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploads:/usr/share/nginx/uploads:ro
     depends_on:
       - frontend
       - backend
@@ -79,3 +84,5 @@ networks:
 
 volumes:
   postgres-data:
+  # Images uploaded from the admin panel (HU019): written by the backend, served by nginx.
+  uploads:

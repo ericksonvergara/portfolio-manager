@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 class TechnologyPersistenceAdapter implements TechnologyRepositoryPort {
@@ -20,7 +22,15 @@ class TechnologyPersistenceAdapter implements TechnologyRepositoryPort {
     @Transactional(readOnly = true)
     public List<Technology> findAllInDisplayOrder() {
         return technologyRepository.findAllByOrderByDisplayOrderAscNameAsc().stream()
-                .map(entity -> new Technology(entity.getName(), entity.getCategory()))
+                .map(entity -> new Technology(entity.getId(), entity.getName(), entity.getCategory()))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<Long> findExistingIds(Set<Long> ids) {
+        return technologyRepository.findAllById(ids).stream()
+                .map(TechnologyJpaEntity::getId)
+                .collect(Collectors.toSet());
     }
 }

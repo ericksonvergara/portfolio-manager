@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend.infrastructure.persistence;
 
+import com.portafolio_manager.backend.infrastructure.storage.TestImages;
 import com.portafolio_manager.backend.infrastructure.security.jwt.TestJwt;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ class LandingSeedIntegrationTest {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("app.uploads.dir", TestImages.UPLOADS_DIR::toString);
     }
 
     @Autowired

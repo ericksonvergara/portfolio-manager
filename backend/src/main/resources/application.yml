@@ -7,6 +7,12 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
+  servlet:
+    multipart:
+      # The file limit is UPLOAD_MAX_SIZE; the request adds a little room for the other form fields.
+      max-file-size: ${UPLOAD_MAX_SIZE:5MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:6MB}
+
   jpa:
     open-in-view: false
     hibernate:
@@ -41,6 +47,11 @@ app:
       refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:7d}
     refresh-cookie:
       secure: ${REFRESH_COOKIE_SECURE:true}
+
+  uploads:
+    # Docker mounts the uploads volume here; nginx serves it under /uploads/.
+    dir: ${UPLOADS_DIR:./uploads}
+    max-size: ${UPLOAD_MAX_SIZE:5MB}
 
   bootstrap:
     admin:

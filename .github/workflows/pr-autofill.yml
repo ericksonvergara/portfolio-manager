@@ -1,0 +1,56 @@
+# ============================================================================
+# Portfolio Manager
+# File: .github/workflows/pr-autofill.yml
+# Version: 1.1.0
+# Description: Fills the Pull Request descriptions: work branch -> develop,
+#              develop -> qa (promotion) and qa -> main (release)
+# Author: Erickson Vergara
+# Repository: https://github.com/ericksonvergara/portfolio-manager
+# License: MIT
+# ============================================================================
+
+name: PR Autofill
+
+on:
+  # Issues, types of change, tests, deployment notes and, for promotions, PRs and version.
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - develop
+      - qa
+      - main
+  # CI, smoke test and Postman results, once the CI of the PR finishes.
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  issues: write
+
+# Both triggers edit the same description: run them one after the other.
+concurrency:
+  group: pr-autofill-${{ github.event.pull_request.head.ref || github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  autofill:
+    name: Autofill PR description
+    runs-on: ubuntu-latest
+    # Dependabot PRs get a read-only token and keep their own description.
+    if: github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout Scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - name: Fill the Description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const autofill = require('./.github/scripts/pr-autofill.js')
+            await autofill({ github, context, core })

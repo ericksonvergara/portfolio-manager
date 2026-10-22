@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend.infrastructure.persistence.project;
 
+import com.portafolio_manager.backend.domain.project.ProjectDraft;
 import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.infrastructure.persistence.technology.TechnologyJpaEntity;
 import jakarta.persistence.Column;
@@ -16,12 +17,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Read-only for now: projects become editable with the project management stories (Sprint 4).
+ * Created (HU015) and edited (HU016) by the admin panel; the images are managed apart (HU019).
  */
 @Entity
 @Table(name = "projects")
@@ -71,6 +73,9 @@ public class ProjectJpaEntity {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @ManyToMany
     @JoinTable(
             name = "project_technologies",
@@ -80,12 +85,53 @@ public class ProjectJpaEntity {
     @OrderBy("displayOrder ASC, name ASC")
     private List<TechnologyJpaEntity> technologies = new ArrayList<>();
 
+    // Read-only side: gallery images are inserted and deleted through their own repository (HU019).
     @OneToMany
-    @JoinColumn(name = "project_id")
+    @JoinColumn(name = "project_id", insertable = false, updatable = false)
     @OrderBy("displayOrder ASC, id ASC")
     private List<ProjectImageJpaEntity> images = new ArrayList<>();
 
     protected ProjectJpaEntity() {
+    }
+
+    /** A new project starts inactive: it has no cover image yet (RN004). */
+    static ProjectJpaEntity newProject(ProjectDraft draft, List<TechnologyJpaEntity> technologies) {
+        ProjectJpaEntity entity = new ProjectJpaEntity();
+        entity.active = false;
+        entity.apply(draft, technologies);
+        return entity;
+    }
+
+    void setCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
+        updatedAt = Instant.now();
+    }
+
+    void setActive(boolean active) {
+        this.active = active;
+        updatedAt = Instant.now();
+    }
+
+    /** Replaces the editable data and the slug; publication and images stay as they are. */
+    void apply(ProjectDraft draft, List<TechnologyJpaEntity> technologies) {
+        name = draft.name();
+        slug = draft.slug();
+        shortDescription = draft.shortDescription();
+        description = draft.description();
+        projectUrl = draft.projectUrl();
+        repositoryUrl = draft.repositoryUrl();
+        videoUrl = draft.videoUrl();
+        status = draft.status();
+        developedOn = draft.developedOn();
+        displayOrder = draft.displayOrder();
+        featured = draft.featured();
+        this.technologies.clear();
+        this.technologies.addAll(technologies);
+        updatedAt = Instant.now();
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getName() {
@@ -134,6 +180,10 @@ public class ProjectJpaEntity {
 
     public boolean isFeatured() {
         return featured;
+    }
+
+    public int getDisplayOrder() {
+        return displayOrder;
     }
 
     public List<TechnologyJpaEntity> getTechnologies() {

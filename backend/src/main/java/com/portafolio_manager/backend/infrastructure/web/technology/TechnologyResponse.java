@@ -6,6 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Tecnología del catálogo")
 record TechnologyResponse(
+        @Schema(example = "3")
+        Long id,
+
         @Schema(example = "Spring Boot")
         String name,
 
@@ -14,6 +17,6 @@ record TechnologyResponse(
 ) {
 
     static TechnologyResponse from(Technology technology) {
-        return new TechnologyResponse(technology.name(), technology.category());
+        return new TechnologyResponse(technology.id(), technology.name(), technology.category());
     }
 }

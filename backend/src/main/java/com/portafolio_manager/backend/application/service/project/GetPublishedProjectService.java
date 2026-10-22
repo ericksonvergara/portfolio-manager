@@ -15,6 +15,6 @@ public class GetPublishedProjectService implements GetPublishedProjectUseCase {
 
     @Override
     public ProjectDetail execute(String slug) {
-        return projectRepository.findPublishedBySlug(slug).orElseThrow(() -> new ProjectNotFoundException(slug));
+        return projectRepository.findPublishedBySlug(slug).orElseThrow(() -> ProjectNotFoundException.withSlug(slug));
     }
 }
