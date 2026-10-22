@@ -7,6 +7,7 @@ import com.portafolio_manager.backend.application.port.in.project.GetAdminProjec
 import com.portafolio_manager.backend.application.port.in.project.GetPublishedProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListAdminProjectsUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListPublishedProjectsUseCase;
+import com.portafolio_manager.backend.application.port.in.project.SetProjectPublicationUseCase;
 import com.portafolio_manager.backend.application.port.in.project.UpdateProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.ListTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
@@ -19,6 +20,7 @@ import com.portafolio_manager.backend.application.service.project.GetAdminProjec
 import com.portafolio_manager.backend.application.service.project.GetPublishedProjectService;
 import com.portafolio_manager.backend.application.service.project.ListAdminProjectsService;
 import com.portafolio_manager.backend.application.service.project.ListPublishedProjectsService;
+import com.portafolio_manager.backend.application.service.project.SetProjectPublicationService;
 import com.portafolio_manager.backend.application.service.project.UpdateProjectService;
 import com.portafolio_manager.backend.application.service.technology.ListTechnologiesService;
 import org.springframework.context.annotation.Bean;
@@ -79,5 +81,10 @@ public class PortfolioConfig {
     @Bean
     DeleteProjectUseCase deleteProjectUseCase(ProjectRepositoryPort projectRepository) {
         return new DeleteProjectService(projectRepository);
+    }
+
+    @Bean
+    SetProjectPublicationUseCase setProjectPublicationUseCase(ProjectRepositoryPort projectRepository) {
+        return new SetProjectPublicationService(projectRepository);
     }
 }

@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../../features/admin/ConfirmDialog'
 import {
   deleteProject,
   listAdminProjects,
+  setProjectPublication,
   type AdminProject,
 } from '../../features/admin/projects/adminProjectsApi'
 import {
@@ -18,8 +19,8 @@ const PRIMARY_LINK =
   'inline-block rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-slate-950'
 
 /**
- * Every project of the portfolio, active or not (HU015), with access to its edition (HU016)
- * and its deletion after a confirmation (HU017).
+ * Every project of the portfolio, active or not (HU015), with access to its edition (HU016),
+ * its deletion after a confirmation (HU017) and its publication (HU018).
  */
 export function AdminProjectsPage() {
   const content = useAdminData(listAdminProjects)
@@ -32,11 +33,45 @@ export function AdminProjectsPage() {
   const [pending, setPending] = useState<AdminProject | null>(null)
   const [busy, setBusy] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [changed, setChanged] = useState<Record<number, AdminProject>>({})
+  const [publishing, setPublishing] = useState<number | null>(null)
+  const [publication, setPublication] = useState<{
+    message: string
+    failed: boolean
+  } | null>(null)
 
   const projects =
     content.status === 'ready'
-      ? content.data.filter((project) => !removed.includes(project.id))
+      ? content.data
+          .filter((project) => !removed.includes(project.id))
+          .map((project) => changed[project.id] ?? project)
       : []
+
+  const togglePublication = async (project: AdminProject) => {
+    const active = !project.active
+    setPublishing(project.id)
+    setPublication(null)
+    try {
+      const updated = await setProjectPublication(project.id, active)
+      setChanged((current) => ({ ...current, [project.id]: updated }))
+      setPublication({
+        message: active
+          ? `«${project.name}» está publicado en el portafolio.`
+          : `«${project.name}» ya no aparece en el portafolio.`,
+        failed: false,
+      })
+    } catch (error) {
+      const noCover = isAxiosError(error) && error.response?.status === 409
+      setPublication({
+        message: noCover
+          ? `«${project.name}» necesita una imagen principal para publicarse.`
+          : 'No se pudo cambiar la publicación. Inténtalo de nuevo.',
+        failed: true,
+      })
+    } finally {
+      setPublishing(null)
+    }
+  }
 
   const confirmDelete = async () => {
     if (!pending) return
@@ -74,7 +109,20 @@ export function AdminProjectsPage() {
         </Link>
       </div>
 
-      {(deleted || saved?.created || saved?.updated) && (
+      {publication && (
+        <p
+          role={publication.failed ? 'alert' : 'status'}
+          className={`mb-4 rounded-lg border px-3 py-2 text-sm ${
+            publication.failed
+              ? 'border-amber-800 bg-amber-950 text-amber-200'
+              : 'border-emerald-800 bg-emerald-950 text-emerald-200'
+          }`}
+        >
+          {publication.message}
+        </p>
+      )}
+
+      {!publication && (deleted || saved?.created || saved?.updated) && (
         <p
           role="status"
           className="mb-4 rounded-lg border border-emerald-800 bg-emerald-950 px-3 py-2 text-sm text-emerald-200"
@@ -142,15 +190,35 @@ export function AdminProjectsPage() {
                     {STATUS_LABELS[project.status]}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        project.active
-                          ? 'bg-emerald-500/15 text-emerald-300'
-                          : 'bg-slate-700/50 text-slate-300'
-                      }`}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={project.active}
+                      aria-label={`Publicar ${project.name}`}
+                      disabled={publishing === project.id}
+                      onClick={() => void togglePublication(project)}
+                      className="inline-flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
                     >
-                      {project.active ? 'Activo' : 'Inactivo'}
-                    </span>
+                      <span
+                        aria-hidden="true"
+                        className={`relative h-5 w-9 rounded-full transition ${
+                          project.active ? 'bg-emerald-500' : 'bg-slate-600'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${
+                            project.active ? 'left-4' : 'left-0.5'
+                          }`}
+                        />
+                      </span>
+                      <span
+                        className={`text-xs ${
+                          project.active ? 'text-emerald-300' : 'text-slate-300'
+                        }`}
+                      >
+                        {project.active ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-slate-300">
                     {project.displayOrder}

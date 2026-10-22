@@ -554,7 +554,7 @@
     },
     {
       "name": "Administración - Proyectos",
-      "description": "Gestión de proyectos (HU015, HU016, HU017). Inicia sesión con `adminEmail` y `adminPassword`. Registra un proyecto inactivo con nombre único (`Postman <timestamp>`), lo consulta, lo edita y al final lo elimina, así que cada ejecución deja la base como estaba.",
+      "description": "Gestión de proyectos (HU015-HU018). Inicia sesión con `adminEmail` y `adminPassword`. Registra un proyecto inactivo con nombre único (`Postman <timestamp>`), lo consulta, lo edita, comprueba que no se puede publicar sin imagen y al final lo elimina. Si hay un proyecto publicado con portada (por ejemplo del seed), lo oculta y lo vuelve a publicar, así que cada ejecución deja la base como estaba.",
       "item": [
         {
           "name": "01 · Login (administración) → 200",
@@ -749,7 +749,9 @@
                   "  const created = pm.response.json().find((p) => p.id === Number(pm.collectionVariables.get('adminProjectId')));",
                   "  pm.expect(created, 'proyecto creado').to.exist;",
                   "  pm.expect(created.active).to.be.false;",
-                  "});"
+                  "});",
+                  "const published = pm.response.json().find((p) => p.active && p.coverImageUrl);",
+                  "pm.collectionVariables.set('publishedProjectId', published ? published.id : '');"
                 ]
               }
             }
@@ -849,7 +851,119 @@
           }
         },
         {
-          "name": "12 · El proyecto inactivo no está en la Landing Page",
+          "name": "12 · Publicar proyecto sin imagen principal → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409 Conflict (RN004)', () => pm.response.to.have.status(409));",
+                  "pm.test('Explica que falta la imagen principal', () => pm.expect(pm.response.json().message).to.include('cover image'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"active\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/admin/projects/{{adminProjectId}}/publication"
+          }
+        },
+        {
+          "name": "13 · Ocultar un proyecto publicado → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Uses a published project with a cover image (for example from the local seed); skipped if there is none.",
+                  "if (!pm.collectionVariables.get('publishedProjectId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const project = pm.response.json();",
+                  "pm.test('Queda inactivo sin eliminarse', () => pm.expect(project.active).to.be.false);",
+                  "pm.collectionVariables.set('publishedProjectSlug', project.slug);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"active\": false\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/admin/projects/{{publishedProjectId}}/publication"
+          }
+        },
+        {
+          "name": "14 · El proyecto oculto no está en la Landing Page",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["if (!pm.collectionVariables.get('publishedProjectId')) {", "  pm.execution.skipRequest();", "}"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('No aparece en el listado público (RN008)', () => {",
+                  "  pm.expect(pm.response.json().map((p) => p.slug)).to.not.include(pm.collectionVariables.get('publishedProjectSlug'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects" }
+        },
+        {
+          "name": "15 · Volver a publicar el proyecto → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["if (!pm.collectionVariables.get('publishedProjectId')) {", "  pm.execution.skipRequest();", "}"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Vuelve a estar activo', () => pm.expect(pm.response.json().active).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"active\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/admin/projects/{{publishedProjectId}}/publication"
+          }
+        },
+        {
+          "name": "16 · El proyecto inactivo no está en la Landing Page",
           "event": [
             {
               "listen": "test",
@@ -868,7 +982,7 @@
           "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects" }
         },
         {
-          "name": "13 · Eliminar proyecto → 204",
+          "name": "17 · Eliminar proyecto → 204",
           "event": [
             {
               "listen": "test",
@@ -883,7 +997,7 @@
           }
         },
         {
-          "name": "14 · Eliminar el mismo proyecto otra vez → 404",
+          "name": "18 · Eliminar el mismo proyecto otra vez → 404",
           "event": [
             {
               "listen": "test",
@@ -898,7 +1012,7 @@
           }
         },
         {
-          "name": "15 · Consultar el proyecto eliminado → 404",
+          "name": "19 · Consultar el proyecto eliminado → 404",
           "event": [
             {
               "listen": "test",
@@ -960,6 +1074,8 @@
     { "key": "adminProjectName", "value": "", "description": "Unique name of the project created by the admin folder." },
     { "key": "adminProjectNameUpper", "value": "", "description": "Same name in upper case (duplicate name test)." },
     { "key": "adminProjectId", "value": "", "description": "Id of the project created by the admin folder." },
-    { "key": "adminProjectSlug", "value": "", "description": "Slug of the project created by the admin folder." }
+    { "key": "adminProjectSlug", "value": "", "description": "Slug of the project created by the admin folder." },
+    { "key": "publishedProjectId", "value": "", "description": "A published project with a cover image, hidden and published again by the admin folder." },
+    { "key": "publishedProjectSlug", "value": "", "description": "Slug of that published project." }
   ]
 }

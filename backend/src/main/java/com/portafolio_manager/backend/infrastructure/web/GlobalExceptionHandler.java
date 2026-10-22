@@ -6,6 +6,7 @@ import com.portafolio_manager.backend.domain.profile.ProfileNotFoundException;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.InvalidProjectException;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
+import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,7 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateProjectNameException.class)
+    @ExceptionHandler({DuplicateProjectNameException.class, ProjectNotPublishableException.class})
     ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, exception.getMessage(), request);
     }

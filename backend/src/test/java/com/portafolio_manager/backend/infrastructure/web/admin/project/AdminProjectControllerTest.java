@@ -4,12 +4,15 @@ import com.portafolio_manager.backend.application.port.in.project.CreateProjectU
 import com.portafolio_manager.backend.application.port.in.project.DeleteProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.GetAdminProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.ListAdminProjectsUseCase;
+import com.portafolio_manager.backend.application.port.in.project.SetProjectPublicationUseCase;
 import com.portafolio_manager.backend.application.port.in.project.UpdateProjectUseCase;
 import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
 import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
+import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
+import com.portafolio_manager.backend.domain.project.ProjectPublication;
 import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.domain.project.ProjectUpdate;
 import com.portafolio_manager.backend.domain.technology.Technology;
@@ -38,6 +41,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -88,6 +92,9 @@ class AdminProjectControllerTest {
 
     @MockitoBean
     private DeleteProjectUseCase deleteProjectUseCase;
+
+    @MockitoBean
+    private SetProjectPublicationUseCase setProjectPublicationUseCase;
 
     @MockitoBean
     private RevokedAccessTokenRepositoryPort revokedAccessTokenRepository;
@@ -220,6 +227,44 @@ class AdminProjectControllerTest {
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(deleteProjectUseCase);
+    }
+
+    @Test
+    void shouldChangeThePublication() throws Exception {
+        when(setProjectPublicationUseCase.execute(new ProjectPublication(7L, false))).thenReturn(CREATED);
+
+        mockMvc.perform(patch("/api/admin/projects/7/publication")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\": false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
+    void shouldAnswerConflictWhenTheProjectHasNoCoverImage() throws Exception {
+        when(setProjectPublicationUseCase.execute(new ProjectPublication(7L, true)))
+                .thenThrow(new ProjectNotPublishableException("Sistema ERP"));
+
+        mockMvc.perform(patch("/api/admin/projects/7/publication")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\": true}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("Project 'Sistema ERP' needs a cover image before it can be published"));
+    }
+
+    @Test
+    void shouldRequireTheActiveFlag() throws Exception {
+        mockMvc.perform(patch("/api/admin/projects/7/publication")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("active: must not be null"));
+
+        verifyNoInteractions(setProjectPublicationUseCase);
     }
 
     private String bearer(String role) {

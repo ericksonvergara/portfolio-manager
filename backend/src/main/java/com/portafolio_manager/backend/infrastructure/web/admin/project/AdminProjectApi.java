@@ -78,4 +78,21 @@ interface AdminProjectApi {
     @ApiResponse(responseCode = "404", description = "No existe un proyecto con ese id",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     ResponseEntity<Void> deleteProject(@Parameter(description = "Id del proyecto", example = "7") Long id);
+
+    @Operation(
+            summary = "Activar o desactivar un proyecto",
+            description = "Un proyecto activo aparece en la Landing Page (RN008); desactivarlo lo oculta sin "
+                    + "eliminarlo. Solo se puede activar si tiene imagen principal (RN004)."
+    )
+    @ApiResponse(responseCode = "200", description = "Publicación actualizada")
+    @ApiResponse(responseCode = "400", description = "Falta el campo active",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "No existe un proyecto con ese id",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "El proyecto no tiene imagen principal (RN004)",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    AdminProjectResponse setPublication(
+            @Parameter(description = "Id del proyecto", example = "7") Long id,
+            PublicationRequest request
+    );
 }

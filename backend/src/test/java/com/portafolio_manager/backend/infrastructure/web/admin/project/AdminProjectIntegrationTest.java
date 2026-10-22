@@ -23,13 +23,15 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Project registration (HU015), edition (HU016) and deletion (HU017) against the real schema.
+ * Project registration (HU015), edition (HU016), deletion (HU017) and publication (HU018)
+ * against the real schema.
  */
 @SpringBootTest(properties = TestJwt.SECRET_PROPERTY)
 @AutoConfigureMockMvc
@@ -164,6 +166,39 @@ class AdminProjectIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(status().isNotFound());
         mockMvc.perform(delete("/api/admin/projects/" + id).header(HttpHeaders.AUTHORIZATION, adminToken()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldPublishAndHideAProjectWithoutDeletingIt() throws Exception {
+        long id = createdId("Sistema ERP", java);
+
+        // RN004: no cover image yet
+        publish(id, true).andExpect(status().isConflict());
+
+        jdbcTemplate.update("UPDATE projects SET cover_image_url = '/uploads/erp.png' WHERE id = ?", id);
+        publish(id, true)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(true));
+        mockMvc.perform(get("/api/public/projects/sistema-erp")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/public/projects")).andExpect(jsonPath("$[*].name").value(contains("Sistema ERP")));
+
+        // RN008: hidden from the landing page, but still in the admin panel
+        publish(id, false)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(false));
+        mockMvc.perform(get("/api/public/projects/sistema-erp")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/public/projects")).andExpect(jsonPath("$", hasSize(0)));
+        mockMvc.perform(get("/api/admin/projects").header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(jsonPath("$", hasSize(1)));
+
+        publish(999_999L, true).andExpect(status().isNotFound());
+    }
+
+    private ResultActions publish(long id, boolean active) throws Exception {
+        return mockMvc.perform(patch("/api/admin/projects/" + id + "/publication")
+                .header(HttpHeaders.AUTHORIZATION, adminToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"active\": " + active + "}"));
     }
 
     private long count(String sql, Object... args) {
