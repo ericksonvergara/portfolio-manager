@@ -39,3 +39,11 @@ export function imageErrorMessage(error: unknown): string {
   }
   return 'No se pudo guardar la imagen. Inténtalo de nuevo.'
 }
+
+/** "8 KB", "1,5 MB": the size shown next to a preview. */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  }
+  return `${(bytes / (1024 * 1024)).toLocaleString('es', { maximumFractionDigits: 1 })} MB`
+}

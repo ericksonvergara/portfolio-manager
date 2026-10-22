@@ -189,4 +189,82 @@ describe('ProjectImages', () => {
       'remove-image 7 12',
     ])
   })
+
+  it('previews the selected cover and lets it be discarded or replaced before saving', async () => {
+    const opened: string[] = []
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (
+      this: HTMLInputElement,
+    ) {
+      opened.push(this.id)
+    })
+    const user = userEvent.setup()
+    render(<Harness initial={PROJECT} />)
+
+    await user.upload(
+      screen.getByLabelText('Archivo de la imagen principal'),
+      png(),
+    )
+    expect(
+      screen.getByRole('img', { name: 'Vista previa de la imagen principal' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Cambiar imagen' }))
+    expect(opened).toEqual(['cover-file'])
+
+    await user.click(screen.getByRole('button', { name: 'Descartar' }))
+    expect(
+      screen.queryByRole('img', { name: /Vista previa/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Subir imagen' })).toBeDisabled()
+    expect(api.calls).toHaveLength(0)
+    vi.restoreAllMocks()
+  })
+
+  it('previews a new cover next to the current one and clears it once saved', async () => {
+    api.answer = () =>
+      Promise.resolve({ ...PROJECT, coverImageUrl: '/uploads/b.png' })
+    const user = userEvent.setup()
+    render(
+      <Harness initial={{ ...PROJECT, coverImageUrl: '/uploads/a.png' }} />,
+    )
+
+    await user.upload(
+      screen.getByLabelText('Nueva imagen principal'),
+      png('b.png'),
+    )
+    expect(
+      screen.getByRole('img', { name: 'Imagen principal de Sistema ERP' }),
+    ).toHaveAttribute('src', '/uploads/a.png')
+    expect(
+      screen.getByRole('img', {
+        name: 'Vista previa de la nueva imagen principal',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Reemplazar imagen' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Imagen principal reemplazada.',
+    )
+    expect(
+      screen.queryByRole('img', { name: /Vista previa/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('previews a gallery image before adding it', async () => {
+    const user = userEvent.setup()
+    render(<Harness initial={PROJECT} />)
+
+    await user.upload(
+      screen.getByLabelText('Nueva imagen de la galería'),
+      png('g.png'),
+    )
+
+    expect(
+      screen.getByRole('img', {
+        name: 'Vista previa de la nueva imagen de la galería',
+      }),
+    ).toBeInTheDocument()
+    expect(api.calls).toHaveLength(0)
+  })
 })
