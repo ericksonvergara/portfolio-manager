@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { AxiosError, type AxiosResponse } from 'axios'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminProject } from '../../features/admin/projects/adminProjectsApi'
@@ -10,6 +11,9 @@ const adminApi = vi.hoisted(() => ({
   answers: [] as Array<() => Promise<AdminProject[]>>,
   deleted: [] as number[],
   deleteAnswer: (): Promise<void> => Promise.resolve(),
+  published: [] as Array<{ id: number; active: boolean }>,
+  publishAnswer: (): Promise<AdminProject> =>
+    Promise.reject(new Error('not set')),
 }))
 
 vi.mock('../../features/admin/projects/adminProjectsApi', () => ({
@@ -18,6 +22,10 @@ vi.mock('../../features/admin/projects/adminProjectsApi', () => ({
   deleteProject: (id: number) => {
     adminApi.deleted.push(id)
     return adminApi.deleteAnswer()
+  },
+  setProjectPublication: (id: number, active: boolean) => {
+    adminApi.published.push({ id, active })
+    return adminApi.publishAnswer()
   },
 }))
 
@@ -54,6 +62,8 @@ beforeEach(() => {
   adminApi.answers = []
   adminApi.deleted = []
   adminApi.deleteAnswer = () => Promise.resolve()
+  adminApi.published = []
+  adminApi.publishAnswer = () => Promise.reject(new Error('not set'))
 })
 
 describe('AdminProjectsPage', () => {
@@ -182,5 +192,53 @@ describe('AdminProjectsPage', () => {
     expect(
       screen.getByRole('rowheader', { name: /Sistema ERP/ }),
     ).toBeInTheDocument()
+  })
+
+  it('publishes a project with a switch', async () => {
+    adminApi.answers.push(() =>
+      Promise.resolve([{ ...PROJECT, coverImageUrl: '/uploads/erp.png' }]),
+    )
+    adminApi.publishAnswer = () =>
+      Promise.resolve({
+        ...PROJECT,
+        coverImageUrl: '/uploads/erp.png',
+        active: true,
+      })
+    const user = userEvent.setup()
+    renderPage()
+    const toggle = await screen.findByRole('switch', {
+      name: 'Publicar Sistema ERP',
+    })
+    expect(toggle).not.toBeChecked()
+
+    await user.click(toggle)
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      '«Sistema ERP» está publicado en el portafolio.',
+    )
+    expect(toggle).toBeChecked()
+    expect(adminApi.published).toEqual([{ id: 7, active: true }])
+  })
+
+  it('explains that a project needs a cover image to be published', async () => {
+    adminApi.answers.push(() => Promise.resolve([PROJECT]))
+    adminApi.publishAnswer = () =>
+      Promise.reject(
+        new AxiosError('Conflict', 'ERR_BAD_REQUEST', undefined, undefined, {
+          status: 409,
+        } as AxiosResponse),
+      )
+    const user = userEvent.setup()
+    renderPage()
+    const toggle = await screen.findByRole('switch', {
+      name: 'Publicar Sistema ERP',
+    })
+
+    await user.click(toggle)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '«Sistema ERP» necesita una imagen principal para publicarse.',
+    )
+    expect(toggle).not.toBeChecked()
   })
 })

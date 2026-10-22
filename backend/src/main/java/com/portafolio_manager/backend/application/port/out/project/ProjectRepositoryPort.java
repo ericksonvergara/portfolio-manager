@@ -44,4 +44,10 @@ public interface ProjectRepositoryPort extends PersistencePort {
 
     /** Deletes the project with its gallery and technology links; false if it does not exist. */
     boolean delete(Long id);
+
+    /**
+     * Publishes or hides the project; empty if it does not exist. Throws
+     * {@code ProjectNotPublishableException} if it has no cover image when activated (RN004).
+     */
+    Optional<AdminProject> setActive(Long id, boolean active);
 }

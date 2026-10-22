@@ -5,6 +5,7 @@ import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
+import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
 import com.portafolio_manager.backend.domain.project.ProjectImage;
 import com.portafolio_manager.backend.domain.project.ProjectSummary;
 import com.portafolio_manager.backend.domain.project.ProjectUpdate;
@@ -96,6 +97,24 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
         } catch (DataIntegrityViolationException exception) {
             throw new DuplicateProjectNameException(update.draft().name());
         }
+    }
+
+    @Override
+    @Transactional
+    public Optional<AdminProject> setActive(Long id, boolean active) {
+        Optional<ProjectJpaEntity> found = projectRepository.findById(id);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        ProjectJpaEntity entity = found.get();
+        entity.setActive(active);
+        try {
+            // The schema also enforces RN004 (projects_published_with_cover).
+            projectRepository.saveAndFlush(entity);
+        } catch (DataIntegrityViolationException exception) {
+            throw new ProjectNotPublishableException(entity.getName());
+        }
+        return Optional.of(reloaded(entity));
     }
 
     @Override

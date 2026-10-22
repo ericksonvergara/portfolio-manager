@@ -67,3 +67,15 @@ export async function updateProject(
 export async function deleteProject(id: number): Promise<void> {
   await api.delete(`/api/admin/projects/${id}`)
 }
+
+/** Publishes or hides a project (HU018); a project needs a cover image to be published (RN004). */
+export async function setProjectPublication(
+  id: number,
+  active: boolean,
+): Promise<AdminProject> {
+  const { data } = await api.patch<AdminProject>(
+    `/api/admin/projects/${id}/publication`,
+    { active },
+  )
+  return data
+}

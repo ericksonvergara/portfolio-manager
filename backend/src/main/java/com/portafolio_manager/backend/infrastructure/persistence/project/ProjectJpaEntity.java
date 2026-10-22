@@ -101,6 +101,11 @@ public class ProjectJpaEntity {
         return entity;
     }
 
+    void setActive(boolean active) {
+        this.active = active;
+        updatedAt = Instant.now();
+    }
+
     /** Replaces the editable data and the slug; publication and images stay as they are. */
     void apply(ProjectDraft draft, List<TechnologyJpaEntity> technologies) {
         name = draft.name();
