@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Portfolio Manager API",
-    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra, edita y elimina un proyecto de prueba en cada ejecución (HU015-HU019). La carpeta **Recuperación de contraseña** (HU010) lee el correo desde Mailpit (`mailpitUrl`), y **Cuenta del administrador** (HU011) cambia la contraseña y la restaura.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
+    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra, edita y elimina un proyecto de prueba en cada ejecución (HU015-HU019). La carpeta **Administración - Tecnologías** (HU021) gestiona el catálogo con una tecnología de prueba. La carpeta **Recuperación de contraseña** (HU010) lee el correo desde Mailpit (`mailpitUrl`), y **Cuenta del administrador** (HU011) cambia la contraseña y la restaura.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -1210,6 +1210,280 @@
       ]
     },
     {
+      "name": "Administración - Tecnologías",
+      "description": "Catálogo de tecnologías (HU021). Crea una tecnología de prueba con nombre único, la edita, comprueba los duplicados (sin importar mayúsculas) y el catálogo público, intenta eliminar una tecnología en uso y al final elimina la suya.",
+      "item": [
+        {
+          "name": "01 · Login (tecnologías) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "02 · Listar el catálogo sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));"] }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/admin/technologies" }
+        },
+        {
+          "name": "03 · Crear con una categoría inválida → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('technologyName', `Postman Tech ${Date.now()}`);"] }
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cobol\",\n  \"category\": \"LEGACY\",\n  \"displayOrder\": 99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "04 · Crear tecnología → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', () => pm.response.to.have.status(201));",
+                  "const technology = pm.response.json();",
+                  "pm.test('Se crea sin proyectos', () => {",
+                  "  pm.expect(technology.name).to.eql(pm.collectionVariables.get('technologyName'));",
+                  "  pm.expect(technology.projectCount).to.eql(0);",
+                  "  pm.expect(pm.response.headers.get('Location')).to.eql(`/api/admin/technologies/${technology.id}`);",
+                  "});",
+                  "pm.collectionVariables.set('adminTechnologyId', technology.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{technologyName}}\",\n  \"category\": \"TOOLS\",\n  \"displayOrder\": 99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "05 · Crear con el mismo nombre en mayúsculas → 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.collectionVariables.set('technologyNameUpper', pm.collectionVariables.get('technologyName').toUpperCase());"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 409 Conflict: no se repiten nombres', () => pm.response.to.have.status(409));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{technologyNameUpper}}\",\n  \"category\": \"TOOLS\",\n  \"displayOrder\": 99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "06 · Editar tecnología → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.collectionVariables.set('technologyName', `${pm.collectionVariables.get('technologyName')} editada`);"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Aplica el nombre y la categoría nuevos', () => {",
+                  "  const technology = pm.response.json();",
+                  "  pm.expect(technology.name).to.eql(pm.collectionVariables.get('technologyName'));",
+                  "  pm.expect(technology.category).to.eql('DEVOPS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{technologyName}}\",\n  \"category\": \"DEVOPS\",\n  \"displayOrder\": 98\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/technologies/{{adminTechnologyId}}"
+          }
+        },
+        {
+          "name": "07 · La landing muestra la tecnología editada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('El catálogo público es el mismo', () => {",
+                  "  const names = pm.response.json().map((t) => t.name);",
+                  "  pm.expect(names).to.include(pm.collectionVariables.get('technologyName'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/technologies" }
+        },
+        {
+          "name": "08 · Listar el catálogo → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const technologies = pm.response.json();",
+                  "pm.test('Incluye la creada, sin proyectos', () => {",
+                  "  const created = technologies.find((t) => t.id === Number(pm.collectionVariables.get('adminTechnologyId')));",
+                  "  pm.expect(created, 'tecnología creada').to.exist;",
+                  "  pm.expect(created.projectCount).to.eql(0);",
+                  "});",
+                  "const used = technologies.find((t) => t.projectCount > 0);",
+                  "pm.collectionVariables.set('usedTechnologyId', used ? used.id : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "09 · Eliminar una tecnología en uso → 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Uses a technology of an existing project (for example from the demo seed); skipped if there is none.",
+                  "if (!pm.collectionVariables.get('usedTechnologyId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409 Conflict (RN005)', () => pm.response.to.have.status(409));",
+                  "pm.test('Explica que la usan proyectos', () => pm.expect(pm.response.json().message).to.include('is used by'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies/{{usedTechnologyId}}"
+          }
+        },
+        {
+          "name": "10 · Eliminar la tecnología de prueba → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies/{{adminTechnologyId}}"
+          }
+        },
+        {
+          "name": "11 · Eliminarla otra vez → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 404 Not Found', () => pm.response.to.have.status(404));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies/{{adminTechnologyId}}"
+          }
+        }
+      ]
+    },
+    {
       "name": "Recuperación de contraseña",
       "description": "Recuperación por correo (HU010). Necesita `mailpitUrl` en el entorno: Mailpit atrapa el correo y la colección lee el enlace desde su API. La contraseña nueva es `adminPassword` misma, así que las credenciales no cambian. Sin `mailpitUrl`, las peticiones que dependen del correo se saltan.",
       "item": [
@@ -1739,6 +2013,10 @@
     { "key": "resetMailId", "value": "", "description": "Recovery email read from Mailpit." },
     { "key": "resetToken", "value": "", "description": "Token of the recovery link, read from that email." },
     { "key": "accountToken", "value": "", "description": "Access token of the account folder." },
-    { "key": "temporaryPassword", "value": "", "description": "Random password set and restored by the account folder." }
+    { "key": "temporaryPassword", "value": "", "description": "Random password set and restored by the account folder." },
+    { "key": "technologyName", "value": "", "description": "Unique name of the technology created by the technologies folder." },
+    { "key": "technologyNameUpper", "value": "", "description": "Same name in upper case (duplicate test)." },
+    { "key": "adminTechnologyId", "value": "", "description": "Technology created by the technologies folder." },
+    { "key": "usedTechnologyId", "value": "", "description": "A technology used by a project (delete is rejected)." }
   ]
 }

@@ -9,6 +9,7 @@ import { AccountPage } from './pages/admin/AccountPage'
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage'
 import { EditProjectPage } from './pages/admin/EditProjectPage'
 import { NewProjectPage } from './pages/admin/NewProjectPage'
+import { TechnologiesPage } from './pages/admin/TechnologiesPage'
 import { HomePage } from './pages/HomePage'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="proyectos" element={<AdminProjectsPage />} />
             <Route path="proyectos/nuevo" element={<NewProjectPage />} />
             <Route path="proyectos/:id/editar" element={<EditProjectPage />} />
+            <Route path="tecnologias" element={<TechnologiesPage />} />
             <Route path="cuenta" element={<AccountPage />} />
           </Route>
         </Routes>
