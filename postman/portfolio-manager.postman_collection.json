@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Portfolio Manager API",
-    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra, edita y elimina un proyecto de prueba en cada ejecución (HU015-HU019). La carpeta **Recuperación de contraseña** (HU010) lee el correo desde Mailpit (`mailpitUrl`).\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
+    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra, edita y elimina un proyecto de prueba en cada ejecución (HU015-HU019). La carpeta **Recuperación de contraseña** (HU010) lee el correo desde Mailpit (`mailpitUrl`), y **Cuenta del administrador** (HU011) cambia la contraseña y la restaura.\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -1465,6 +1465,227 @@
       ]
     },
     {
+      "name": "Cuenta del administrador",
+      "description": "Cambio de contraseña (HU011). Cambia la contraseña a una temporal aleatoria y al final restaura `adminPassword`, así que las credenciales no cambian. Comprueba que el cambio cierra todas las sesiones, también la de la propia petición.",
+      "item": [
+        {
+          "name": "01 · Login (cuenta) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accountToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "02 · Cambiar con la contraseña actual incorrecta → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request (no 401: la sesión sigue)', () => pm.response.to.have.status(400));",
+                  "pm.test('Dice que la actual no es correcta', () => pm.expect(pm.response.json().message).to.eql('The current password is incorrect'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accountToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Equivocada#1\",\n  \"newPassword\": \"Nueva#456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/account/password"
+          }
+        },
+        {
+          "name": "03 · Cambiar a una contraseña débil → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 400 Bad Request (RF004)', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accountToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{adminPassword}}\",\n  \"newPassword\": \"corta\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/account/password"
+          }
+        },
+        {
+          "name": "04 · Cambiar a la misma contraseña → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Pide una distinta', () => pm.expect(pm.response.json().message).to.include('different'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accountToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{adminPassword}}\",\n  \"newPassword\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/account/password"
+          }
+        },
+        {
+          "name": "05 · Cambiar a una contraseña temporal → 204",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// A random password that follows RF004 (6-12 chars, upper, lower, digit, special); restored in 08.",
+                  "pm.collectionVariables.set('temporaryPassword', `Tmp#${Math.floor(1000 + Math.random() * 9000)}x`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accountToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{adminPassword}}\",\n  \"newPassword\": \"{{temporaryPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/account/password"
+          }
+        },
+        {
+          "name": "06 · El token de la sesión quedó revocado → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 401: se cerraron todas las sesiones, también esta', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accountToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "07 · Login con la contraseña temporal → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accountToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{temporaryPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "08 · Restaurar la contraseña del entorno → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accountToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{temporaryPassword}}\",\n  \"newPassword\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/account/password"
+          }
+        },
+        {
+          "name": "09 · Login con la contraseña del entorno → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 200 OK: las credenciales quedan como estaban', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
       "name": "Documentación",
       "item": [
         {
@@ -1516,6 +1737,8 @@
     { "key": "adminCoverUrl", "value": "", "description": "Cover image uploaded by the admin folder." },
     { "key": "adminImageId", "value": "", "description": "Gallery image uploaded by the admin folder." },
     { "key": "resetMailId", "value": "", "description": "Recovery email read from Mailpit." },
-    { "key": "resetToken", "value": "", "description": "Token of the recovery link, read from that email." }
+    { "key": "resetToken", "value": "", "description": "Token of the recovery link, read from that email." },
+    { "key": "accountToken", "value": "", "description": "Access token of the account folder." },
+    { "key": "temporaryPassword", "value": "", "description": "Random password set and restored by the account folder." }
   ]
 }

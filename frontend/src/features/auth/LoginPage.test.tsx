@@ -228,4 +228,26 @@ describe('ProtectedRoute', () => {
       ),
     ).toHaveAttribute('role', 'status')
   })
+
+  it('explains that every session was closed after a password change', async () => {
+    render(
+      <AuthProvider>
+        <MemoryRouter
+          initialEntries={[
+            { pathname: '/login', state: { passwordChanged: true } },
+          ]}
+        >
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    expect(
+      await screen.findByText(
+        /Contraseña cambiada\. Por seguridad se cerraron todas tus sesiones/,
+      ),
+    ).toHaveAttribute('role', 'status')
+  })
 })

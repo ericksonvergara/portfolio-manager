@@ -5,6 +5,7 @@ import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
+import { AccountPage } from './pages/admin/AccountPage'
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage'
 import { EditProjectPage } from './pages/admin/EditProjectPage'
 import { NewProjectPage } from './pages/admin/NewProjectPage'
@@ -39,6 +40,7 @@ function App() {
             <Route path="proyectos" element={<AdminProjectsPage />} />
             <Route path="proyectos/nuevo" element={<NewProjectPage />} />
             <Route path="proyectos/:id/editar" element={<EditProjectPage />} />
+            <Route path="cuenta" element={<AccountPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
