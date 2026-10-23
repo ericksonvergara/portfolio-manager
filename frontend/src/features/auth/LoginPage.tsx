@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { LoginCredentials } from './authApi'
 import { NotAdminError } from './authContext'
 import {
@@ -39,8 +39,11 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginCredentials>({ mode: 'onTouched' })
 
-  const redirectTo =
-    (location.state as { from?: string } | null)?.from ?? DEFAULT_REDIRECT
+  const state = location.state as {
+    from?: string
+    passwordReset?: boolean
+  } | null
+  const redirectTo = state?.from ?? DEFAULT_REDIRECT
 
   if (isRestoring) {
     return <SessionRestoring />
@@ -85,7 +88,16 @@ export function LoginPage() {
           </p>
         )}
 
-        {sessionExpired && !submitError && (
+        {state?.passwordReset && !submitError && (
+          <p
+            role="status"
+            className="mb-4 rounded-lg border border-emerald-800 bg-emerald-950 px-3 py-2 text-sm text-emerald-200"
+          >
+            Contraseña actualizada. Inicia sesión con la nueva.
+          </p>
+        )}
+
+        {sessionExpired && !submitError && !state?.passwordReset && (
           <p
             role="status"
             className="mb-4 rounded-lg border border-amber-800 bg-amber-950 px-3 py-2 text-sm text-amber-200"
@@ -164,6 +176,15 @@ export function LoginPage() {
           >
             {isSubmitting ? 'Ingresando…' : 'Ingresar'}
           </button>
+
+          <p className="text-center">
+            <Link
+              to="/recuperar-contrasena"
+              className="text-sm text-sky-400 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
         </form>
       </section>
     </main>
