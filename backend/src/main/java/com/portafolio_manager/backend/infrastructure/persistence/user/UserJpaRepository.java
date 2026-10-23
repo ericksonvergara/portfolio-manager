@@ -17,4 +17,12 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
     @Modifying
     @Query("UPDATE UserJpaEntity u SET u.lastLoginAt = :lastLoginAt WHERE u.id = :userId")
     void updateLastLogin(@Param("userId") Long userId, @Param("lastLoginAt") Instant lastLoginAt);
+
+    @Modifying
+    @Query("UPDATE UserJpaEntity u SET u.passwordHash = :passwordHash, u.updatedAt = :updatedAt WHERE u.id = :userId")
+    void updatePassword(
+            @Param("userId") Long userId,
+            @Param("passwordHash") String passwordHash,
+            @Param("updatedAt") Instant updatedAt
+    );
 }

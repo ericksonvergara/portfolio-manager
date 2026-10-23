@@ -32,6 +32,15 @@ services:
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
       API_DOCS_ENABLED: "${API_DOCS_ENABLED:-true}"
       SPRING_FLYWAY_LOCATIONS: "${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration}"
+      MAIL_HOST: "${MAIL_HOST:-mailpit}"
+      MAIL_PORT: "${MAIL_PORT:-1025}"
+      MAIL_USERNAME: "${MAIL_USERNAME:-}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:-}"
+      MAIL_SMTP_AUTH: "${MAIL_SMTP_AUTH:-false}"
+      MAIL_SMTP_STARTTLS: "${MAIL_SMTP_STARTTLS:-false}"
+      MAIL_FROM: "${MAIL_FROM:-Portfolio Manager <no-reply@portfolio.local>}"
+      PASSWORD_RESET_URL: "${PASSWORD_RESET_URL:-http://localhost:8081/restablecer-contrasena}"
+      PASSWORD_RESET_TTL: "${PASSWORD_RESET_TTL:-30m}"
       UPLOADS_DIR: /app/uploads
       UPLOAD_MAX_SIZE: "${UPLOAD_MAX_SIZE:-5MB}"
     volumes:
@@ -39,6 +48,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
       - portfolio-network
 
@@ -59,6 +70,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - portfolio-network
+
+  # Local mail catcher (HU010): receives every email sent by the backend instead of delivering it.
+  # Inbox at http://localhost:8025; replace MAIL_* with a real SMTP server in production.
+  mailpit:
+    image: axllent/mailpit:v1.25.1
+    container_name: portfolio-mailpit
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: "0.25"
+    ports:
+      - "127.0.0.1:8025:8025"
     networks:
       - portfolio-network
 

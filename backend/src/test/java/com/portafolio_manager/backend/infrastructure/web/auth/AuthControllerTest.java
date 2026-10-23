@@ -5,6 +5,11 @@ import com.portafolio_manager.backend.application.port.in.auth.LoginCommand;
 import com.portafolio_manager.backend.application.port.in.auth.LoginUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.LogoutCommand;
 import com.portafolio_manager.backend.application.port.in.auth.LogoutUseCase;
+import com.portafolio_manager.backend.application.port.in.auth.RequestPasswordResetUseCase;
+import com.portafolio_manager.backend.application.port.in.auth.ResetPasswordCommand;
+import com.portafolio_manager.backend.application.port.in.auth.ResetPasswordUseCase;
+import com.portafolio_manager.backend.domain.auth.InvalidPasswordResetTokenException;
+import com.portafolio_manager.backend.domain.user.WeakPasswordException;
 import com.portafolio_manager.backend.application.port.in.auth.RefreshSessionUseCase;
 import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
 import com.portafolio_manager.backend.domain.auth.InvalidCredentialsException;
@@ -29,11 +34,14 @@ import java.time.ZoneOffset;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,6 +69,12 @@ class AuthControllerTest {
 
     @MockitoBean
     private LogoutUseCase logoutUseCase;
+
+    @MockitoBean
+    private RequestPasswordResetUseCase requestPasswordResetUseCase;
+
+    @MockitoBean
+    private ResetPasswordUseCase resetPasswordUseCase;
 
     @MockitoBean
     private RevokedAccessTokenRepositoryPort revokedAccessTokenRepository;
@@ -162,5 +176,48 @@ class AuthControllerTest {
         Clock clock() {
             return Clock.fixed(NOW, ZoneOffset.UTC);
         }
+    }
+
+    @Test
+    void shouldAcceptAPasswordResetRequestWithoutRevealingTheAccount() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"admin@example.com\"}"))
+                .andExpect(status().isAccepted())
+                .andExpect(content().string(""));
+        verify(requestPasswordResetUseCase).execute("admin@example.com");
+
+        mockMvc.perform(post("/api/auth/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"no-es-correo\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldSetTheNewPasswordFromTheLink() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\": \"abc\", \"newPassword\": \"Nueva#123\"}"))
+                .andExpect(status().isNoContent());
+        verify(resetPasswordUseCase).execute(new ResetPasswordCommand("abc", "Nueva#123"));
+    }
+
+    @Test
+    void shouldRejectAnInvalidLinkOrAWeakPassword() throws Exception {
+        doThrow(new InvalidPasswordResetTokenException())
+                .when(resetPasswordUseCase).execute(new ResetPasswordCommand("viejo", "Nueva#123"));
+        doThrow(new WeakPasswordException())
+                .when(resetPasswordUseCase).execute(new ResetPasswordCommand("abc", "corta"));
+
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\": \"viejo\", \"newPassword\": \"Nueva#123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("The password reset link is invalid or has expired"));
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\": \"abc\", \"newPassword\": \"corta\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(startsWith("The password must have")));
     }
 }

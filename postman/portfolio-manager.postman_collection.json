@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Portfolio Manager API",
-    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra, edita y elimina un proyecto de prueba en cada ejecución (HU015-HU017).\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
+    "description": "Colección de pruebas de la API de Portfolio Manager.\n\n**Uso:** selecciona el entorno *Portfolio Manager - Local*, completa `adminEmail` y `adminPassword` (los del `.env`) y ejecuta la carpeta **Autenticación** con el *Runner*: las peticiones están ordenadas como un flujo (login → refresh → detección de reutilización → logout) y cada una valida su respuesta. La carpeta **Público** cubre el contenido de la Landing Page (HU001) y no necesita credenciales. La carpeta **Administración - Proyectos** usa las mismas credenciales y registra, edita y elimina un proyecto de prueba en cada ejecución (HU015-HU019). La carpeta **Recuperación de contraseña** (HU010) lee el correo desde Mailpit (`mailpitUrl`).\n\nEl refresh token se envía explícitamente en la cabecera `Cookie` (variable `refreshToken`) y el cookie jar se limpia antes de cada petición, para que los resultados no dependan de cookies guardadas. Para que esa limpieza funcione en la app, añade `localhost` en *Cookies → Domains Allowlist*.\n\nFuente de verdad versionada en el repo: `postman/portfolio-manager.postman_collection.json`.\n\nDocumentación interactiva: `{{baseUrl}}/api/docs/swagger-ui.html`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -1210,6 +1210,261 @@
       ]
     },
     {
+      "name": "Recuperación de contraseña",
+      "description": "Recuperación por correo (HU010). Necesita `mailpitUrl` en el entorno: Mailpit atrapa el correo y la colección lee el enlace desde su API. La contraseña nueva es `adminPassword` misma, así que las credenciales no cambian. Sin `mailpitUrl`, las peticiones que dependen del correo se saltan.",
+      "item": [
+        {
+          "name": "01 · Vaciar la bandeja de Mailpit",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Mailpit catches the emails locally and in CI; skipped when mailpitUrl is not set.",
+                  "if (!pm.environment.get('mailpitUrl')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200 OK', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": { "method": "DELETE", "header": [], "url": "{{mailpitUrl}}/api/v1/messages" }
+        },
+        {
+          "name": "02 · Solicitar recuperación para un correo inexistente → 202",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 202 Accepted, igual que si existiera', () => pm.response.to.have.status(202));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"nadie@portfolio.test\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/auth/password-reset"
+          }
+        },
+        {
+          "name": "03 · Solicitar recuperación del administrador → 202",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 202 Accepted', () => pm.response.to.have.status(202));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/auth/password-reset"
+          }
+        },
+        {
+          "name": "04 · Mailpit recibió un solo correo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["if (!pm.environment.get('mailpitUrl')) {", "  pm.execution.skipRequest();", "}"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const inbox = pm.response.json();",
+                  "pm.test('Solo llega el correo del administrador (nada para el inexistente)', () => {",
+                  "  pm.expect(inbox.messages_count).to.eql(1);",
+                  "  pm.expect(inbox.messages[0].To[0].Address.toLowerCase()).to.eql(pm.environment.get('adminEmail').toLowerCase());",
+                  "});",
+                  "pm.collectionVariables.set('resetMailId', inbox.messages[0].ID);"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{mailpitUrl}}/api/v1/messages" }
+        },
+        {
+          "name": "05 · Leer el enlace del correo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["if (!pm.environment.get('mailpitUrl')) {", "  pm.execution.skipRequest();", "}"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const mail = pm.response.json();",
+                  "pm.test('Es el correo de recuperación', () => pm.expect(mail.Subject).to.include('Recupera tu contraseña'));",
+                  "const link = mail.Text.match(/(\\S+restablecer-contrasena\\?token=\\S+)/);",
+                  "pm.test('Trae un enlace con token que caduca en 30 minutos', () => {",
+                  "  pm.expect(link, 'enlace').to.exist;",
+                  "  pm.expect(mail.Text).to.include('30 minutos');",
+                  "});",
+                  "pm.collectionVariables.set('resetToken', decodeURIComponent(link[1].split('token=')[1]));"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{mailpitUrl}}/api/v1/message/{{resetMailId}}" }
+        },
+        {
+          "name": "06 · Restablecer con un enlace inválido → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Dice que el enlace no vale', () => pm.expect(pm.response.json().message).to.include('invalid or has expired'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"enlace-inventado\",\n  \"newPassword\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/password-reset/confirm"
+          }
+        },
+        {
+          "name": "07 · Restablecer con una contraseña débil → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["if (!pm.environment.get('mailpitUrl')) {", "  pm.execution.skipRequest();", "}"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request (RF004)', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica la política de contraseñas', () => pm.expect(pm.response.json().message).to.include('The password must have'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"corta\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/password-reset/confirm"
+          }
+        },
+        {
+          "name": "08 · Restablecer la contraseña → 204",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The new password is adminPassword itself, so the environment keeps working.",
+                  "if (!pm.environment.get('mailpitUrl')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/password-reset/confirm"
+          }
+        },
+        {
+          "name": "09 · Reutilizar el enlace → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["if (!pm.environment.get('mailpitUrl')) {", "  pm.execution.skipRequest();", "}"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 400 Bad Request: el enlace vale una sola vez', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/password-reset/confirm"
+          }
+        },
+        {
+          "name": "10 · Login con la contraseña restablecida → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Responde 200 OK', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
       "name": "Documentación",
       "item": [
         {
@@ -1259,6 +1514,8 @@
     { "key": "publishedProjectId", "value": "", "description": "A published project with a cover image, hidden and published again by the admin folder." },
     { "key": "publishedProjectSlug", "value": "", "description": "Slug of that published project." },
     { "key": "adminCoverUrl", "value": "", "description": "Cover image uploaded by the admin folder." },
-    { "key": "adminImageId", "value": "", "description": "Gallery image uploaded by the admin folder." }
+    { "key": "adminImageId", "value": "", "description": "Gallery image uploaded by the admin folder." },
+    { "key": "resetMailId", "value": "", "description": "Recovery email read from Mailpit." },
+    { "key": "resetToken", "value": "", "description": "Token of the recovery link, read from that email." }
   ]
 }
