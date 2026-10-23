@@ -13,7 +13,11 @@ import com.portafolio_manager.backend.application.port.in.project.RemoveProjectC
 import com.portafolio_manager.backend.application.port.in.project.SetProjectCoverUseCase;
 import com.portafolio_manager.backend.application.port.in.project.SetProjectPublicationUseCase;
 import com.portafolio_manager.backend.application.port.in.project.UpdateProjectUseCase;
+import com.portafolio_manager.backend.application.port.in.technology.CreateTechnologyUseCase;
+import com.portafolio_manager.backend.application.port.in.technology.DeleteTechnologyUseCase;
+import com.portafolio_manager.backend.application.port.in.technology.ListAdminTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.ListTechnologiesUseCase;
+import com.portafolio_manager.backend.application.port.in.technology.UpdateTechnologyUseCase;
 import com.portafolio_manager.backend.application.port.out.image.ImageStoragePort;
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
@@ -31,7 +35,11 @@ import com.portafolio_manager.backend.application.service.project.RemoveProjectC
 import com.portafolio_manager.backend.application.service.project.SetProjectCoverService;
 import com.portafolio_manager.backend.application.service.project.SetProjectPublicationService;
 import com.portafolio_manager.backend.application.service.project.UpdateProjectService;
+import com.portafolio_manager.backend.application.service.technology.CreateTechnologyService;
+import com.portafolio_manager.backend.application.service.technology.DeleteTechnologyService;
+import com.portafolio_manager.backend.application.service.technology.ListAdminTechnologiesService;
 import com.portafolio_manager.backend.application.service.technology.ListTechnologiesService;
+import com.portafolio_manager.backend.application.service.technology.UpdateTechnologyService;
 import com.portafolio_manager.backend.infrastructure.storage.UploadProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -130,5 +138,25 @@ public class PortfolioConfig {
     @Bean
     SetProjectPublicationUseCase setProjectPublicationUseCase(ProjectRepositoryPort projectRepository) {
         return new SetProjectPublicationService(projectRepository);
+    }
+
+    @Bean
+    ListAdminTechnologiesUseCase listAdminTechnologiesUseCase(TechnologyRepositoryPort technologyRepository) {
+        return new ListAdminTechnologiesService(technologyRepository);
+    }
+
+    @Bean
+    CreateTechnologyUseCase createTechnologyUseCase(TechnologyRepositoryPort technologyRepository) {
+        return new CreateTechnologyService(technologyRepository);
+    }
+
+    @Bean
+    UpdateTechnologyUseCase updateTechnologyUseCase(TechnologyRepositoryPort technologyRepository) {
+        return new UpdateTechnologyService(technologyRepository);
+    }
+
+    @Bean
+    DeleteTechnologyUseCase deleteTechnologyUseCase(TechnologyRepositoryPort technologyRepository) {
+        return new DeleteTechnologyService(technologyRepository);
     }
 }

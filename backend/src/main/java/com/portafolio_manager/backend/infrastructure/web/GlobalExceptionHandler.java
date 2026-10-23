@@ -11,6 +11,10 @@ import com.portafolio_manager.backend.domain.project.InvalidProjectException;
 import com.portafolio_manager.backend.domain.project.ProjectImageNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
+import com.portafolio_manager.backend.domain.technology.DuplicateTechnologyNameException;
+import com.portafolio_manager.backend.domain.technology.InvalidTechnologyException;
+import com.portafolio_manager.backend.domain.technology.TechnologyInUseException;
+import com.portafolio_manager.backend.domain.technology.TechnologyNotFoundException;
 import com.portafolio_manager.backend.domain.user.IncorrectPasswordException;
 import com.portafolio_manager.backend.domain.user.UnchangedPasswordException;
 import com.portafolio_manager.backend.domain.user.WeakPasswordException;
@@ -34,7 +38,12 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
     }
 
-    @ExceptionHandler({ProfileNotFoundException.class, ProjectNotFoundException.class, ProjectImageNotFoundException.class})
+    @ExceptionHandler({
+            ProfileNotFoundException.class,
+            ProjectNotFoundException.class,
+            ProjectImageNotFoundException.class,
+            TechnologyNotFoundException.class
+    })
     ResponseEntity<ApiErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
     }
@@ -58,6 +67,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             InvalidProjectException.class,
             InvalidImageException.class,
+            InvalidTechnologyException.class,
             WeakPasswordException.class,
             InvalidPasswordResetTokenException.class,
             // 400, not 401: the frontend treats a 401 as an expired session.
@@ -68,7 +78,12 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
-    @ExceptionHandler({DuplicateProjectNameException.class, ProjectNotPublishableException.class})
+    @ExceptionHandler({
+            DuplicateProjectNameException.class,
+            ProjectNotPublishableException.class,
+            DuplicateTechnologyNameException.class,
+            TechnologyInUseException.class
+    })
     ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, exception.getMessage(), request);
     }
