@@ -42,7 +42,9 @@ export function LoginPage() {
   const state = location.state as {
     from?: string
     passwordReset?: boolean
+    passwordChanged?: boolean
   } | null
+  const passwordNotice = state?.passwordReset || state?.passwordChanged
   const redirectTo = state?.from ?? DEFAULT_REDIRECT
 
   if (isRestoring) {
@@ -88,16 +90,18 @@ export function LoginPage() {
           </p>
         )}
 
-        {state?.passwordReset && !submitError && (
+        {passwordNotice && !submitError && (
           <p
             role="status"
             className="mb-4 rounded-lg border border-emerald-800 bg-emerald-950 px-3 py-2 text-sm text-emerald-200"
           >
-            Contraseña actualizada. Inicia sesión con la nueva.
+            {state?.passwordChanged
+              ? 'Contraseña cambiada. Por seguridad se cerraron todas tus sesiones: inicia sesión con la nueva.'
+              : 'Contraseña actualizada. Inicia sesión con la nueva.'}
           </p>
         )}
 
-        {sessionExpired && !submitError && !state?.passwordReset && (
+        {sessionExpired && !submitError && !passwordNotice && (
           <p
             role="status"
             className="mb-4 rounded-lg border border-amber-800 bg-amber-950 px-3 py-2 text-sm text-amber-200"

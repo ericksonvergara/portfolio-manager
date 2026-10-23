@@ -11,6 +11,8 @@ import com.portafolio_manager.backend.domain.project.InvalidProjectException;
 import com.portafolio_manager.backend.domain.project.ProjectImageNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
+import com.portafolio_manager.backend.domain.user.IncorrectPasswordException;
+import com.portafolio_manager.backend.domain.user.UnchangedPasswordException;
 import com.portafolio_manager.backend.domain.user.WeakPasswordException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -57,7 +59,10 @@ public class GlobalExceptionHandler {
             InvalidProjectException.class,
             InvalidImageException.class,
             WeakPasswordException.class,
-            InvalidPasswordResetTokenException.class
+            InvalidPasswordResetTokenException.class,
+            // 400, not 401: the frontend treats a 401 as an expired session.
+            IncorrectPasswordException.class,
+            UnchangedPasswordException.class
     })
     ResponseEntity<ApiErrorResponse> handleInvalidData(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);

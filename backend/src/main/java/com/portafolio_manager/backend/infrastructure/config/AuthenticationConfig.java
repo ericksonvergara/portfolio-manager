@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend.infrastructure.config;
 
+import com.portafolio_manager.backend.application.port.in.auth.ChangePasswordUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.LoginUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.LogoutUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.RefreshSessionUseCase;
@@ -13,6 +14,7 @@ import com.portafolio_manager.backend.application.port.out.auth.RefreshTokenGene
 import com.portafolio_manager.backend.application.port.out.auth.RefreshTokenRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.user.UserRepositoryPort;
+import com.portafolio_manager.backend.application.service.auth.ChangePasswordService;
 import com.portafolio_manager.backend.application.service.auth.LoginService;
 import com.portafolio_manager.backend.application.service.auth.LogoutService;
 import com.portafolio_manager.backend.application.service.auth.RefreshSessionService;
@@ -131,6 +133,23 @@ public class AuthenticationConfig {
                 userRepository,
                 passwordHasher,
                 refreshTokenRepository,
+                clock
+        );
+    }
+
+    @Bean
+    ChangePasswordUseCase changePasswordUseCase(
+            UserRepositoryPort userRepository,
+            PasswordHasherPort passwordHasher,
+            RefreshTokenRepositoryPort refreshTokenRepository,
+            RevokedAccessTokenRepositoryPort revokedAccessTokenRepository,
+            Clock clock
+    ) {
+        return new ChangePasswordService(
+                userRepository,
+                passwordHasher,
+                refreshTokenRepository,
+                revokedAccessTokenRepository,
                 clock
         );
     }

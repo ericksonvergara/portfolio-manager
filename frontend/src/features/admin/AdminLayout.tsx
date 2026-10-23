@@ -1,7 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 
-const NAV_ITEMS = [{ to: '/admin/proyectos', label: 'Proyectos' }]
+const NAV_ITEMS = [
+  { to: '/admin/proyectos', label: 'Proyectos' },
+  { to: '/admin/cuenta', label: 'Cuenta' },
+]
 
 /**
  * Frame of the admin panel: header, section navigation and the current page.
