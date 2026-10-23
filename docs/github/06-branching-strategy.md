@@ -4,8 +4,8 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.6
-  Fecha       2026-10-21
+  Versión     1.7
+  Fecha       2026-10-23
   Estado      Aprobado
 
 ------------------------------------------------------------------------
@@ -244,8 +244,12 @@ También completa la barra lateral del Pull Request:
     los archivos cambiados: `backend`, `frontend`, `database`, `docker`,
     `nginx`, `ci`, `documentation` y `testing`. Solo añade etiquetas que
     ya existen y nunca quita ninguna.
--   **Milestone:** el de la Issue enlazada; en promociones y releases,
-    `Sprint N` según el roadmap. Solo si el Pull Request no tiene uno.
+-   **Milestone:** `Sprint N`. En los Pull Requests de trabajo sale de la
+    línea `**Sprint:**` de la Issue enlazada (si no existe ese milestone,
+    se usa el de la Issue); en promociones y releases, del roadmap. Solo
+    si el Pull Request no tiene uno.
+-   En promociones y releases no se copian las etiquetas de prioridad
+    (`critical`, `high`, `medium`, `low`) de las historias.
 -   **Development:** se completa con el `Closes #` de la descripción.
 
 *Projects* y *Reviewers* no se rellenan: el token del workflow no puede
@@ -318,3 +322,7 @@ branches*):
                          Autofill).
   1.6       2026-10-21   PR Autofill completa assignee, labels y
                          milestone.
+  1.7       2026-10-23   Milestone por sprint en los Pull Requests de
+                         trabajo; sin etiquetas de prioridad en
+                         promociones; volúmenes e imágenes de Docker
+                         en las notas de despliegue.

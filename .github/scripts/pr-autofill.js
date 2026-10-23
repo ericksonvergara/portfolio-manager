@@ -1,7 +1,7 @@
 // ============================================================================
 // Portfolio Manager
 // File: .github/scripts/pr-autofill.js
-// Version: 1.1.0
+// Version: 1.2.0
 // Description: Fills the auto-generated parts of the Pull Requests (description,
 //              assignee, labels and milestone):
 //              work branch -> develop, develop -> qa (promotion) and
@@ -31,6 +31,9 @@ const LONG_LIVED = ['develop', 'qa', 'main']
 const MIGRATION = /^backend\/src\/main\/resources\/db\/migration\/(V[^/]+\.sql)$/
 const UNIT_TEST = /^backend\/src\/test\/.+(?<!IntegrationTest)\.java$|\.test\.tsx?$/
 const INTEGRATION_TEST = /^backend\/src\/test\/.+IntegrationTest\.java$|^postman\//
+
+// Priority labels of single stories, not copied to a promotion or a release.
+const PRIORITY_LABELS = ['critical', 'high', 'medium', 'low']
 
 // Labels added from the files changed; only labels that already exist in the repository are used.
 const FILE_LABELS = [
@@ -245,7 +248,7 @@ async function fetchPulls(api, numbers) {
   if (!numbers.length) return []
   const fields = `number title headRefName author { login } labels(first: 20) { nodes { name } }
     closingIssuesReferences(first: 10) {
-      nodes { number title labels(first: 20) { nodes { name } } milestone { number title } }
+      nodes { number title body labels(first: 20) { nodes { name } } milestone { number title } }
     }
     body mergeCommit { oid }
     commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }`
@@ -290,6 +293,11 @@ function describePull(pr) {
     labels: pr.labels.nodes.map((l) => l.name),
     issueLabels: pr.closingIssuesReferences.nodes.flatMap((i) => i.labels.nodes.map((l) => l.name)),
     issueMilestone: pr.closingIssuesReferences.nodes.find((i) => i.milestone)?.milestone || null,
+    // The sprint of the story, from the "**Sprint:** Sprint N" line of the issue body.
+    issueSprint:
+      pr.closingIssuesReferences.nodes
+        .map((i) => (i.body || '').match(/\*\*Sprint:\*\*\s*(Sprint \d+)/)?.[1])
+        .find(Boolean) || null,
     ciGreen: rollup === 'SUCCESS',
     mergeCommit: pr.mergeCommit?.oid || null,
   }
@@ -433,10 +441,15 @@ async function fillSidebar(api, pr, flow, data) {
   )
   const current = new Set((pr.labels || []).map((l) => l.name))
   const files = data.files.map((f) => f.filename)
-  const wanted = [
-    ...(flow.kind === 'work'
+  // A promotion or release gathers many PRs: their priorities say nothing about the whole.
+  const inherited =
+    flow.kind === 'work'
       ? data.pull.issueLabels
-      : data.pulls.flatMap((p) => [...p.labels, ...p.issueLabels])),
+      : data.pulls
+          .flatMap((p) => [...p.labels, ...p.issueLabels])
+          .filter((l) => !PRIORITY_LABELS.includes(l))
+  const wanted = [
+    ...inherited,
     ...FILE_LABELS.filter(({ files: re }) => files.some((f) => re.test(f))).map((l) => l.label),
   ]
   const missing = [...new Set(wanted)].filter((l) => existing.has(l) && !current.has(l))
@@ -445,18 +458,24 @@ async function fillSidebar(api, pr, flow, data) {
     api.core.info(`#${pr.number}: labels added: ${missing.join(', ')}.`)
   }
 
+  // Every PR is grouped by sprint: a work PR takes the sprint of its story (falling back to the
+  // milestone of the issue), a promotion or release the sprint deduced from the roadmap.
   if (pr.milestone) return
-  let milestone = flow.kind === 'work' ? data.pull.issueMilestone : null
-  if (flow.kind !== 'work' && data.sprints[0]) {
-    const title = `Sprint ${data.sprints[0].number}`
+  const sprint =
+    flow.kind === 'work'
+      ? data.pull.issueSprint
+      : data.sprints[0] && `Sprint ${data.sprints[0].number}`
+  let milestone = null
+  if (sprint) {
     const milestones = await github.paginate(github.rest.issues.listMilestones, {
       owner,
       repo,
       state: 'all',
       per_page: 100,
     })
-    milestone = milestones.find((m) => m.title === title) || null
+    milestone = milestones.find((m) => m.title === sprint) || null
   }
+  if (!milestone && flow.kind === 'work') milestone = data.pull.issueMilestone
   if (milestone) {
     await github.rest.issues.update({ ...issue, milestone: milestone.number })
     api.core.info(`#${pr.number}: milestone ${milestone.title}.`)
@@ -712,8 +731,19 @@ function deploymentNotes(files) {
   const gradle = files.find((f) => f.filename === 'backend/build.gradle')
   if (gradle && /^\+.*languageVersion/m.test(gradle.patch || ''))
     notes.push('- Java version changed (`backend/build.gradle`).')
-  if (files.some((f) => f.filename === 'docker-compose.yaml'))
+  const compose = files.find((f) => f.filename === 'docker-compose.yaml')
+  if (compose) {
+    const patch = compose.patch || ''
+    // Named volumes keep data (back them up); paths starting with . or / are bind mounts.
+    const volumes = new Set(
+      [...patch.matchAll(/^\+\s+-\s+["']?([A-Za-z0-9][\w.-]*):\//gm)].map((m) => m[1]),
+    )
+    for (const volume of volumes)
+      notes.push(`- New Docker volume \`${volume}\`: include it in backups.`)
+    for (const m of patch.matchAll(/^\+\s+image:\s*["']?([^\s"']+)/gm))
+      notes.push(`- \`docker-compose.yaml\` uses the image \`${m[1]}\`.`)
     notes.push('- `docker-compose.yaml` changed: review services and variables.')
+  }
   return notes.length ? notes : ['- No new migrations, environment variables or runtime changes.']
 }
 
