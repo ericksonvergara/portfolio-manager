@@ -19,6 +19,7 @@ import com.portafolio_manager.backend.domain.user.IncorrectPasswordException;
 import com.portafolio_manager.backend.domain.user.UnchangedPasswordException;
 import com.portafolio_manager.backend.domain.user.WeakPasswordException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -86,6 +87,16 @@ public class GlobalExceptionHandler {
     })
     ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, exception.getMessage(), request);
+    }
+
+    /**
+     * A constraint of the database rejected the change: another request changed the same data at the same
+     * time (for example, a technology deleted while a project was being saved with it). The SQL details stay
+     * in the server log.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ApiErrorResponse> handleIntegrityViolation(HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "The data changed while saving. Reload it and try again", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

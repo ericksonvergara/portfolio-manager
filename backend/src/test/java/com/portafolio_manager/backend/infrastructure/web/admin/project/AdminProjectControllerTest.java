@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -166,6 +167,20 @@ class AdminProjectControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.path").value("/api/admin/projects"));
+    }
+
+    @Test
+    void shouldAnswerConflictWhenTheDatabaseRejectsTheChange() throws Exception {
+        // For example, a technology deleted by another request while the project was being saved with it.
+        when(updateProjectUseCase.execute(any(ProjectUpdate.class)))
+                .thenThrow(new DataIntegrityViolationException("violates foreign key constraint"));
+
+        mockMvc.perform(put("/api/admin/projects/7")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("The data changed while saving. Reload it and try again"));
     }
 
     @Test
