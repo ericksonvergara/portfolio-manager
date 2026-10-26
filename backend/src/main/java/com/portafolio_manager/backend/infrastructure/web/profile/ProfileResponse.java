@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 @Schema(description = "Perfil público del dueño del portafolio")
-record ProfileResponse(
+public record ProfileResponse(
         @Schema(example = "Erickson Vergara")
         String fullName,
 
@@ -31,7 +31,7 @@ record ProfileResponse(
         List<SocialLinkResponse> socialLinks
 ) {
 
-    static ProfileResponse from(Profile profile) {
+    public static ProfileResponse from(Profile profile) {
         return new ProfileResponse(
                 profile.fullName(),
                 profile.headline(),
@@ -43,7 +43,7 @@ record ProfileResponse(
         );
     }
 
-    record SocialLinkResponse(
+    public record SocialLinkResponse(
             @Schema(example = "GITHUB")
             SocialPlatform platform,
 

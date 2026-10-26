@@ -3,6 +3,7 @@ package com.portafolio_manager.backend.application.service.project;
 import com.portafolio_manager.backend.application.port.in.project.AddGalleryImageUseCase;
 import com.portafolio_manager.backend.application.port.out.image.ImageStoragePort;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
+import com.portafolio_manager.backend.application.service.image.StoredImages;
 import com.portafolio_manager.backend.domain.project.AdminProject;
 import com.portafolio_manager.backend.domain.project.ImageChange;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;

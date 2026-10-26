@@ -1830,6 +1830,427 @@
       ]
     },
     {
+      "name": "Administración - Perfil",
+      "description": "Perfil público (HU023). El perfil es único, así que la carpeta guarda sus datos originales, comprueba las validaciones (correo y redes), lo edita, verifica la Landing Page y al final lo restaura tal como estaba. La subida de la fotografía solo se prueba si el perfil no tiene una, y después se quita: una fotografía existente no se puede restaurar por la API. Sin perfil (404), las peticiones que lo modifican se saltan. Las subidas usan los archivos de `postman/fixtures/` (ver la carpeta de proyectos).",
+      "item": [
+        {
+          "name": "01 · Login (perfil) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "02 · Consultar el perfil sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/profile"
+          }
+        },
+        {
+          "name": "03 · Consultar el perfil → 200 (guarda los datos originales)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run = Date.now();",
+                  "pm.collectionVariables.set('profileTestName', `Postman Perfil ${run}`);",
+                  "pm.collectionVariables.set('profileTestEmail', `postman.${run}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK, o 404 si aún no hay perfil', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+                  "if (pm.response.code === 200) {",
+                  "  const profile = pm.response.json();",
+                  "  const { photoUrl, ...data } = profile;",
+                  "  pm.collectionVariables.set('profileOriginal', JSON.stringify(data));",
+                  "  pm.collectionVariables.set('profilePhotoFree', String(photoUrl === null));",
+                  "} else {",
+                  "  pm.collectionVariables.set('profileOriginal', '');",
+                  "  pm.collectionVariables.set('profilePhotoFree', 'false');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/profile"
+          }
+        },
+        {
+          "name": "04 · Guardar con un correo inválido → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Every write needs an existing profile to restore; skipped while there is none.",
+                  "if (!pm.collectionVariables.get('profileOriginal')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Indica que el correo es inválido', () => pm.expect(pm.response.json().message).to.match(/^email/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{profileTestName}}\",\n  \"headline\": \"Perfil de prueba de Postman\",\n  \"about\": \"Texto de prueba de la colección de Postman.\",\n  \"email\": \"contacto@example\",\n  \"location\": \"\",\n  \"socialLinks\": [\n    { \"platform\": \"WEBSITE\", \"url\": \"https://example.com/postman\" },\n    { \"platform\": \"GITHUB\", \"url\": \"https://github.com/postman\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/profile"
+          }
+        },
+        {
+          "name": "05 · Guardar dos enlaces de la misma red → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Every write needs an existing profile to restore; skipped while there is none.",
+                  "if (!pm.collectionVariables.get('profileOriginal')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica la regla', () => pm.expect(pm.response.json().message).to.include('one link per platform'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{profileTestName}}\",\n  \"headline\": \"Perfil de prueba de Postman\",\n  \"about\": \"Texto de prueba de la colección de Postman.\",\n  \"email\": \"{{profileTestEmail}}\",\n  \"location\": \"\",\n  \"socialLinks\": [\n    { \"platform\": \"GITHUB\", \"url\": \"https://github.com/uno\" },\n    { \"platform\": \"GITHUB\", \"url\": \"https://github.com/dos\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/profile"
+          }
+        },
+        {
+          "name": "06 · Guardar nombre, correo y redes → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Every write needs an existing profile to restore; skipped while there is none.",
+                  "if (!pm.collectionVariables.get('profileOriginal')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const profile = pm.response.json();",
+                  "pm.test('Aplica los cambios', () => {",
+                  "  pm.expect(profile.fullName).to.eql(pm.collectionVariables.get('profileTestName'));",
+                  "  pm.expect(profile.email).to.eql(pm.collectionVariables.get('profileTestEmail'));",
+                  "  pm.expect(profile.location).to.be.null;",
+                  "  pm.expect(profile.socialLinks.map((l) => l.platform)).to.eql(['WEBSITE', 'GITHUB']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{profileTestName}}\",\n  \"headline\": \"Perfil de prueba de Postman\",\n  \"about\": \"Texto de prueba de la colección de Postman.\",\n  \"email\": \"{{profileTestEmail}}\",\n  \"location\": \"\",\n  \"socialLinks\": [\n    { \"platform\": \"WEBSITE\", \"url\": \"https://example.com/postman\" },\n    { \"platform\": \"GITHUB\", \"url\": \"https://github.com/postman\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/profile"
+          }
+        },
+        {
+          "name": "07 · La landing muestra el perfil editado",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Every write needs an existing profile to restore; skipped while there is none.",
+                  "if (!pm.collectionVariables.get('profileOriginal')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Con el nombre y el correo nuevos', () => {",
+                  "  const profile = pm.response.json();",
+                  "  pm.expect(profile.fullName).to.eql(pm.collectionVariables.get('profileTestName'));",
+                  "  pm.expect(profile.email).to.eql(pm.collectionVariables.get('profileTestEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/profile"
+          }
+        },
+        {
+          "name": "08 · Subir una fotografía que no es una imagen → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Every write needs an existing profile to restore; skipped while there is none.",
+                  "if (!pm.collectionVariables.get('profileOriginal')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request: no cambia nada', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "postman/fixtures/no-es-imagen.png" }] },
+            "url": "{{baseUrl}}/api/admin/profile/photo"
+          }
+        },
+        {
+          "name": "09 · Subir la fotografía → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Only when the profile has no photo: an existing photo cannot be restored through the API.",
+                  "if (pm.collectionVariables.get('profilePhotoFree') !== 'true') {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const photoUrl = pm.response.json().photoUrl;",
+                  "pm.test('Se guarda en /uploads/', () => pm.expect(photoUrl).to.match(/^\\/uploads\\/.+\\.png$/));",
+                  "pm.collectionVariables.set('profilePhotoUrl', photoUrl);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "postman/fixtures/portada.png" }] },
+            "url": "{{baseUrl}}/api/admin/profile/photo"
+          }
+        },
+        {
+          "name": "10 · nginx sirve la fotografía → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Only when the profile has no photo: an existing photo cannot be restored through the API.",
+                  "if (pm.collectionVariables.get('profilePhotoFree') !== 'true') {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Es una imagen PNG', () => pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}{{profilePhotoUrl}}"
+          }
+        },
+        {
+          "name": "11 · Quitar la fotografía → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Only when the profile has no photo: an existing photo cannot be restored through the API.",
+                  "if (pm.collectionVariables.get('profilePhotoFree') !== 'true') {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda sin fotografía, como estaba', () => pm.expect(pm.response.json().photoUrl).to.be.null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/profile/photo"
+          }
+        },
+        {
+          "name": "12 · Restaurar los datos originales → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Every write needs an existing profile to restore; skipped while there is none.",
+                  "if (!pm.collectionVariables.get('profileOriginal')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('El perfil queda como estaba', () => {",
+                  "  const { photoUrl, ...data } = pm.response.json();",
+                  "  pm.expect(data).to.eql(JSON.parse(pm.collectionVariables.get('profileOriginal')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{{profileOriginal}}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/profile"
+          }
+        }
+      ]
+    },
+    {
       "name": "Recuperación de contraseña",
       "description": "Recuperación por correo (HU010). Necesita `mailpitUrl` en el entorno: Mailpit atrapa el correo y la colección lee el enlace desde su API. La contraseña nueva es `adminPassword` misma, así que las credenciales no cambian. Sin `mailpitUrl`, las peticiones que dependen del correo se saltan.",
       "item": [
@@ -2369,6 +2790,11 @@
     { "key": "linkTechnologyAId", "value": "", "description": "Id of the first HU022 technology." },
     { "key": "linkTechnologyBId", "value": "", "description": "Id of the second HU022 technology." },
     { "key": "linkProjectName", "value": "", "description": "Project created by the HU022 folder." },
-    { "key": "linkProjectId", "value": "", "description": "Id of the HU022 project." }
+    { "key": "linkProjectId", "value": "", "description": "Id of the HU022 project." },
+    { "key": "profileOriginal", "value": "", "description": "The profile data before the profile folder, restored at its end (no photo)." },
+    { "key": "profilePhotoFree", "value": "", "description": "'true' when the profile had no photo, so the photo requests can run." },
+    { "key": "profileTestName", "value": "", "description": "Name used by the profile folder." },
+    { "key": "profileTestEmail", "value": "", "description": "Contact email used by the profile folder." },
+    { "key": "profilePhotoUrl", "value": "", "description": "Photo uploaded by the profile folder." }
   ]
 }

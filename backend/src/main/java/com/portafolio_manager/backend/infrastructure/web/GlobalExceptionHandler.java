@@ -5,6 +5,7 @@ import com.portafolio_manager.backend.domain.auth.InvalidPasswordResetTokenExcep
 import com.portafolio_manager.backend.domain.auth.InvalidRefreshTokenException;
 import com.portafolio_manager.backend.domain.image.ImageTooLargeException;
 import com.portafolio_manager.backend.domain.image.InvalidImageException;
+import com.portafolio_manager.backend.domain.profile.InvalidProfileException;
 import com.portafolio_manager.backend.domain.profile.ProfileNotFoundException;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.InvalidProjectException;
@@ -69,6 +70,7 @@ public class GlobalExceptionHandler {
             InvalidProjectException.class,
             InvalidImageException.class,
             InvalidTechnologyException.class,
+            InvalidProfileException.class,
             WeakPasswordException.class,
             InvalidPasswordResetTokenException.class,
             // 400, not 401: the frontend treats a 401 as an expired session.

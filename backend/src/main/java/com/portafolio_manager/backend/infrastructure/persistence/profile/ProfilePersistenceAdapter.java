@@ -2,6 +2,7 @@ package com.portafolio_manager.backend.infrastructure.persistence.profile;
 
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
 import com.portafolio_manager.backend.domain.profile.Profile;
+import com.portafolio_manager.backend.domain.profile.ProfileDraft;
 import com.portafolio_manager.backend.domain.profile.SocialLink;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,27 @@ class ProfilePersistenceAdapter implements ProfileRepositoryPort {
     @Transactional(readOnly = true)
     public Optional<Profile> find() {
         return profileRepository.findFirstByOrderByIdAsc().map(ProfilePersistenceAdapter::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public Profile save(ProfileDraft draft) {
+        ProfileJpaEntity entity = profileRepository.findFirstByOrderByIdAsc()
+                .map(existing -> {
+                    existing.apply(draft);
+                    return existing;
+                })
+                .orElseGet(() -> ProfileJpaEntity.newProfile(draft));
+        return toDomain(profileRepository.saveAndFlush(entity));
+    }
+
+    @Override
+    @Transactional
+    public Optional<Profile> setPhoto(String photoUrl) {
+        return profileRepository.findFirstByOrderByIdAsc().map(entity -> {
+            entity.setPhotoUrl(photoUrl);
+            return toDomain(profileRepository.saveAndFlush(entity));
+        });
     }
 
     private static Profile toDomain(ProfileJpaEntity entity) {

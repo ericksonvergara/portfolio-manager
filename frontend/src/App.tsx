@@ -9,6 +9,7 @@ import { AccountPage } from './pages/admin/AccountPage'
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage'
 import { EditProjectPage } from './pages/admin/EditProjectPage'
 import { NewProjectPage } from './pages/admin/NewProjectPage'
+import { ProfilePage } from './pages/admin/ProfilePage'
 import { TechnologiesPage } from './pages/admin/TechnologiesPage'
 import { HomePage } from './pages/HomePage'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
@@ -42,6 +43,7 @@ function App() {
             <Route path="proyectos/nuevo" element={<NewProjectPage />} />
             <Route path="proyectos/:id/editar" element={<EditProjectPage />} />
             <Route path="tecnologias" element={<TechnologiesPage />} />
+            <Route path="perfil" element={<ProfilePage />} />
             <Route path="cuenta" element={<AccountPage />} />
           </Route>
         </Routes>
