@@ -1,6 +1,9 @@
 package com.portafolio_manager.backend.infrastructure.config;
 
 import com.portafolio_manager.backend.application.port.in.profile.GetPublicProfileUseCase;
+import com.portafolio_manager.backend.application.port.in.profile.RemoveProfilePhotoUseCase;
+import com.portafolio_manager.backend.application.port.in.profile.SetProfilePhotoUseCase;
+import com.portafolio_manager.backend.application.port.in.profile.UpdateProfileUseCase;
 import com.portafolio_manager.backend.application.port.in.project.AddGalleryImageUseCase;
 import com.portafolio_manager.backend.application.port.in.project.CreateProjectUseCase;
 import com.portafolio_manager.backend.application.port.in.project.DeleteProjectUseCase;
@@ -23,6 +26,9 @@ import com.portafolio_manager.backend.application.port.out.profile.ProfileReposi
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
 import com.portafolio_manager.backend.application.service.profile.GetPublicProfileService;
+import com.portafolio_manager.backend.application.service.profile.RemoveProfilePhotoService;
+import com.portafolio_manager.backend.application.service.profile.SetProfilePhotoService;
+import com.portafolio_manager.backend.application.service.profile.UpdateProfileService;
 import com.portafolio_manager.backend.application.service.project.AddGalleryImageService;
 import com.portafolio_manager.backend.application.service.project.CreateProjectService;
 import com.portafolio_manager.backend.application.service.project.DeleteProjectService;
@@ -53,6 +59,28 @@ public class PortfolioConfig {
     @Bean
     GetPublicProfileUseCase getPublicProfileUseCase(ProfileRepositoryPort profileRepository) {
         return new GetPublicProfileService(profileRepository);
+    }
+
+    @Bean
+    UpdateProfileUseCase updateProfileUseCase(ProfileRepositoryPort profileRepository) {
+        return new UpdateProfileService(profileRepository);
+    }
+
+    @Bean
+    SetProfilePhotoUseCase setProfilePhotoUseCase(
+            ProfileRepositoryPort profileRepository,
+            ImageStoragePort imageStorage,
+            UploadProperties uploads
+    ) {
+        return new SetProfilePhotoService(profileRepository, imageStorage, uploads.maxSize().toBytes());
+    }
+
+    @Bean
+    RemoveProfilePhotoUseCase removeProfilePhotoUseCase(
+            ProfileRepositoryPort profileRepository,
+            ImageStoragePort imageStorage
+    ) {
+        return new RemoveProfilePhotoService(profileRepository, imageStorage);
     }
 
     @Bean
