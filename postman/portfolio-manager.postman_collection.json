@@ -1484,6 +1484,352 @@
       ]
     },
     {
+      "name": "Administración - Tecnologías de un proyecto",
+      "description": "Asociación de tecnologías a proyectos (HU022). Crea dos tecnologías de prueba y un proyecto que usa las dos, comprueba el conteo del catálogo y que no se puede eliminar una tecnología asociada, quita una del proyecto, rechaza dejarlo sin tecnologías o con una inexistente, y al final elimina el proyecto y las dos tecnologías, así que la base queda como estaba.",
+      "item": [
+        {
+          "name": "01 · Login (tecnologías de un proyecto) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "02 · Crear la primera tecnología de prueba → 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run = Date.now();",
+                  "pm.collectionVariables.set('linkTechnologyAName', `Postman Link A ${run}`);",
+                  "pm.collectionVariables.set('linkTechnologyBName', `Postman Link B ${run}`);",
+                  "pm.collectionVariables.set('linkProjectName', `Postman HU022 ${run}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('linkTechnologyAId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{linkTechnologyAName}}\",\n  \"category\": \"TOOLS\",\n  \"displayOrder\": 99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "03 · Crear la segunda tecnología de prueba → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('linkTechnologyBId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{linkTechnologyBName}}\",\n  \"category\": \"TOOLS\",\n  \"displayOrder\": 99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "04 · Registrar un proyecto con las dos → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('linkProjectId', pm.response.json().id);",
+                  "pm.test('Muestra las dos tecnologías asociadas', () => pm.expect(pm.response.json().technologies.map((t) => t.name)).to.eql([pm.collectionVariables.get('linkTechnologyAName'), pm.collectionVariables.get('linkTechnologyBName')]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{linkProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Comprueba la asociación de tecnologías (HU022).\",\n  \"projectUrl\": null,\n  \"repositoryUrl\": null,\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{linkTechnologyAId}}, {{linkTechnologyBId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
+          "name": "05 · El catálogo cuenta el proyecto en las dos → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const byId = Object.fromEntries(pm.response.json().map((t) => [t.id, t.projectCount]));",
+                  "pm.test('La primera la usa un proyecto', () => pm.expect(byId[pm.collectionVariables.get('linkTechnologyAId')]).to.eql(1));",
+                  "pm.test('La segunda la usa un proyecto', () => pm.expect(byId[pm.collectionVariables.get('linkTechnologyBId')]).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "06 · Eliminar una tecnología asociada → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409 Conflict (RN005)', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies/{{linkTechnologyAId}}"
+          }
+        },
+        {
+          "name": "07 · Quitar una tecnología del proyecto → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Solo queda la segunda', () => pm.expect(pm.response.json().technologies.map((t) => t.name)).to.eql([pm.collectionVariables.get('linkTechnologyBName')]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{linkProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Comprueba la asociación de tecnologías (HU022).\",\n  \"projectUrl\": null,\n  \"repositoryUrl\": null,\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{linkTechnologyBId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects/{{linkProjectId}}"
+          }
+        },
+        {
+          "name": "08 · Quitar todas las tecnologías → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request: necesita al menos una (RN005)', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{linkProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Comprueba la asociación de tecnologías (HU022).\",\n  \"projectUrl\": null,\n  \"repositoryUrl\": null,\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects/{{linkProjectId}}"
+          }
+        },
+        {
+          "name": "09 · Asociar una tecnología inexistente → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Indica la tecnología desconocida', () => pm.expect(pm.response.json().message).to.eql('Unknown technologies: [999999999]'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{linkProjectName}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Comprueba la asociación de tecnologías (HU022).\",\n  \"projectUrl\": null,\n  \"repositoryUrl\": null,\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{linkTechnologyBId}}, 999999999]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects/{{linkProjectId}}"
+          }
+        },
+        {
+          "name": "10 · Consultar el proyecto: conserva la asociación válida → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Los intentos rechazados no cambiaron nada', () => pm.expect(pm.response.json().technologies.map((t) => t.name)).to.eql([pm.collectionVariables.get('linkTechnologyBName')]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects/{{linkProjectId}}"
+          }
+        },
+        {
+          "name": "11 · El catálogo ya no cuenta la tecnología quitada → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const byId = Object.fromEntries(pm.response.json().map((t) => [t.id, t.projectCount]));",
+                  "pm.test('La primera queda libre', () => pm.expect(byId[pm.collectionVariables.get('linkTechnologyAId')]).to.eql(0));",
+                  "pm.test('La segunda sigue en uso', () => pm.expect(byId[pm.collectionVariables.get('linkTechnologyBId')]).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies"
+          }
+        },
+        {
+          "name": "12 · Eliminar la tecnología quitada → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies/{{linkTechnologyAId}}"
+          }
+        },
+        {
+          "name": "13 · Eliminar el proyecto de prueba → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/projects/{{linkProjectId}}"
+          }
+        },
+        {
+          "name": "14 · Eliminar la otra tecnología, ya sin proyectos → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content: al borrar el proyecto se liberó', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/technologies/{{linkTechnologyBId}}"
+          }
+        }
+      ]
+    },
+    {
       "name": "Recuperación de contraseña",
       "description": "Recuperación por correo (HU010). Necesita `mailpitUrl` en el entorno: Mailpit atrapa el correo y la colección lee el enlace desde su API. La contraseña nueva es `adminPassword` misma, así que las credenciales no cambian. Sin `mailpitUrl`, las peticiones que dependen del correo se saltan.",
       "item": [
@@ -2017,6 +2363,12 @@
     { "key": "technologyName", "value": "", "description": "Unique name of the technology created by the technologies folder." },
     { "key": "technologyNameUpper", "value": "", "description": "Same name in upper case (duplicate test)." },
     { "key": "adminTechnologyId", "value": "", "description": "Technology created by the technologies folder." },
-    { "key": "usedTechnologyId", "value": "", "description": "A technology used by a project (delete is rejected)." }
+    { "key": "usedTechnologyId", "value": "", "description": "A technology used by a project (delete is rejected)." },
+    { "key": "linkTechnologyAName", "value": "", "description": "First technology of the HU022 folder (removed from the project)." },
+    { "key": "linkTechnologyBName", "value": "", "description": "Second technology of the HU022 folder (kept in the project)." },
+    { "key": "linkTechnologyAId", "value": "", "description": "Id of the first HU022 technology." },
+    { "key": "linkTechnologyBId", "value": "", "description": "Id of the second HU022 technology." },
+    { "key": "linkProjectName", "value": "", "description": "Project created by the HU022 folder." },
+    { "key": "linkProjectId", "value": "", "description": "Id of the HU022 project." }
   ]
 }
