@@ -17,12 +17,18 @@ import java.util.List;
 interface PublicProjectApi {
 
     @Operation(
-            summary = "Listar proyectos publicados",
+            summary = "Listar y buscar proyectos publicados",
             description = "Solo proyectos activos: primero los destacados y después por orden de aparición. "
-                    + "Devuelve una lista vacía si no hay ninguno."
+                    + "Con `search`, solo los que coinciden por nombre o tecnología, sin distinguir mayúsculas "
+                    + "ni tildes; con varias palabras deben coincidir todas. Devuelve una lista vacía si no hay ninguno."
     )
     @ApiResponse(responseCode = "200", description = "Proyectos publicados")
-    List<ProjectCardResponse> listProjects();
+    @ApiResponse(responseCode = "400", description = "La búsqueda supera los 100 caracteres",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    List<ProjectCardResponse> listProjects(
+            @Parameter(description = "Texto a buscar en el nombre y las tecnologías (opcional)", example = "react")
+            String search
+    );
 
     @Operation(
             summary = "Consultar el detalle de un proyecto",

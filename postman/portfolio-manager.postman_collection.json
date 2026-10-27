@@ -445,7 +445,12 @@
                   "  }",
                   "});",
                   "// The detail request uses the first published project, if there is one.",
-                  "pm.collectionVariables.set('projectSlug', projects.length > 0 ? projects[0].slug : '');"
+                  "pm.collectionVariables.set('projectSlug', projects.length > 0 ? projects[0].slug : '');",
+                  "// The search requests (HU004) look for a published project that has technologies.",
+                  "const sample = projects.find((project) => project.technologies.length > 0);",
+                  "pm.collectionVariables.set('searchSlug', sample ? sample.slug : '');",
+                  "pm.collectionVariables.set('searchName', sample ? sample.name.split(' ')[0] : '');",
+                  "pm.collectionVariables.set('searchTechnology', sample ? sample.technologies[0] : '');"
                 ]
               }
             }
@@ -456,6 +461,111 @@
             "url": "{{baseUrl}}/api/public/projects",
             "description": "Solo proyectos activos (RN008), destacados primero y luego por orden de aparición. Guarda el primer `slug` en `projectSlug`."
           }
+        },
+        {
+          "name": "Buscar proyectos por nombre → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs a published project with technologies (for example from the demo seed); skipped if there is none.",
+                  "if (!pm.collectionVariables.get('searchTechnology')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye el proyecto buscado (HU004)', () => {",
+                  "  pm.expect(pm.response.json().map((p) => p.slug)).to.include(pm.collectionVariables.get('searchSlug'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?search={{searchName}}" }
+        },
+        {
+          "name": "Buscar proyectos por tecnología, en mayúsculas → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs a published project with technologies (for example from the demo seed); skipped if there is none.",
+                  "if (!pm.collectionVariables.get('searchTechnology')) {",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "pm.collectionVariables.set('searchTechnologyUpper', pm.collectionVariables.get('searchTechnology').toUpperCase());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const technology = pm.collectionVariables.get('searchTechnology').toLowerCase();",
+                  "const projects = pm.response.json();",
+                  "pm.test('Todos usan esa tecnología, sin distinguir mayúsculas', () => {",
+                  "  pm.expect(projects).to.not.be.empty;",
+                  "  projects.forEach((p) => pm.expect(p.technologies.map((t) => t.toLowerCase()).join(' ')).to.include(technology));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?search={{searchTechnologyUpper}}" }
+        },
+        {
+          "name": "Buscar un texto que no coincide → 200 vacío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve una lista vacía', () => pm.expect(pm.response.json()).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?search=zzz-sin-resultados" }
+        },
+        {
+          "name": "Buscar con más de 100 caracteres → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('searchTooLong', 'x'.repeat(101));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica el límite', () => pm.expect(pm.response.json().message).to.eql('search must be at most 100 characters'));"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?search={{searchTooLong}}" }
         },
         {
           "name": "Detalle de un proyecto publicado → 200",
@@ -2795,6 +2905,11 @@
     { "key": "profilePhotoFree", "value": "", "description": "'true' when the profile had no photo, so the photo requests can run." },
     { "key": "profileTestName", "value": "", "description": "Name used by the profile folder." },
     { "key": "profileTestEmail", "value": "", "description": "Contact email used by the profile folder." },
-    { "key": "profilePhotoUrl", "value": "", "description": "Photo uploaded by the profile folder." }
+    { "key": "profilePhotoUrl", "value": "", "description": "Photo uploaded by the profile folder." },
+    { "key": "searchSlug", "value": "", "description": "Published project the search requests look for (HU004)." },
+    { "key": "searchName", "value": "", "description": "First word of its name." },
+    { "key": "searchTechnology", "value": "", "description": "One of its technologies." },
+    { "key": "searchTechnologyUpper", "value": "", "description": "The same technology in upper case." },
+    { "key": "searchTooLong", "value": "", "description": "A search over the 100-character limit." }
   ]
 }
