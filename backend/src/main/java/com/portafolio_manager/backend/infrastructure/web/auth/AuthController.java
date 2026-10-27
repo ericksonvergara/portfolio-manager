@@ -6,6 +6,9 @@ import com.portafolio_manager.backend.application.port.in.auth.LoginUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.LogoutCommand;
 import com.portafolio_manager.backend.application.port.in.auth.LogoutUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.RefreshSessionUseCase;
+import com.portafolio_manager.backend.application.port.in.auth.RequestPasswordResetUseCase;
+import com.portafolio_manager.backend.application.port.in.auth.ResetPasswordCommand;
+import com.portafolio_manager.backend.application.port.in.auth.ResetPasswordUseCase;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -26,17 +29,23 @@ class AuthController implements AuthApi {
     private final LoginUseCase loginUseCase;
     private final RefreshSessionUseCase refreshSessionUseCase;
     private final LogoutUseCase logoutUseCase;
+    private final RequestPasswordResetUseCase requestPasswordResetUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
     private final RefreshTokenCookieFactory cookieFactory;
 
     AuthController(
             LoginUseCase loginUseCase,
             RefreshSessionUseCase refreshSessionUseCase,
             LogoutUseCase logoutUseCase,
+            RequestPasswordResetUseCase requestPasswordResetUseCase,
+            ResetPasswordUseCase resetPasswordUseCase,
             RefreshTokenCookieFactory cookieFactory
     ) {
         this.loginUseCase = loginUseCase;
         this.refreshSessionUseCase = refreshSessionUseCase;
         this.logoutUseCase = logoutUseCase;
+        this.requestPasswordResetUseCase = requestPasswordResetUseCase;
+        this.resetPasswordUseCase = resetPasswordUseCase;
         this.cookieFactory = cookieFactory;
     }
 
@@ -61,6 +70,20 @@ class AuthController implements AuthApi {
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, cookieFactory.clear().toString())
                 .build();
+    }
+
+    @Override
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        requestPasswordResetUseCase.execute(request.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    @Override
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        resetPasswordUseCase.execute(new ResetPasswordCommand(request.token(), request.newPassword()));
+        return ResponseEntity.noContent().build();
     }
 
     private ResponseEntity<TokenResponse> sessionResponse(AuthenticationResult result) {

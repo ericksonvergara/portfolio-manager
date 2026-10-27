@@ -32,7 +32,7 @@ vi.mock('../../features/landing/landingApi', () => ({
   getTechnologies: () => Promise.resolve(TECHNOLOGIES),
 }))
 
-function httpError(status: number) {
+function httpError(status: number, message?: string) {
   return new AxiosError(
     'Request failed',
     'ERR_BAD_REQUEST',
@@ -40,6 +40,7 @@ function httpError(status: number) {
     undefined,
     {
       status,
+      data: { message },
     } as AxiosResponse,
   )
 }
@@ -146,7 +147,10 @@ describe('NewProjectPage', () => {
   })
 
   it('marks the name when it is already taken', async () => {
-    api.respond = () => Promise.reject(httpError(409))
+    api.respond = () =>
+      Promise.reject(
+        httpError(409, "A project named 'Sistema ERP' already exists"),
+      )
     renderPage()
     const user = await fillRequiredFields()
     await user.click(screen.getByRole('button', { name: 'Registrar proyecto' }))

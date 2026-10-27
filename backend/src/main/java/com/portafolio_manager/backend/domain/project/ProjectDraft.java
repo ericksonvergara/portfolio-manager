@@ -1,7 +1,7 @@
 package com.portafolio_manager.backend.domain.project;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import com.portafolio_manager.backend.domain.WebUrl;
+
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Set;
@@ -58,14 +58,8 @@ public record ProjectDraft(
             return null;
         }
         String url = value.strip();
-        try {
-            URI uri = new URI(url);
-            boolean web = "http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme());
-            if (web && uri.getHost() != null) {
-                return url;
-            }
-        } catch (URISyntaxException ignored) {
-            // reported below
+        if (WebUrl.isValid(url)) {
+            return url;
         }
         throw new InvalidProjectException(field + " must be a valid http or https URL");
     }

@@ -17,4 +17,6 @@ public interface UserRepositoryPort extends PersistencePort {
     User save(User user);
 
     void updateLastLogin(Long userId, Instant lastLoginAt);
+
+    void updatePassword(Long userId, String passwordHash);
 }

@@ -1,7 +1,7 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/workflows/release.yml
-# Version: 1.0.0
+# Version: 1.0.1
 # Description: Automated Release Workflow
 # Author: Erickson Vergara
 # Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -26,6 +26,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          # The notes compare with the previous tag, so the history and the tags are needed.
+          fetch-depth: 0
 
       - name: Generate Release Notes
         id: release_notes

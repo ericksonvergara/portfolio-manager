@@ -12,6 +12,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class GetPublicProfileServiceTest {
 
@@ -25,16 +27,18 @@ class GetPublicProfileServiceTest {
             List.of(new SocialLink(SocialPlatform.GITHUB, "https://github.com/ericksonvergara"))
     );
 
+    private final ProfileRepositoryPort repository = mock(ProfileRepositoryPort.class);
+
     @Test
     void shouldReturnTheProfile() {
-        ProfileRepositoryPort repository = () -> Optional.of(PROFILE);
+        when(repository.find()).thenReturn(Optional.of(PROFILE));
 
         assertThat(new GetPublicProfileService(repository).execute(null)).isEqualTo(PROFILE);
     }
 
     @Test
     void shouldFailWhileTheProfileIsNotSetUp() {
-        ProfileRepositoryPort repository = Optional::empty;
+        when(repository.find()).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> new GetPublicProfileService(repository).execute(null))
                 .isInstanceOf(ProfileNotFoundException.class);
