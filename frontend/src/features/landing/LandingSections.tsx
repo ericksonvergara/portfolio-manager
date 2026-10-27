@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORY_LABELS, SOCIAL_LABELS } from './labels'
 import type {
@@ -9,6 +9,7 @@ import type {
   TechnologyCategory,
 } from './landingApi'
 import { SocialIcon } from './SocialIcon'
+import { MAX_SEARCH_LENGTH, useProjectSearch } from './useProjectSearch'
 
 const SECTION_IDS = {
   about: 'sobre-mi',
@@ -246,13 +247,82 @@ export function PortfolioSection({ projects }: { projects: ProjectCard[] }) {
           Los proyectos publicados aparecerán aquí.
         </p>
       ) : (
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
+        <SearchableProjects all={projects} />
+      )}
+    </Section>
+  )
+}
+
+/** The project grid with its search box (HU004). */
+function SearchableProjects({ all }: { all: ProjectCard[] }) {
+  const [query, setQuery] = useState('')
+  const search = useProjectSearch(all, query)
+  const inputId = useId()
+  const text = query.trim()
+
+  const summary =
+    search.status === 'searching'
+      ? 'Buscando…'
+      : !text
+        ? ''
+        : search.projects.length === 1
+          ? `1 proyecto encontrado para «${text}».`
+          : `${search.projects.length} proyectos encontrados para «${text}».`
+
+  return (
+    <>
+      <div role="search" className="mb-8 max-w-md">
+        <label
+          htmlFor={inputId}
+          className="mb-1 block text-sm font-medium text-slate-300"
+        >
+          Buscar proyectos
+        </label>
+        <div className="flex gap-2">
+          <input
+            id={inputId}
+            type="search"
+            value={query}
+            maxLength={MAX_SEARCH_LENGTH}
+            placeholder="Nombre o tecnología, por ejemplo React"
+            onChange={(event) => setQuery(event.target.value)}
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+        <p role="status" className="mt-2 min-h-5 text-sm text-slate-400">
+          {summary}
+        </p>
+      </div>
+
+      {search.status === 'error' ? (
+        <p role="alert" className="text-slate-300">
+          No se pudo completar la búsqueda. Inténtalo de nuevo.
+        </p>
+      ) : search.projects.length === 0 ? (
+        <p className="text-slate-400">
+          No hay proyectos que coincidan con «{text}». Prueba con otro nombre o
+          tecnología.
+        </p>
+      ) : (
+        <ul
+          aria-busy={search.status === 'searching'}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {search.projects.map((project) => (
             <ProjectCardItem key={project.slug} project={project} />
           ))}
         </ul>
       )}
-    </Section>
+    </>
   )
 }
 

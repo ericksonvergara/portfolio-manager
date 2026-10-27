@@ -6,6 +6,7 @@ import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTok
 import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectImage;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
+import com.portafolio_manager.backend.domain.project.ProjectSearch;
 import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.domain.project.ProjectSummary;
 import com.portafolio_manager.backend.domain.technology.Technology;
@@ -85,8 +86,20 @@ class PublicProjectControllerTest {
     }
 
     @Test
+    void shouldPassTheSearchAndRejectOneThatIsTooLong() throws Exception {
+        when(listPublishedProjectsUseCase.execute(new ProjectSearch("react"))).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/public/projects").param("search", " react "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+        mockMvc.perform(get("/api/public/projects").param("search", "x".repeat(101)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("search must be at most 100 characters"));
+    }
+
+    @Test
     void shouldReturnTheProjectCardsToAnonymousVisitors() throws Exception {
-        when(listPublishedProjectsUseCase.execute(null)).thenReturn(List.of(new ProjectSummary(
+        when(listPublishedProjectsUseCase.execute(ProjectSearch.all())).thenReturn(List.of(new ProjectSummary(
                 "sistema-erp",
                 "Sistema ERP",
                 "Gestión de inventario y facturación.",

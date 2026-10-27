@@ -66,6 +66,27 @@ class PublicProjectIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldSearchThePublishedProjectsByNameOrTechnology() throws Exception {
+        long erp = insertProject("Gestión de Imágenes", true, false, 1);
+        long shop = insertProject("Tienda en línea", true, false, 2);
+        insertProject("Imágenes ocultas", false, false, 3);
+        long java = insertTechnology("Java", 1);
+        long react = insertTechnology("React", 2);
+        jdbcTemplate.update("INSERT INTO project_technologies VALUES (?, ?), (?, ?), (?, ?)",
+                erp, java, shop, java, shop, react);
+
+        mockMvc.perform(get("/api/public/projects").param("search", "IMAGENES"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name").value(contains("Gestión de Imágenes")));
+        mockMvc.perform(get("/api/public/projects").param("search", "java"))
+                .andExpect(jsonPath("$[*].name").value(contains("Gestión de Imágenes", "Tienda en línea")));
+        mockMvc.perform(get("/api/public/projects").param("search", "java react"))
+                .andExpect(jsonPath("$[*].name").value(contains("Tienda en línea")));
+        mockMvc.perform(get("/api/public/projects").param("search", "python"))
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
     void shouldReturnTheDetailOfAnActiveProject() throws Exception {
         long project = insertProject("Sistema ERP", true, false, 1);
         jdbcTemplate.update("""

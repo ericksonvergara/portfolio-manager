@@ -72,8 +72,12 @@ export async function getTechnologies(): Promise<Technology[]> {
   return data
 }
 
-export async function getProjects(): Promise<ProjectCard[]> {
-  const { data } = await api.get<ProjectCard[]>('/api/public/projects')
+/** The published projects; with a search, only those that match its name or technologies (HU004). */
+export async function getProjects(search?: string): Promise<ProjectCard[]> {
+  const params = search?.trim() ? { search: search.trim() } : undefined
+  const { data } = await api.get<ProjectCard[]>('/api/public/projects', {
+    params,
+  })
   return data
 }
 
