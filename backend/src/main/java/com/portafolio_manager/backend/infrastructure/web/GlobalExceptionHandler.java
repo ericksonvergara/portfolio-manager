@@ -1,16 +1,26 @@
 package com.portafolio_manager.backend.infrastructure.web;
 
 import com.portafolio_manager.backend.domain.auth.InvalidCredentialsException;
+import com.portafolio_manager.backend.domain.auth.InvalidPasswordResetTokenException;
 import com.portafolio_manager.backend.domain.auth.InvalidRefreshTokenException;
 import com.portafolio_manager.backend.domain.image.ImageTooLargeException;
 import com.portafolio_manager.backend.domain.image.InvalidImageException;
+import com.portafolio_manager.backend.domain.profile.InvalidProfileException;
 import com.portafolio_manager.backend.domain.profile.ProfileNotFoundException;
 import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.InvalidProjectException;
 import com.portafolio_manager.backend.domain.project.ProjectImageNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
 import com.portafolio_manager.backend.domain.project.ProjectNotPublishableException;
+import com.portafolio_manager.backend.domain.technology.DuplicateTechnologyNameException;
+import com.portafolio_manager.backend.domain.technology.InvalidTechnologyException;
+import com.portafolio_manager.backend.domain.technology.TechnologyInUseException;
+import com.portafolio_manager.backend.domain.technology.TechnologyNotFoundException;
+import com.portafolio_manager.backend.domain.user.IncorrectPasswordException;
+import com.portafolio_manager.backend.domain.user.UnchangedPasswordException;
+import com.portafolio_manager.backend.domain.user.WeakPasswordException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -30,7 +40,12 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
     }
 
-    @ExceptionHandler({ProfileNotFoundException.class, ProjectNotFoundException.class, ProjectImageNotFoundException.class})
+    @ExceptionHandler({
+            ProfileNotFoundException.class,
+            ProjectNotFoundException.class,
+            ProjectImageNotFoundException.class,
+            TechnologyNotFoundException.class
+    })
     ResponseEntity<ApiErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
     }
@@ -51,14 +66,39 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Missing file part '" + exception.getRequestPartName() + "'", request);
     }
 
-    @ExceptionHandler({InvalidProjectException.class, InvalidImageException.class})
+    @ExceptionHandler({
+            InvalidProjectException.class,
+            InvalidImageException.class,
+            InvalidTechnologyException.class,
+            InvalidProfileException.class,
+            WeakPasswordException.class,
+            InvalidPasswordResetTokenException.class,
+            // 400, not 401: the frontend treats a 401 as an expired session.
+            IncorrectPasswordException.class,
+            UnchangedPasswordException.class
+    })
     ResponseEntity<ApiErrorResponse> handleInvalidData(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
-    @ExceptionHandler({DuplicateProjectNameException.class, ProjectNotPublishableException.class})
+    @ExceptionHandler({
+            DuplicateProjectNameException.class,
+            ProjectNotPublishableException.class,
+            DuplicateTechnologyNameException.class,
+            TechnologyInUseException.class
+    })
     ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, exception.getMessage(), request);
+    }
+
+    /**
+     * A constraint of the database rejected the change: another request changed the same data at the same
+     * time (for example, a technology deleted while a project was being saved with it). The SQL details stay
+     * in the server log.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ApiErrorResponse> handleIntegrityViolation(HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "The data changed while saving. Reload it and try again", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -69,4 +69,26 @@ interface AuthApi {
             headers = @Header(name = "Set-Cookie", description = "Cookie `refresh_token` expirada")
     )
     ResponseEntity<Void> logout(@Parameter(hidden = true) HttpServletRequest request);
+
+    @Operation(
+            summary = "Solicitar la recuperación de la contraseña",
+            description = "Si el correo pertenece a una cuenta activa, envía un enlace de un solo uso que caduca "
+                    + "(30 minutos por defecto). Responde igual exista o no la cuenta, para no revelar qué "
+                    + "correos están registrados (HU010)."
+    )
+    @ApiResponse(responseCode = "202", description = "Solicitud aceptada")
+    @ApiResponse(responseCode = "400", description = "Correo mal formado",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    ResponseEntity<Void> requestPasswordReset(PasswordResetRequest request);
+
+    @Operation(
+            summary = "Establecer una contraseña nueva",
+            description = "Con el token del enlace recibido. La contraseña debe cumplir la política (RF004). "
+                    + "El enlace deja de valer y se cierran todas las sesiones abiertas de la cuenta."
+    )
+    @ApiResponse(responseCode = "204", description = "Contraseña actualizada")
+    @ApiResponse(responseCode = "400", description = "Contraseña que no cumple la política, o enlace inválido, "
+            + "usado o caducado",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    ResponseEntity<Void> confirmPasswordReset(PasswordResetConfirmRequest request);
 }

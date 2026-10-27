@@ -1,18 +1,27 @@
 package com.portafolio_manager.backend.infrastructure.config;
 
+import com.portafolio_manager.backend.application.port.in.auth.ChangePasswordUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.LoginUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.LogoutUseCase;
 import com.portafolio_manager.backend.application.port.in.auth.RefreshSessionUseCase;
+import com.portafolio_manager.backend.application.port.in.auth.RequestPasswordResetUseCase;
+import com.portafolio_manager.backend.application.port.in.auth.ResetPasswordUseCase;
 import com.portafolio_manager.backend.application.port.out.auth.AccessTokenProviderPort;
 import com.portafolio_manager.backend.application.port.out.auth.PasswordHasherPort;
+import com.portafolio_manager.backend.application.port.out.auth.PasswordResetMailerPort;
+import com.portafolio_manager.backend.application.port.out.auth.PasswordResetTokenRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.auth.RefreshTokenGeneratorPort;
 import com.portafolio_manager.backend.application.port.out.auth.RefreshTokenRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTokenRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.user.UserRepositoryPort;
+import com.portafolio_manager.backend.application.service.auth.ChangePasswordService;
 import com.portafolio_manager.backend.application.service.auth.LoginService;
 import com.portafolio_manager.backend.application.service.auth.LogoutService;
 import com.portafolio_manager.backend.application.service.auth.RefreshSessionService;
+import com.portafolio_manager.backend.application.service.auth.RequestPasswordResetService;
+import com.portafolio_manager.backend.application.service.auth.ResetPasswordService;
 import com.portafolio_manager.backend.application.service.auth.SessionIssuer;
+import com.portafolio_manager.backend.infrastructure.mail.PasswordResetProperties;
 import com.portafolio_manager.backend.infrastructure.security.jwt.JwtProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -84,6 +93,62 @@ public class AuthenticationConfig {
                 refreshTokenRepository,
                 refreshTokenGenerator,
                 accessTokenProvider,
+                revokedAccessTokenRepository,
+                clock
+        );
+    }
+
+    @Bean
+    RequestPasswordResetUseCase requestPasswordResetUseCase(
+            UserRepositoryPort userRepository,
+            PasswordResetTokenRepositoryPort passwordResetTokenRepository,
+            RefreshTokenGeneratorPort refreshTokenGenerator,
+            PasswordResetMailerPort passwordResetMailer,
+            Clock clock,
+            PasswordResetProperties passwordReset
+    ) {
+        return new RequestPasswordResetService(
+                userRepository,
+                passwordResetTokenRepository,
+                refreshTokenGenerator,
+                passwordResetMailer,
+                clock,
+                passwordReset.ttl(),
+                passwordReset.url()
+        );
+    }
+
+    @Bean
+    ResetPasswordUseCase resetPasswordUseCase(
+            PasswordResetTokenRepositoryPort passwordResetTokenRepository,
+            RefreshTokenGeneratorPort refreshTokenGenerator,
+            UserRepositoryPort userRepository,
+            PasswordHasherPort passwordHasher,
+            RefreshTokenRepositoryPort refreshTokenRepository,
+            Clock clock
+    ) {
+        return new ResetPasswordService(
+                passwordResetTokenRepository,
+                refreshTokenGenerator,
+                userRepository,
+                passwordHasher,
+                refreshTokenRepository,
+                clock
+        );
+    }
+
+    @Bean
+    ChangePasswordUseCase changePasswordUseCase(
+            UserRepositoryPort userRepository,
+            PasswordHasherPort passwordHasher,
+            RefreshTokenRepositoryPort refreshTokenRepository,
+            RevokedAccessTokenRepositoryPort revokedAccessTokenRepository,
+            Clock clock
+    ) {
+        return new ChangePasswordService(
+                userRepository,
+                passwordHasher,
+                refreshTokenRepository,
                 revokedAccessTokenRepository,
                 clock
         );

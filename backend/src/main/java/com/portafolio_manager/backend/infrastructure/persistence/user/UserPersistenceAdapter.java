@@ -69,6 +69,12 @@ class UserPersistenceAdapter implements UserRepositoryPort {
         userRepository.updateLastLogin(userId, lastLoginAt);
     }
 
+    @Override
+    @Transactional
+    public void updatePassword(Long userId, String passwordHash) {
+        userRepository.updatePassword(userId, passwordHash, Instant.now());
+    }
+
     private static User toDomain(UserJpaEntity entity) {
         Set<Role> roles = entity.getRoles().stream()
                 .map(role -> Role.valueOf(role.getName()))

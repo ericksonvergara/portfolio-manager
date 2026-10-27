@@ -57,7 +57,7 @@ vi.mock('../../features/landing/landingApi', () => ({
   getTechnologies: () => Promise.resolve(TECHNOLOGIES),
 }))
 
-function httpError(status: number) {
+function httpError(status: number, message?: string) {
   return new AxiosError(
     'Request failed',
     'ERR_BAD_REQUEST',
@@ -65,6 +65,7 @@ function httpError(status: number) {
     undefined,
     {
       status,
+      data: { message },
     } as AxiosResponse,
   )
 }
@@ -145,8 +146,81 @@ describe('EditProjectPage', () => {
     ])
   })
 
+  it('removes the technologies that are unchecked (HU022)', async () => {
+    api.project = () =>
+      Promise.resolve({
+        ...PROJECT,
+        technologies: [
+          { id: 1, name: 'Java' },
+          { id: 2, name: 'React' },
+        ],
+      })
+    api.respond = () => Promise.resolve(PROJECT)
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByLabelText('React'))
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(await screen.findByText(/Listado:/)).toBeInTheDocument()
+    expect(api.updates[0].input.technologyIds).toEqual([1])
+  })
+
+  it('asks to keep at least one technology', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByLabelText('Java'))
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(
+      await screen.findByText('Selecciona al menos una tecnología.'),
+    ).toBeInTheDocument()
+    expect(api.updates).toEqual([])
+  })
+
+  it('explains that a technology left the catalog while editing', async () => {
+    api.respond = () =>
+      Promise.reject(httpError(400, 'Unknown technologies: [2]'))
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      await screen.findByRole('button', { name: 'Guardar cambios' }),
+    )
+
+    expect(
+      await screen.findByText(
+        /Alguna tecnología seleccionada ya no existe en el catálogo/,
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('asks to reload when the data changed while saving', async () => {
+    api.respond = () =>
+      Promise.reject(
+        httpError(
+          409,
+          'The data changed while saving. Reload it and try again',
+        ),
+      )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      await screen.findByRole('button', { name: 'Guardar cambios' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Los datos cambiaron mientras guardabas.',
+    )
+    expect(screen.getByLabelText('Nombre')).toHaveAttribute(
+      'aria-invalid',
+      'false',
+    )
+  })
+
   it('marks the name when another project already has it', async () => {
-    api.respond = () => Promise.reject(httpError(409))
+    api.respond = () =>
+      Promise.reject(
+        httpError(409, "A project named 'Sistema ERP' already exists"),
+      )
     const user = userEvent.setup()
     renderPage()
     await user.click(

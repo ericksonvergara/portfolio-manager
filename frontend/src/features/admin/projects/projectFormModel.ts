@@ -70,12 +70,34 @@ export class ProjectFormError extends Error {
   }
 }
 
-/** Turns a failed save into the message the form shows (409: the name is taken, RN001). */
+/** The backend messages that point to one field of the form (see GlobalExceptionHandler). */
+const DUPLICATED_NAME = /^A project named /
+const UNKNOWN_TECHNOLOGIES = /^Unknown technologies/
+
+/**
+ * Turns a failed save into the message the form shows: the name is taken (409, RN001), a technology was
+ * deleted from the catalog while the form was open (400, HU022) or the data changed meanwhile (other 409).
+ */
 export function toProjectFormError(error: unknown): ProjectFormError {
-  if (isAxiosError(error) && error.response?.status === 409) {
+  const status = isAxiosError(error) ? error.response?.status : undefined
+  const message = isAxiosError<{ message?: string }>(error)
+    ? (error.response?.data?.message ?? '')
+    : ''
+  if (status === 409 && DUPLICATED_NAME.test(message)) {
     return new ProjectFormError('Ya existe un proyecto con ese nombre.', 'name')
   }
-  if (isAxiosError(error) && error.response?.status === 400) {
+  if (status === 409) {
+    return new ProjectFormError(
+      'Los datos cambiaron mientras guardabas. Recarga la página e inténtalo de nuevo.',
+    )
+  }
+  if (status === 400 && UNKNOWN_TECHNOLOGIES.test(message)) {
+    return new ProjectFormError(
+      'Alguna tecnología seleccionada ya no existe en el catálogo. Recarga la página para ver el catálogo actual.',
+      'technologyIds',
+    )
+  }
+  if (status === 400) {
     return new ProjectFormError('Revisa los datos ingresados.')
   }
   return new ProjectFormError(

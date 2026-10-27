@@ -197,4 +197,57 @@ describe('ProtectedRoute', () => {
 
     expect(await screen.findByText('Proyectos')).toBeInTheDocument()
   })
+
+  it('links to the password recovery', async () => {
+    renderApp()
+
+    expect(
+      await screen.findByRole('link', { name: '¿Olvidaste tu contraseña?' }),
+    ).toHaveAttribute('href', '/recuperar-contrasena')
+  })
+
+  it('confirms a password that was just reset', async () => {
+    render(
+      <AuthProvider>
+        <MemoryRouter
+          initialEntries={[
+            { pathname: '/login', state: { passwordReset: true } },
+          ]}
+        >
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    // The session restore runs first (its own status); then the login shows the confirmation.
+    expect(
+      await screen.findByText(
+        'Contraseña actualizada. Inicia sesión con la nueva.',
+      ),
+    ).toHaveAttribute('role', 'status')
+  })
+
+  it('explains that every session was closed after a password change', async () => {
+    render(
+      <AuthProvider>
+        <MemoryRouter
+          initialEntries={[
+            { pathname: '/login', state: { passwordChanged: true } },
+          ]}
+        >
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    expect(
+      await screen.findByText(
+        /Contraseña cambiada\. Por seguridad se cerraron todas tus sesiones/,
+      ),
+    ).toHaveAttribute('role', 'status')
+  })
 })

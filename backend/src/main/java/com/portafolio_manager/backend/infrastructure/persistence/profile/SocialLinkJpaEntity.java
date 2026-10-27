@@ -31,6 +31,15 @@ public class SocialLinkJpaEntity {
     protected SocialLinkJpaEntity() {
     }
 
+    SocialLinkJpaEntity(SocialPlatform platform) {
+        this.platform = platform;
+    }
+
+    void apply(String url, int displayOrder) {
+        this.url = url;
+        this.displayOrder = displayOrder;
+    }
+
     public SocialPlatform getPlatform() {
         return platform;
     }
