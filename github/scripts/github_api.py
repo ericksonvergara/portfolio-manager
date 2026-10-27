@@ -1277,6 +1277,23 @@ class GitHubClient:
             issue_type,
         )
 
+    def set_release(
+        self,
+        project_id: str,
+        item_id: str,
+        release: str,
+    ) -> dict[str, Any]:
+        """
+        Sets the Release field.
+        """
+
+        return self._set_single_select_field(
+            project_id,
+            item_id,
+            "Release",
+            release,
+        )
+
     def set_module(
         self,
         project_id: str,
