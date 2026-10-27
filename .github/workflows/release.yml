@@ -1,7 +1,7 @@
 # ============================================================================
 # Portfolio Manager
 # File: .github/workflows/release.yml
-# Version: 1.0.1
+# Version: 1.0.2
 # Description: Automated Release Workflow
 # Author: Erickson Vergara
 # Repository: https://github.com/ericksonvergara/portfolio-manager
@@ -36,7 +36,8 @@ jobs:
           echo "## Portfolio Manager Release" > RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### What's Included" >> RELEASE_NOTES.md
-          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> RELEASE_NOTES.md
+          # One line per commit; the merge commits of the Pull Requests are left out.
+          git log --no-merges --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> RELEASE_NOTES.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
