@@ -4,7 +4,11 @@ export type SocialPlatform =
   'GITHUB' | 'LINKEDIN' | 'X' | 'INSTAGRAM' | 'YOUTUBE' | 'WEBSITE'
 
 export type TechnologyCategory =
-  'BACKEND' | 'FRONTEND' | 'DATABASE' | 'DEVOPS' | 'MOBILE' | 'TOOLS'
+  'BACKEND' | 'FRONTEND' | 'DATABASE' | 'DEVOPS' | 'MOBILE' | 'AI' | 'TOOLS'
+
+/** The kinds of project a visitor can filter by, derived from their technologies (HU005). */
+export type ProjectCategory =
+  'BACKEND' | 'FRONTEND' | 'FULL_STACK' | 'MOBILE' | 'DEVOPS' | 'AI'
 
 export interface SocialLink {
   platform: SocialPlatform
@@ -72,9 +76,22 @@ export async function getTechnologies(): Promise<Technology[]> {
   return data
 }
 
-/** The published projects; with a search, only those that match its name or technologies (HU004). */
-export async function getProjects(search?: string): Promise<ProjectCard[]> {
-  const params = search?.trim() ? { search: search.trim() } : undefined
+export interface ProjectFilter {
+  /** Name or technology (HU004). */
+  search?: string
+  /** Kind of project (HU005). */
+  category?: ProjectCategory | null
+}
+
+/** The published projects, optionally narrowed by a search and a category; both can be combined. */
+export async function getProjects(
+  filter: ProjectFilter = {},
+): Promise<ProjectCard[]> {
+  const search = filter.search?.trim()
+  const params = {
+    ...(search ? { search } : {}),
+    ...(filter.category ? { category: filter.category } : {}),
+  }
   const { data } = await api.get<ProjectCard[]>('/api/public/projects', {
     params,
   })

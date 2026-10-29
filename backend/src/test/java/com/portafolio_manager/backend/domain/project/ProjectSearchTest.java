@@ -52,6 +52,15 @@ class ProjectSearchTest {
     }
 
     @Test
+    void shouldCombineTheTextWithTheCategory() {
+        // ERP uses Spring Boot and React, both tagged BACKEND by the helper below.
+        assertThat(new ProjectSearch("erp", ProjectCategory.BACKEND).matches(ERP)).isTrue();
+        assertThat(new ProjectSearch(null, ProjectCategory.BACKEND).matches(ERP)).isTrue();
+        assertThat(new ProjectSearch("erp", ProjectCategory.MOBILE).matches(ERP)).isFalse();
+        assertThat(new ProjectSearch("angular", ProjectCategory.BACKEND).matches(ERP)).isFalse();
+    }
+
+    @Test
     void shouldLimitTheLength() {
         assertThat(new ProjectSearch("x".repeat(100)).text()).hasSize(100);
         assertThatThrownBy(() -> new ProjectSearch("x".repeat(101)))

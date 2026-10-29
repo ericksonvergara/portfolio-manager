@@ -450,7 +450,8 @@
                   "const sample = projects.find((project) => project.technologies.length > 0);",
                   "pm.collectionVariables.set('searchSlug', sample ? sample.slug : '');",
                   "pm.collectionVariables.set('searchName', sample ? sample.name.split(' ')[0] : '');",
-                  "pm.collectionVariables.set('searchTechnology', sample ? sample.technologies[0] : '');"
+                  "pm.collectionVariables.set('searchTechnology', sample ? sample.technologies[0] : '');",
+                  "pm.collectionVariables.set('publishedSlugs', JSON.stringify(projects.map((project) => project.slug)));"
                 ]
               }
             }
@@ -566,6 +567,60 @@
             }
           ],
           "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?search={{searchTooLong}}" }
+        },
+        {
+          "name": "Filtrar proyectos por categoría Backend → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK sin autenticación', () => pm.response.to.have.status(200));",
+                  "const published = JSON.parse(pm.collectionVariables.get('publishedSlugs') || '[]');",
+                  "pm.test('Solo devuelve proyectos publicados', () => {",
+                  "  pm.response.json().forEach((p) => pm.expect(published).to.include(p.slug));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?category=BACKEND" }
+        },
+        {
+          "name": "Filtrar Full Stack combinado con la búsqueda → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const published = JSON.parse(pm.collectionVariables.get('publishedSlugs') || '[]');",
+                  "pm.test('Solo devuelve proyectos publicados', () => {",
+                  "  pm.response.json().forEach((p) => pm.expect(published).to.include(p.slug));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?category=FULL_STACK&search={{searchTechnology}}" }
+        },
+        {
+          "name": "Filtrar con una categoría inexistente → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Indica el parámetro inválido', () => pm.expect(pm.response.json().message).to.eql(\"Invalid value for 'category'\"));"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/public/projects?category=QUANTUM" }
         },
         {
           "name": "Detalle de un proyecto publicado → 200",
@@ -1460,10 +1515,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Aplica el nombre y la categoría nuevos', () => {",
+                  "pm.test('Aplica el nombre y la categoría nuevos (AI, HU005)', () => {",
                   "  const technology = pm.response.json();",
                   "  pm.expect(technology.name).to.eql(pm.collectionVariables.get('technologyName'));",
-                  "  pm.expect(technology.category).to.eql('DEVOPS');",
+                  "  pm.expect(technology.category).to.eql('AI');",
                   "});"
                 ]
               }
@@ -1475,7 +1530,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{technologyName}}\",\n  \"category\": \"DEVOPS\",\n  \"displayOrder\": 98\n}",
+              "raw": "{\n  \"name\": \"{{technologyName}}\",\n  \"category\": \"AI\",\n  \"displayOrder\": 98\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{baseUrl}}/api/admin/technologies/{{adminTechnologyId}}"
@@ -2910,6 +2965,7 @@
     { "key": "searchName", "value": "", "description": "First word of its name." },
     { "key": "searchTechnology", "value": "", "description": "One of its technologies." },
     { "key": "searchTechnologyUpper", "value": "", "description": "The same technology in upper case." },
-    { "key": "searchTooLong", "value": "", "description": "A search over the 100-character limit." }
+    { "key": "searchTooLong", "value": "", "description": "A search over the 100-character limit." },
+    { "key": "publishedSlugs", "value": "", "description": "Slugs of every published project, to check the filtered lists (HU005)." }
   ]
 }

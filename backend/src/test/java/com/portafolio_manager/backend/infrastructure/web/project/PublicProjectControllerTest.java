@@ -6,6 +6,7 @@ import com.portafolio_manager.backend.application.port.out.auth.RevokedAccessTok
 import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectImage;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
+import com.portafolio_manager.backend.domain.project.ProjectCategory;
 import com.portafolio_manager.backend.domain.project.ProjectSearch;
 import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.domain.project.ProjectSummary;
@@ -95,6 +96,19 @@ class PublicProjectControllerTest {
         mockMvc.perform(get("/api/public/projects").param("search", "x".repeat(101)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("search must be at most 100 characters"));
+    }
+
+    @Test
+    void shouldPassTheCategoryAndRejectAnUnknownOne() throws Exception {
+        when(listPublishedProjectsUseCase.execute(new ProjectSearch("react", ProjectCategory.FULL_STACK)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/public/projects").param("search", "react").param("category", "FULL_STACK"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+        mockMvc.perform(get("/api/public/projects").param("category", "QUANTUM"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid value for 'category'"));
     }
 
     @Test

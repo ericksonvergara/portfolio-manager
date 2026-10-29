@@ -22,9 +22,12 @@ const landingApi = vi.hoisted(() => ({
 vi.mock('../features/landing/landingApi', () => ({
   getProfile: () => landingApi.profile(),
   getTechnologies: () => landingApi.technologies(),
-  getProjects: (search?: string) => {
-    if (!search) return landingApi.projects()
-    landingApi.searches.push(search)
+  getProjects: ({
+    search,
+    category,
+  }: { search?: string; category?: string | null } = {}) => {
+    if (!search && !category) return landingApi.projects()
+    landingApi.searches.push([search, category].filter(Boolean).join('|'))
     return landingApi.search()
   },
 }))
@@ -319,9 +322,7 @@ describe('HomePage project search (HU004)', () => {
     await user.type(box, 'python')
 
     expect(
-      await within(portfolio).findByText(
-        /No hay proyectos que coincidan con «python»/,
-      ),
+      await within(portfolio).findByText(/No hay proyectos para «python»/),
     ).toBeInTheDocument()
     expect(within(portfolio).queryAllByRole('article')).toHaveLength(0)
 
@@ -351,5 +352,71 @@ describe('HomePage project search (HU004)', () => {
     const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
 
     expect(within(portfolio).queryByRole('searchbox')).not.toBeInTheDocument()
+  })
+})
+
+describe('HomePage project filters (HU005)', () => {
+  it('filters by the kind of project and combines it with the search', async () => {
+    landingApi.search = () => Promise.resolve([PROJECTS[0]])
+    const user = userEvent.setup()
+    renderHome()
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+    const filters = within(portfolio).getByRole('group', {
+      name: 'Filtrar por tipo de proyecto',
+    })
+    expect(
+      within(filters)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual([
+      'Todos',
+      'Backend',
+      'Frontend',
+      'Full Stack',
+      'Móvil',
+      'DevOps',
+      'IA',
+    ])
+    expect(
+      within(filters).getByRole('button', { name: 'Todos' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(
+      within(filters).getByRole('button', { name: 'Full Stack' }),
+    )
+    expect(
+      await within(portfolio).findByText(
+        '1 proyecto encontrado de tipo Full Stack.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(filters).getByRole('button', { name: 'Full Stack' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+
+    await user.type(
+      within(portfolio).getByRole('searchbox', { name: 'Buscar proyectos' }),
+      'react',
+    )
+    expect(
+      await within(portfolio).findByText(
+        '1 proyecto encontrado para «react» de tipo Full Stack.',
+      ),
+    ).toBeInTheDocument()
+    expect(landingApi.searches).toEqual(['FULL_STACK', 'react|FULL_STACK'])
+  })
+
+  it('explains an empty category and goes back to every project', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+    await user.click(within(portfolio).getByRole('button', { name: 'IA' }))
+
+    expect(
+      await within(portfolio).findByText(/No hay proyectos de tipo IA/),
+    ).toBeInTheDocument()
+
+    await user.click(within(portfolio).getByRole('button', { name: 'Todos' }))
+    expect(within(portfolio).getAllByRole('article')).toHaveLength(2)
+    expect(landingApi.searches).toEqual(['AI'])
   })
 })
