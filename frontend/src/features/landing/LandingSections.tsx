@@ -1,9 +1,14 @@
 import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { CATEGORY_LABELS, SOCIAL_LABELS } from './labels'
+import {
+  CATEGORY_LABELS,
+  PROJECT_CATEGORY_LABELS,
+  SOCIAL_LABELS,
+} from './labels'
 import type {
   Profile,
   ProjectCard,
+  ProjectCategory,
   SocialLink,
   Technology,
   TechnologyCategory,
@@ -253,52 +258,99 @@ export function PortfolioSection({ projects }: { projects: ProjectCard[] }) {
   )
 }
 
-/** The project grid with its search box (HU004). */
+const FILTER_BUTTON =
+  'rounded-full border px-3 py-1 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400'
+
+/** The project grid with its search box (HU004) and its category filters (HU005), which combine. */
 function SearchableProjects({ all }: { all: ProjectCard[] }) {
   const [query, setQuery] = useState('')
-  const search = useProjectSearch(all, query)
+  const [category, setCategory] = useState<ProjectCategory | null>(null)
+  const search = useProjectSearch(all, query, category)
   const inputId = useId()
   const text = query.trim()
+  const filtered = text !== '' || category !== null
 
+  // "para «react» de tipo Full Stack": what narrows the list, for the summary and the empty state.
+  const criteria = [
+    text && `para «${text}»`,
+    category && `de tipo ${PROJECT_CATEGORY_LABELS[category]}`,
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const count = search.projects.length
   const summary =
     search.status === 'searching'
       ? 'Buscando…'
-      : !text
-        ? ''
-        : search.projects.length === 1
-          ? `1 proyecto encontrado para «${text}».`
-          : `${search.projects.length} proyectos encontrados para «${text}».`
+      : filtered && search.status === 'idle'
+        ? `${count === 1 ? '1 proyecto encontrado' : `${count} proyectos encontrados`} ${criteria}.`
+        : ''
+
+  const clear = () => {
+    setQuery('')
+    setCategory(null)
+  }
+
+  const filterButton = (value: ProjectCategory | null, label: string) => {
+    const pressed = category === value
+    return (
+      <button
+        key={value ?? 'all'}
+        type="button"
+        aria-pressed={pressed}
+        onClick={() => setCategory(value)}
+        className={`${FILTER_BUTTON} ${
+          pressed
+            ? 'border-sky-500 bg-sky-500/15 text-sky-200'
+            : 'border-slate-700 text-slate-300 hover:border-slate-500'
+        }`}
+      >
+        {label}
+      </button>
+    )
+  }
 
   return (
     <>
-      <div role="search" className="mb-8 max-w-md">
-        <label
-          htmlFor={inputId}
-          className="mb-1 block text-sm font-medium text-slate-300"
+      <div className="mb-8 space-y-4">
+        <div role="search" className="max-w-md">
+          <label
+            htmlFor={inputId}
+            className="mb-1 block text-sm font-medium text-slate-300"
+          >
+            Buscar proyectos
+          </label>
+          <div className="flex gap-2">
+            <input
+              id={inputId}
+              type="search"
+              value={query}
+              maxLength={MAX_SEARCH_LENGTH}
+              placeholder="Nombre o tecnología, por ejemplo React"
+              onChange={(event) => setQuery(event.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40"
+            />
+            {filtered && (
+              <button
+                type="button"
+                onClick={clear}
+                className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+        <div
+          role="group"
+          aria-label="Filtrar por tipo de proyecto"
+          className="flex flex-wrap gap-2"
         >
-          Buscar proyectos
-        </label>
-        <div className="flex gap-2">
-          <input
-            id={inputId}
-            type="search"
-            value={query}
-            maxLength={MAX_SEARCH_LENGTH}
-            placeholder="Nombre o tecnología, por ejemplo React"
-            onChange={(event) => setQuery(event.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-            >
-              Limpiar
-            </button>
+          {filterButton(null, 'Todos')}
+          {(Object.keys(PROJECT_CATEGORY_LABELS) as ProjectCategory[]).map(
+            (value) => filterButton(value, PROJECT_CATEGORY_LABELS[value]),
           )}
         </div>
-        <p role="status" className="mt-2 min-h-5 text-sm text-slate-400">
+        <p role="status" className="min-h-5 text-sm text-slate-400">
           {summary}
         </p>
       </div>
@@ -309,8 +361,7 @@ function SearchableProjects({ all }: { all: ProjectCard[] }) {
         </p>
       ) : search.projects.length === 0 ? (
         <p className="text-slate-400">
-          No hay proyectos que coincidan con «{text}». Prueba con otro nombre o
-          tecnología.
+          No hay proyectos {criteria}. Prueba con otro filtro o búsqueda.
         </p>
       ) : (
         <ul

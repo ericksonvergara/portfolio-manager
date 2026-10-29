@@ -6,5 +6,6 @@ public enum TechnologyCategory {
     DATABASE,
     DEVOPS,
     MOBILE,
+    AI,
     TOOLS
 }

@@ -27,6 +27,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
@@ -112,6 +113,15 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
 
         return error(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    /** A query or path parameter of the wrong type, for example an unknown category. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ApiErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception,
+            HttpServletRequest request
+    ) {
+        return error(HttpStatus.BAD_REQUEST, "Invalid value for '" + exception.getName() + "'", request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

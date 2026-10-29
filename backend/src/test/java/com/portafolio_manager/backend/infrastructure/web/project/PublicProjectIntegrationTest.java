@@ -87,6 +87,30 @@ class PublicProjectIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldFilterThePublishedProjectsByTheCategoryOfTheirTechnologies() throws Exception {
+        long api = insertProject("API de pagos", true, false, 1);
+        long web = insertProject("Tienda web", true, false, 2);
+        long bot = insertProject("Asistente", true, false, 3);
+        long java = insertTechnology("Java", "BACKEND", 1);
+        long react = insertTechnology("React", "FRONTEND", 2);
+        long openAi = insertTechnology("OpenAI", "AI", 3); // V7: the AI category exists
+        jdbcTemplate.update("INSERT INTO project_technologies VALUES (?, ?), (?, ?), (?, ?), (?, ?)",
+                api, java, web, java, web, react, bot, openAi);
+
+        mockMvc.perform(get("/api/public/projects").param("category", "BACKEND"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name").value(contains("API de pagos", "Tienda web")));
+        mockMvc.perform(get("/api/public/projects").param("category", "FULL_STACK"))
+                .andExpect(jsonPath("$[*].name").value(contains("Tienda web")));
+        mockMvc.perform(get("/api/public/projects").param("category", "AI"))
+                .andExpect(jsonPath("$[*].name").value(contains("Asistente")));
+        mockMvc.perform(get("/api/public/projects").param("category", "BACKEND").param("search", "pagos"))
+                .andExpect(jsonPath("$[*].name").value(contains("API de pagos")));
+        mockMvc.perform(get("/api/public/projects").param("category", "MOBILE"))
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
     void shouldReturnTheDetailOfAnActiveProject() throws Exception {
         long project = insertProject("Sistema ERP", true, false, 1);
         jdbcTemplate.update("""
@@ -159,8 +183,12 @@ class PublicProjectIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     private long insertTechnology(String name, int displayOrder) {
+        return insertTechnology(name, "BACKEND", displayOrder);
+    }
+
+    private long insertTechnology(String name, String category, int displayOrder) {
         return jdbcTemplate.queryForObject(
-                "INSERT INTO technologies (name, category, display_order) VALUES (?, 'BACKEND', ?) RETURNING id",
-                Long.class, name, displayOrder);
+                "INSERT INTO technologies (name, category, display_order) VALUES (?, ?, ?) RETURNING id",
+                Long.class, name, category, displayOrder);
     }
 }

@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { getProjects, type ProjectCard } from './landingApi'
+import {
+  getProjects,
+  type ProjectCard,
+  type ProjectCategory,
+} from './landingApi'
 
 /** Same limit as the backend (ProjectSearch.MAX_LENGTH). */
 export const MAX_SEARCH_LENGTH = 100
@@ -13,41 +17,46 @@ export type ProjectSearchState =
   | { status: 'error'; projects: ProjectCard[] }
 
 /**
- * Searches the published projects by name or technology (HU004). An empty search shows the projects
- * already loaded with the page, without a request; while a search is running, the previous results
- * stay visible, and an answer that arrives after a newer search is ignored.
+ * Searches the published projects by name or technology (HU004) and filters them by category (HU005).
+ * Without search nor category it shows the projects already loaded with the page, without a request;
+ * while a request is running, the previous results stay visible, and an answer that arrives after a
+ * newer one was asked for is ignored.
  */
 export function useProjectSearch(
   all: ProjectCard[],
   query: string,
+  category: ProjectCategory | null,
 ): ProjectSearchState {
   const text = query.trim()
+  const key = text || category ? `${category ?? ''}|${text}` : ''
   const [result, setResult] = useState<{
-    text: string
+    key: string
     projects: ProjectCard[]
     failed: boolean
   } | null>(null)
 
   useEffect(() => {
-    if (!text) return
+    if (!key) return
     let current = true
+    // A click on a filter answers at once; typing waits for a pause.
+    const delay = text ? DEBOUNCE_MS : 0
     const timer = setTimeout(() => {
-      getProjects(text)
+      getProjects({ search: text, category })
         .then((projects) => {
-          if (current) setResult({ text, projects, failed: false })
+          if (current) setResult({ key, projects, failed: false })
         })
         .catch(() => {
-          if (current) setResult({ text, projects: [], failed: true })
+          if (current) setResult({ key, projects: [], failed: true })
         })
-    }, DEBOUNCE_MS)
+    }, delay)
     return () => {
       current = false
       clearTimeout(timer)
     }
-  }, [text])
+  }, [key, text, category])
 
-  if (!text) return { status: 'idle', projects: all }
-  if (result?.text !== text) {
+  if (!key) return { status: 'idle', projects: all }
+  if (result?.key !== key) {
     return { status: 'searching', projects: result?.projects ?? all }
   }
   return result.failed
