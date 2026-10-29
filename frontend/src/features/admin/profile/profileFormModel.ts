@@ -6,8 +6,7 @@ import type { ProfileInput } from './adminProfileApi'
 /** The platforms in the order the form shows them, which is also the order of the landing page. */
 export const PLATFORMS = Object.keys(SOCIAL_LABELS) as SocialPlatform[]
 
-/** Same rule as the backend: something before the @, a domain with a dot, and no spaces. */
-export const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s.]+$/
+export { EMAIL_PATTERN } from '../../../services/validation'
 
 export interface ProfileFormValues {
   fullName: string

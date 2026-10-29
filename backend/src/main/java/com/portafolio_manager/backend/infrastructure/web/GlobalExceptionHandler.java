@@ -3,6 +3,9 @@ package com.portafolio_manager.backend.infrastructure.web;
 import com.portafolio_manager.backend.domain.auth.InvalidCredentialsException;
 import com.portafolio_manager.backend.domain.auth.InvalidPasswordResetTokenException;
 import com.portafolio_manager.backend.domain.auth.InvalidRefreshTokenException;
+import com.portafolio_manager.backend.domain.contact.ContactMessageNotFoundException;
+import com.portafolio_manager.backend.domain.contact.InvalidContactMessageException;
+import com.portafolio_manager.backend.domain.contact.TooManyContactMessagesException;
 import com.portafolio_manager.backend.domain.image.ImageTooLargeException;
 import com.portafolio_manager.backend.domain.image.InvalidImageException;
 import com.portafolio_manager.backend.domain.profile.InvalidProfileException;
@@ -44,11 +47,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ProfileNotFoundException.class,
             ProjectNotFoundException.class,
+            ContactMessageNotFoundException.class,
             ProjectImageNotFoundException.class,
             TechnologyNotFoundException.class
     })
     ResponseEntity<ApiErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(TooManyContactMessagesException.class)
+    ResponseEntity<ApiErrorResponse> handleTooManyRequests(RuntimeException exception, HttpServletRequest request) {
+        return error(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage(), request);
     }
 
     @ExceptionHandler(ImageTooLargeException.class)
@@ -72,6 +81,7 @@ public class GlobalExceptionHandler {
             InvalidImageException.class,
             InvalidTechnologyException.class,
             InvalidProfileException.class,
+            InvalidContactMessageException.class,
             WeakPasswordException.class,
             InvalidPasswordResetTokenException.class,
             // 400, not 401: the frontend treats a 401 as an expired session.

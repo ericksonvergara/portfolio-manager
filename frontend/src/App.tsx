@@ -8,6 +8,7 @@ import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { AccountPage } from './pages/admin/AccountPage'
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage'
 import { EditProjectPage } from './pages/admin/EditProjectPage'
+import { MessagesPage } from './pages/admin/MessagesPage'
 import { NewProjectPage } from './pages/admin/NewProjectPage'
 import { ProfilePage } from './pages/admin/ProfilePage'
 import { TechnologiesPage } from './pages/admin/TechnologiesPage'
@@ -44,6 +45,7 @@ function App() {
             <Route path="proyectos/:id/editar" element={<EditProjectPage />} />
             <Route path="tecnologias" element={<TechnologiesPage />} />
             <Route path="perfil" element={<ProfilePage />} />
+            <Route path="mensajes" element={<MessagesPage />} />
             <Route path="cuenta" element={<AccountPage />} />
           </Route>
         </Routes>

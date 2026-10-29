@@ -104,3 +104,16 @@ export async function getProject(slug: string): Promise<ProjectDetail> {
   )
   return data
 }
+
+/** What a visitor writes in the contact form (HU006). */
+export interface ContactInput {
+  name: string
+  email: string
+  message: string
+  /** Hidden field that only bots fill in: the backend discards their message. */
+  website: string
+}
+
+export async function sendContactMessage(input: ContactInput): Promise<void> {
+  await api.post('/api/public/contact', input)
+}
