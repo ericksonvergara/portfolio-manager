@@ -1,12 +1,12 @@
 package com.portafolio_manager.backend.domain.profile;
 
+import com.portafolio_manager.backend.domain.EmailAddress;
 import com.portafolio_manager.backend.domain.WebUrl;
 
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * The data the administrator enters for the public profile (HU023). The email is the public contact
@@ -22,15 +22,12 @@ public record ProfileDraft(
         List<SocialLink> socialLinks
 ) {
 
-    /** Something before the @, a domain with at least one dot, and no spaces. */
-    private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s.]+$");
-
     public ProfileDraft {
         fullName = required(fullName, "fullName", 100);
         headline = required(headline, "headline", 150);
         about = required(about, "about", 2000);
         email = required(email, "email", 150);
-        if (!EMAIL.matcher(email).matches()) {
+        if (!EmailAddress.isValid(email)) {
             throw new InvalidProfileException("email must be a valid email address");
         }
         location = optional(location, "location", 100);

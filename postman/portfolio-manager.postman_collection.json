@@ -2416,6 +2416,314 @@
       ]
     },
     {
+      "name": "Contacto",
+      "description": "Formulario de contacto y bandeja de mensajes (HU006). Comprueba la validación, que el mensaje de un bot (campo trampa `website` relleno) se responde igual pero no se guarda, el aviso por correo en Mailpit (con `mailpitUrl`), y la bandeja del administrador: listar, marcar como leído y eliminar. Cada IP puede enviar CONTACT_MAX_MESSAGES mensajes por hora (5 por defecto): si se supera, el envío responde 429 y las peticiones que dependen de él se saltan. Al final elimina su mensaje.",
+      "item": [
+        {
+          "name": "01 · Enviar con un correo inválido → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run = Date.now();",
+                  "pm.collectionVariables.set('contactName', `Postman Contacto ${run}`);",
+                  "pm.collectionVariables.set('contactEmail', `postman.${run}@example.com`);",
+                  "pm.collectionVariables.set('contactSent', 'false');",
+                  "pm.collectionVariables.set('contactMessageId', '');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Indica el campo', () => pm.expect(pm.response.json().message).to.match(/^email/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{contactName}}\",\n  \"email\": \"postman@example\",\n  \"message\": \"Mensaje de prueba de la colección de Postman.\",\n  \"website\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/public/contact"
+          }
+        },
+        {
+          "name": "02 · Enviar con el campo trampa relleno (bot) → 202",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 202 Accepted, igual que a una persona', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{contactName}}\",\n  \"email\": \"{{contactEmail}}\",\n  \"message\": \"Mensaje de prueba de la colección de Postman.\",\n  \"website\": \"https://spam.example\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/public/contact"
+          }
+        },
+        {
+          "name": "03 · Enviar un mensaje → 202",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 202 Accepted (o 429 si esta IP ya envió sus mensajes de la hora)', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([202, 429]);",
+                  "});",
+                  "pm.collectionVariables.set('contactSent', String(pm.response.code === 202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{contactName}}\",\n  \"email\": \"{{contactEmail}}\",\n  \"message\": \"Mensaje de prueba de la colección de Postman.\",\n  \"website\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/public/contact"
+          }
+        },
+        {
+          "name": "04 · Mailpit recibió el aviso para el dueño",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Only when the message was accepted: a 429 means this IP already used its messages of the hour.",
+                  "if (pm.collectionVariables.get('contactSent') !== 'true') {",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "if (!pm.environment.get('mailpitUrl')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const notice = pm.response.json().messages.find((m) => m.Subject === `Nuevo mensaje de contacto de ${pm.collectionVariables.get('contactName')}`);",
+                  "pm.test('Llega el aviso, y responderlo contesta al visitante', () => {",
+                  "  pm.expect(notice, 'aviso').to.exist;",
+                  "  pm.expect(notice.ReplyTo[0].Address).to.eql(pm.collectionVariables.get('contactEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{mailpitUrl}}/api/v1/messages"
+          }
+        },
+        {
+          "name": "05 · Login (mensajes) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "06 · Listar los mensajes sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/messages"
+          }
+        },
+        {
+          "name": "07 · Listar los mensajes → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const messages = pm.response.json();",
+                  "pm.test('El mensaje del bot no se guardó', () => {",
+                  "  pm.expect(messages.filter((m) => m.name === pm.collectionVariables.get('contactName'))).to.have.lengthOf(pm.collectionVariables.get('contactSent') === 'true' ? 1 : 0);",
+                  "});",
+                  "const mine = messages.find((m) => m.name === pm.collectionVariables.get('contactName'));",
+                  "if (mine) {",
+                  "  pm.test('Llega sin leer y con sus datos', () => {",
+                  "    pm.expect(mine.read).to.be.false;",
+                  "    pm.expect(mine.email).to.eql(pm.collectionVariables.get('contactEmail'));",
+                  "  });",
+                  "  pm.test('El más reciente va primero', () => pm.expect(messages[0].id).to.eql(mine.id));",
+                  "}",
+                  "pm.collectionVariables.set('contactMessageId', mine ? mine.id : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/messages"
+          }
+        },
+        {
+          "name": "08 · Marcar el mensaje como leído → 200",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('contactMessageId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda leído', () => {",
+                  "  pm.expect(pm.response.json().read).to.be.true;",
+                  "  pm.expect(pm.response.json().readAt).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/messages/{{contactMessageId}}/read"
+          }
+        },
+        {
+          "name": "09 · Eliminar el mensaje → 204",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('contactMessageId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/messages/{{contactMessageId}}"
+          }
+        },
+        {
+          "name": "10 · Eliminarlo otra vez → 404",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('contactMessageId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/messages/{{contactMessageId}}"
+          }
+        }
+      ]
+    },
+    {
       "name": "Recuperación de contraseña",
       "description": "Recuperación por correo (HU010). Necesita `mailpitUrl` en el entorno: Mailpit atrapa el correo y la colección lee el enlace desde su API. La contraseña nueva es `adminPassword` misma, así que las credenciales no cambian. Sin `mailpitUrl`, las peticiones que dependen del correo se saltan.",
       "item": [
@@ -2966,6 +3274,10 @@
     { "key": "searchTechnology", "value": "", "description": "One of its technologies." },
     { "key": "searchTechnologyUpper", "value": "", "description": "The same technology in upper case." },
     { "key": "searchTooLong", "value": "", "description": "A search over the 100-character limit." },
-    { "key": "publishedSlugs", "value": "", "description": "Slugs of every published project, to check the filtered lists (HU005)." }
+    { "key": "publishedSlugs", "value": "", "description": "Slugs of every published project, to check the filtered lists (HU005)." },
+    { "key": "contactName", "value": "", "description": "Visitor name used by the contact folder (HU006)." },
+    { "key": "contactEmail", "value": "", "description": "Visitor email used by the contact folder." },
+    { "key": "contactSent", "value": "", "description": "'true' when the contact message was accepted (not 429)." },
+    { "key": "contactMessageId", "value": "", "description": "Id of that message in the inbox." }
   ]
 }

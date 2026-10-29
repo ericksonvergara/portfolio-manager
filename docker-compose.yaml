@@ -41,6 +41,8 @@ services:
       MAIL_FROM: "${MAIL_FROM:-Portfolio Manager <no-reply@portfolio.local>}"
       PASSWORD_RESET_URL: "${PASSWORD_RESET_URL:-http://localhost:8081/restablecer-contrasena}"
       PASSWORD_RESET_TTL: "${PASSWORD_RESET_TTL:-30m}"
+      CONTACT_MAX_MESSAGES: "${CONTACT_MAX_MESSAGES:-5}"
+      CONTACT_WINDOW: "${CONTACT_WINDOW:-1h}"
       UPLOADS_DIR: /app/uploads
       UPLOAD_MAX_SIZE: "${UPLOAD_MAX_SIZE:-5MB}"
     volumes:

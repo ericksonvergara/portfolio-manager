@@ -1,5 +1,6 @@
 import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { ContactForm } from './ContactForm'
 import {
   CATEGORY_LABELS,
   PROJECT_CATEGORY_LABELS,
@@ -449,19 +450,25 @@ function ProjectCardItem({ project }: { project: ProjectCard }) {
 export function ContactSection({ profile }: { profile: Profile }) {
   return (
     <Section id={SECTION_IDS.contact} title="Contacto">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-slate-300">
-            ¿Tienes un proyecto en mente? Escríbeme a
+      <div className="grid gap-10 lg:grid-cols-[2fr_1fr]">
+        <div>
+          <p className="mb-6 text-slate-300">
+            ¿Tienes un proyecto en mente? Déjame un mensaje y te responderé.
           </p>
-          <a
-            href={`mailto:${profile.email}`}
-            className="mt-1 inline-block text-xl font-semibold break-all text-sky-400 hover:text-sky-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          >
-            {profile.email}
-          </a>
+          <ContactForm />
         </div>
-        <SocialLinks links={profile.socialLinks} />
+        <div className="min-w-0 space-y-6">
+          <div>
+            <p className="text-sm text-slate-400">O escríbeme a</p>
+            <a
+              href={`mailto:${profile.email}`}
+              className="mt-1 inline-block text-lg font-semibold break-all text-sky-400 hover:text-sky-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+            >
+              {profile.email}
+            </a>
+          </div>
+          <SocialLinks links={profile.socialLinks} />
+        </div>
       </div>
     </Section>
   )
