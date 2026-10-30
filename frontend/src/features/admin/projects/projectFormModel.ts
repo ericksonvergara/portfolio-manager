@@ -1,19 +1,9 @@
 import { isAxiosError } from 'axios'
+import { WEB_URL_MESSAGE } from '../../../services/validation'
 import type { ProjectStatus } from '../../landing/landingApi'
 import type { AdminProject, ProjectInput } from './adminProjectsApi'
 
-/** Same rule as the backend: an absolute http(s) URL with a host (RN002, RN003). */
-export function isWebUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return (
-      (url.protocol === 'http:' || url.protocol === 'https:') &&
-      url.hostname !== ''
-    )
-  } catch {
-    return false
-  }
-}
+export { isWebUrl } from '../../../services/validation'
 
 export interface ProjectFormValues {
   name: string
@@ -73,6 +63,7 @@ export class ProjectFormError extends Error {
 /** The backend messages that point to one field of the form (see GlobalExceptionHandler). */
 const DUPLICATED_NAME = /^A project named /
 const UNKNOWN_TECHNOLOGIES = /^Unknown technologies/
+const INVALID_URL = /^(projectUrl|repositoryUrl|videoUrl) must be a valid/
 
 /**
  * Turns a failed save into the message the form shows: the name is taken (409, RN001), a technology was
@@ -84,11 +75,21 @@ export function toProjectFormError(error: unknown): ProjectFormError {
     ? (error.response?.data?.message ?? '')
     : ''
   if (status === 409 && DUPLICATED_NAME.test(message)) {
-    return new ProjectFormError('Ya existe un proyecto con ese nombre.', 'name')
+    return new ProjectFormError(
+      'Ya existe un proyecto con ese nombre o con uno equivalente (solo cambian mayúsculas, tildes o signos).',
+      'name',
+    )
   }
   if (status === 409) {
     return new ProjectFormError(
       'Los datos cambiaron mientras guardabas. Recarga la página e inténtalo de nuevo.',
+    )
+  }
+  const invalidUrl = status === 400 ? INVALID_URL.exec(message) : null
+  if (invalidUrl) {
+    return new ProjectFormError(
+      WEB_URL_MESSAGE,
+      invalidUrl[1] as keyof ProjectFormValues,
     )
   }
   if (status === 400 && UNKNOWN_TECHNOLOGIES.test(message)) {
@@ -120,4 +121,15 @@ export function fromAdminProject(project: AdminProject): ProjectFormValues {
     featured: project.featured,
     technologyIds: project.technologies.map((t) => String(t.id)),
   }
+}
+
+/**
+ * What a project still lacks to be published (HU030): a cover image (RN004) and at least one
+ * technology (RN005). The backend checks the same.
+ */
+export function publicationRequirements(project: AdminProject): string[] {
+  return [
+    ...(project.coverImageUrl === null ? ['una imagen principal'] : []),
+    ...(project.technologies.length === 0 ? ['al menos una tecnología'] : []),
+  ]
 }

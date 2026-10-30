@@ -1,5 +1,6 @@
 package com.portafolio_manager.backend.infrastructure.web.project;
 
+import com.portafolio_manager.backend.domain.project.ProjectCategory;
 import com.portafolio_manager.backend.infrastructure.web.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,12 +18,21 @@ import java.util.List;
 interface PublicProjectApi {
 
     @Operation(
-            summary = "Listar proyectos publicados",
+            summary = "Listar, buscar y filtrar proyectos publicados",
             description = "Solo proyectos activos: primero los destacados y después por orden de aparición. "
-                    + "Devuelve una lista vacía si no hay ninguno."
+                    + "Con `search`, solo los que coinciden por nombre o tecnología, sin distinguir mayúsculas "
+                    + "ni tildes; con varias palabras deben coincidir todas. Con `category`, solo los de ese tipo, "
+                    + "según sus tecnologías (FULL_STACK: usa tecnologías de backend y de frontend). Se pueden "
+                    + "combinar. Devuelve una lista vacía si no hay ninguno."
     )
     @ApiResponse(responseCode = "200", description = "Proyectos publicados")
-    List<ProjectCardResponse> listProjects();
+    @ApiResponse(responseCode = "400", description = "La búsqueda supera los 100 caracteres o la categoría no existe",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    List<ProjectCardResponse> listProjects(
+            @Parameter(description = "Texto a buscar en el nombre y las tecnologías (opcional)", example = "react")
+            String search,
+            @Parameter(description = "Tipo de proyecto (opcional)", example = "FULL_STACK") ProjectCategory category
+    );
 
     @Operation(
             summary = "Consultar el detalle de un proyecto",

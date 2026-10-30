@@ -5,11 +5,16 @@
 ===============================================================================
 Portfolio Manager
 File: github/scripts/create-github-issues.py
-Version: 1.0.0
+Version: 1.1.0
 
 Description:
 Creates GitHub Issues from the generated backlog and assigns
 labels, milestones and Project fields.
+
+The milestone of a User or Technical Story is its sprint
+(docs/github/03-milestones.md); Epics span several sprints and keep
+the release milestone. The release of every Issue is also stored in
+the Project "Release" field.
 
 Author:
 Erickson Vergara
@@ -192,6 +197,29 @@ def get_epic_estimated_hours(
     )
 
     return total_hours
+
+
+def get_issue_milestone(
+    work_item: dict[str, Any],
+    work_item_type: str,
+) -> str | None:
+    """
+    Returns the GitHub milestone of an Issue: the sprint for stories,
+    the release for Epics and for stories still in the Backlog.
+    """
+
+    if work_item_type != "Epic":
+
+        sprint = work_item.get(
+            "sprint",
+        )
+
+        if sprint and sprint.startswith("Sprint "):
+            return sprint
+
+    return work_item.get(
+        "milestone",
+    )
 
 
 # =============================================================================
@@ -629,8 +657,9 @@ def configure_issue(
             labels,
         )
 
-    milestone = work_item.get(
-        "milestone",
+    milestone = get_issue_milestone(
+        work_item,
+        work_item_type,
     )
 
     if milestone:
@@ -745,6 +774,24 @@ def configure_issue(
             project_item_id,
             sprint,
         )
+
+    release = work_item.get(
+        "milestone",
+    )
+
+    if release:
+
+        try:
+            client.set_release(
+                project_id,
+                project_item_id,
+                release,
+            )
+        except GitHubNotFoundError:
+            Console.warning(
+                f"Project field 'Release' or option '{release}' "
+                f"not found: create it (custom-fields.yml, CF014)."
+            )
 
     status = work_item.get(
         "status",

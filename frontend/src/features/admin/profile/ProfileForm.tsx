@@ -1,6 +1,6 @@
 import { useForm, useWatch } from 'react-hook-form'
 import { SOCIAL_LABELS } from '../../landing/labels'
-import { isWebUrl } from '../projects/projectFormModel'
+import { isWebUrl, WEB_URL_MESSAGE } from '../../../services/validation'
 import type { ProfileInput } from './adminProfileApi'
 import {
   EMAIL_PATTERN,
@@ -195,7 +195,7 @@ export function ProfileForm({ defaultValues, onSubmit }: ProfileFormProps) {
                     validate: (value) =>
                       !value.trim() ||
                       isWebUrl(value.trim()) ||
-                      'Ingresa una URL válida que empiece por http:// o https://.',
+                      WEB_URL_MESSAGE,
                     maxLength: {
                       value: 500,
                       message: 'Máximo 500 caracteres.',

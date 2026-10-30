@@ -1,5 +1,9 @@
 package com.portafolio_manager.backend.infrastructure.web.admin.project;
 
+import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
+import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
+import com.portafolio_manager.backend.domain.project.ProjectDraft;
+import com.portafolio_manager.backend.domain.project.ProjectStatus;
 import com.portafolio_manager.backend.infrastructure.AbstractPostgresIntegrationTest;
 import com.portafolio_manager.backend.infrastructure.security.jwt.TestJwt;
 import org.junit.jupiter.api.AfterEach;
@@ -17,8 +21,10 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -42,6 +48,9 @@ class AdminProjectIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ProjectRepositoryPort projectRepository;
 
     @Autowired
     private JwtEncoder jwtEncoder;
@@ -84,8 +93,37 @@ class AdminProjectIntegrationTest extends AbstractPostgresIntegrationTest {
         create("Gestión de Inventario", java).andExpect(status().isCreated());
 
         // RN001: same name in another case, and a name that produces the same slug
-        create("GESTIÓN DE INVENTARIO", java).andExpect(status().isConflict());
+        create("GESTIÓN DE INVENTARIO", java)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("A project named 'GESTIÓN DE INVENTARIO', or with an equivalent name, already exists"));
         create("Gestion de inventario", java).andExpect(status().isConflict());
+        create("  Gestión   de inventario!  ", java).andExpect(status().isConflict());
+
+        mockMvc.perform(get("/api/admin/projects").header(HttpHeaders.AUTHORIZATION, adminToken()))
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    void shouldRejectRenamingAProjectToTheNameOfAnother() throws Exception {
+        create("Gestión de Inventario", java).andExpect(status().isCreated());
+        long erp = createdId("Sistema ERP", java);
+
+        update(erp, "gestion de INVENTARIO", java).andExpect(status().isConflict());
+        // Keeping its own name, or changing only its case, is not a duplicate.
+        update(erp, "Sistema ERP", java).andExpect(status().isOk());
+        update(erp, "SISTEMA ERP", java)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("SISTEMA ERP"));
+    }
+
+    @Test
+    void shouldReportANameTakenConcurrentlyAsADuplicate() {
+        // Skips the service check, as when two requests save the same name at once: the schema decides.
+        projectRepository.create(draft("Sistema ERP"));
+
+        assertThatThrownBy(() -> projectRepository.create(draft("SISTEMA ERP")))
+                .isInstanceOf(DuplicateProjectNameException.class);
     }
 
     @Test
@@ -250,5 +288,10 @@ class AdminProjectIntegrationTest extends AbstractPostgresIntegrationTest {
         return jdbcTemplate.queryForObject(
                 "INSERT INTO technologies (name, category, display_order) VALUES (?, 'BACKEND', ?) RETURNING id",
                 Long.class, name, displayOrder);
+    }
+
+    private ProjectDraft draft(String name) {
+        return new ProjectDraft(name, "Corta", "Completa", null, null, null, ProjectStatus.COMPLETED, null, 1, false,
+                Set.of(java));
     }
 }

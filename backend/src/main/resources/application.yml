@@ -72,6 +72,12 @@ app:
     url: ${PASSWORD_RESET_URL:http://localhost:8081/restablecer-contrasena}
     mail-from: ${MAIL_FROM:Portfolio Manager <no-reply@portfolio.local>}
 
+  contact:
+    # Anti-spam (HU006): messages one sender (client IP) may send per window.
+    max-messages: ${CONTACT_MAX_MESSAGES:5}
+    window: ${CONTACT_WINDOW:1h}
+    mail-from: ${MAIL_FROM:Portfolio Manager <no-reply@portfolio.local>}
+
   bootstrap:
     admin:
       name: ${ADMIN_NAME:Administrador}
