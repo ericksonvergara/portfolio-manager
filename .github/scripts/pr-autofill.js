@@ -1,7 +1,7 @@
 // ============================================================================
 // Portfolio Manager
 // File: .github/scripts/pr-autofill.js
-// Version: 1.2.0
+// Version: 1.3.0
 // Description: Fills the auto-generated parts of the Pull Requests (description,
 //              assignee, labels and milestone):
 //              work branch -> develop, develop -> qa (promotion) and
@@ -413,9 +413,14 @@ function envKeys(files) {
     )
   const plus = keys('+')
   const minus = keys('-')
+  // Commented out in .env.example ("# MAIL_HOST=…"): optional locally, usually needed by a real environment.
+  const optional = new Set(
+    [...(env?.patch || '').matchAll(/^\+#\s*([A-Z][A-Z0-9_]*)=/gm)].map((m) => m[1]),
+  )
   return {
     added: [...plus].filter((k) => !minus.has(k)),
     removed: [...minus].filter((k) => !plus.has(k)),
+    optional: [...optional].filter((k) => !plus.has(k)),
   }
 }
 
@@ -721,6 +726,12 @@ function deploymentNotes(files) {
   for (const key of env.added)
     notes.push(`- New environment variable \`${key}\` (see \`.env.example\`).`)
   for (const key of env.removed) notes.push(`- Removed environment variable \`${key}\`.`)
+  if (env.optional.length) {
+    const keys = env.optional.map((k) => `\`${k}\``).join(', ')
+    notes.push(
+      `- New optional environment variables ${keys}: commented out in \`.env.example\`, set them in a real environment.`,
+    )
+  }
   for (const f of files) {
     if (!/(^|\/)Dockerfile$/.test(f.filename) || !f.patch) continue
     for (const m of f.patch.matchAll(/^\+FROM\s+(\S+)/gm))
