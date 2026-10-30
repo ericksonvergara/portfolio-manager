@@ -149,14 +149,19 @@ describe('NewProjectPage', () => {
   it('marks the name when it is already taken', async () => {
     api.respond = () =>
       Promise.reject(
-        httpError(409, "A project named 'Sistema ERP' already exists"),
+        httpError(
+          409,
+          "A project named 'Sistema ERP', or with an equivalent name, already exists",
+        ),
       )
     renderPage()
     const user = await fillRequiredFields()
     await user.click(screen.getByRole('button', { name: 'Registrar proyecto' }))
 
     expect(
-      await screen.findByText('Ya existe un proyecto con ese nombre.'),
+      await screen.findByText(
+        /Ya existe un proyecto con ese nombre o con uno equivalente/,
+      ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Nombre')).toHaveAttribute(
       'aria-invalid',

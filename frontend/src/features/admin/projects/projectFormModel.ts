@@ -84,7 +84,10 @@ export function toProjectFormError(error: unknown): ProjectFormError {
     ? (error.response?.data?.message ?? '')
     : ''
   if (status === 409 && DUPLICATED_NAME.test(message)) {
-    return new ProjectFormError('Ya existe un proyecto con ese nombre.', 'name')
+    return new ProjectFormError(
+      'Ya existe un proyecto con ese nombre o con uno equivalente (solo cambian mayúsculas, tildes o signos).',
+      'name',
+    )
   }
   if (status === 409) {
     return new ProjectFormError(
