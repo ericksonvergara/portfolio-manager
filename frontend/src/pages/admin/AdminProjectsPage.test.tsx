@@ -242,4 +242,54 @@ describe('AdminProjectsPage', () => {
     )
     expect(toggle).not.toBeChecked()
   })
+
+  it('tells in advance what an inactive project lacks to be published (HU030)', async () => {
+    adminApi.answers.push(() =>
+      Promise.resolve([
+        PROJECT,
+        {
+          ...PROJECT,
+          id: 8,
+          name: 'Tienda',
+          coverImageUrl: null,
+          technologies: [],
+        },
+        { ...PROJECT, id: 9, name: 'Blog', coverImageUrl: '/uploads/blog.png' },
+      ]),
+    )
+    renderPage()
+
+    expect(
+      await screen.findByRole('switch', { name: 'Publicar Sistema ERP' }),
+    ).toHaveAccessibleDescription('Para publicarlo falta una imagen principal.')
+    expect(
+      screen.getByRole('switch', { name: 'Publicar Tienda' }),
+    ).toHaveAccessibleDescription(
+      'Para publicarlo falta una imagen principal y al menos una tecnología.',
+    )
+    expect(
+      screen.getByRole('switch', { name: 'Publicar Blog' }),
+    ).not.toHaveAccessibleDescription()
+  })
+
+  it('names everything a rejected project lacks', async () => {
+    adminApi.answers.push(() =>
+      Promise.resolve([{ ...PROJECT, technologies: [] }]),
+    )
+    adminApi.publishAnswer = () =>
+      Promise.reject(
+        new AxiosError('Conflict', 'ERR_BAD_REQUEST', undefined, undefined, {
+          status: 409,
+        } as AxiosResponse),
+      )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      await screen.findByRole('switch', { name: 'Publicar Sistema ERP' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '«Sistema ERP» necesita una imagen principal y al menos una tecnología para publicarse.',
+    )
+  })
 })
