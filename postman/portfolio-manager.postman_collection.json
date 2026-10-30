@@ -696,11 +696,23 @@
           "name": "Perfil público con token inválido → no 401",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Built here, not written in the header: Postman's secret scanner would replace a literal invalid token on import.",
+                  "const scheme = 'Bearer';",
+                  "pm.request.headers.upsert({ key: 'Authorization', value: `${scheme} expired-or-garbage` });"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Ignora un Bearer caducado o inválido en las rutas públicas', () => {",
+                  "pm.test('Envía un token inválido', () => pm.expect(pm.request.headers.get('Authorization')).to.match(/^Bearer\\s+\\S+$/));",
+                  "pm.test('Ignora un token caducado o inválido en las rutas públicas', () => {",
                   "  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
                   "});"
                 ]
@@ -709,9 +721,7 @@
           ],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer expired-or-garbage" }
-            ],
+            "header": [],
             "url": "{{baseUrl}}/api/public/profile"
           }
         }

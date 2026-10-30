@@ -4,8 +4,8 @@
   ----------- ---------------------------
   Proyecto    Portfolio Manager
   Documento   06-branching-strategy.md
-  Versión     1.7
-  Fecha       2026-10-23
+  Versión     1.8
+  Fecha       2026-10-30
   Estado      Aprobado
 
 ------------------------------------------------------------------------
@@ -326,3 +326,7 @@ branches*):
                          trabajo; sin etiquetas de prioridad en
                          promociones; volúmenes e imágenes de Docker
                          en las notas de despliegue.
+  1.8       2026-10-30   Las notas de despliegue listan también las
+                         variables opcionales (comentadas en
+                         `.env.example`), que un entorno real suele
+                         necesitar.
