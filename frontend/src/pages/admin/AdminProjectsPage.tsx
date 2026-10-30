@@ -12,6 +12,7 @@ import {
   ErrorState,
   LoadingState,
 } from '../../features/admin/projects/AdminStates'
+import { publicationRequirements } from '../../features/admin/projects/projectFormModel'
 import { useAdminData } from '../../features/admin/projects/useAdminData'
 import { STATUS_LABELS } from '../../features/landing/labels'
 
@@ -61,11 +62,15 @@ export function AdminProjectsPage() {
         failed: false,
       })
     } catch (error) {
-      const noCover = isAxiosError(error) && error.response?.status === 409
+      const rejected = isAxiosError(error) && error.response?.status === 409
+      const missing = publicationRequirements(project)
       setPublication({
-        message: noCover
-          ? `«${project.name}» necesita una imagen principal para publicarse.`
-          : 'No se pudo cambiar la publicación. Inténtalo de nuevo.',
+        message: !rejected
+          ? 'No se pudo cambiar la publicación. Inténtalo de nuevo.'
+          : missing.length > 0
+            ? `«${project.name}» necesita ${missing.join(' y ')} para publicarse.`
+            : // The project changed in another tab: the list no longer shows what it lacks.
+              `«${project.name}» no cumple los requisitos para publicarse. Recarga la página para ver qué le falta.`,
         failed: true,
       })
     } finally {
@@ -195,6 +200,12 @@ export function AdminProjectsPage() {
                       role="switch"
                       aria-checked={project.active}
                       aria-label={`Publicar ${project.name}`}
+                      aria-describedby={
+                        !project.active &&
+                        publicationRequirements(project).length > 0
+                          ? `requirements-${project.id}`
+                          : undefined
+                      }
                       disabled={publishing === project.id}
                       onClick={() => void togglePublication(project)}
                       className="inline-flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
@@ -219,6 +230,16 @@ export function AdminProjectsPage() {
                         {project.active ? 'Activo' : 'Inactivo'}
                       </span>
                     </button>
+                    {!project.active &&
+                      publicationRequirements(project).length > 0 && (
+                        <p
+                          id={`requirements-${project.id}`}
+                          className="mt-1 text-xs text-amber-300"
+                        >
+                          Para publicarlo falta{' '}
+                          {publicationRequirements(project).join(' y ')}.
+                        </p>
+                      )}
                   </td>
                   <td className="px-4 py-3 text-slate-300">
                     {project.displayOrder}

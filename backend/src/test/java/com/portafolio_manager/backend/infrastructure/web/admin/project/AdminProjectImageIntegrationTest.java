@@ -96,6 +96,19 @@ class AdminProjectImageIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldNotPublishAProjectWithoutTechnologies() throws Exception {
+        // HU030: possible only for data loaded outside the forms, which always require a technology.
+        jdbcTemplate.update("DELETE FROM project_technologies WHERE project_id = ?", projectId);
+        uploadCover(png("portada.png")).andExpect(status().isOk());
+
+        publish(true)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("Project 'Sistema ERP' needs at least one technology before it can be published"));
+        mockMvc.perform(get("/api/public/projects")).andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
     void shouldRejectFilesThatAreNotValidImages() throws Exception {
         uploadCover(new MockMultipartFile("file", "falsa.png", "image/png", "<script>".getBytes()))
                 .andExpect(status().isBadRequest())

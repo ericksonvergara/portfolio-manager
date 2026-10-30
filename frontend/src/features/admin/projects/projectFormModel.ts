@@ -122,3 +122,14 @@ export function fromAdminProject(project: AdminProject): ProjectFormValues {
     technologyIds: project.technologies.map((t) => String(t.id)),
   }
 }
+
+/**
+ * What a project still lacks to be published (HU030): a cover image (RN004) and at least one
+ * technology (RN005). The backend checks the same.
+ */
+export function publicationRequirements(project: AdminProject): string[] {
+  return [
+    ...(project.coverImageUrl === null ? ['una imagen principal'] : []),
+    ...(project.technologies.length === 0 ? ['al menos una tecnología'] : []),
+  ]
+}
