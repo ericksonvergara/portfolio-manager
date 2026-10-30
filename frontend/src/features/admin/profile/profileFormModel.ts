@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios'
 import type { Profile, SocialPlatform } from '../../landing/landingApi'
 import { SOCIAL_LABELS } from '../../landing/labels'
+import { WEB_URL_MESSAGE } from '../../../services/validation'
 import type { ProfileInput } from './adminProfileApi'
 
 /** The platforms in the order the form shows them, which is also the order of the landing page. */
@@ -59,10 +60,13 @@ export function toProfileInput(values: ProfileFormValues): ProfileInput {
 }
 
 /** The form rejects the submission with a field error; anything else is shown above the form. */
-export class ProfileFormError extends Error {
-  readonly field?: 'email'
+/** The fields a server rejection can point to. */
+export type ProfileErrorField = 'email' | `links.${SocialPlatform}`
 
-  constructor(message: string, field?: 'email') {
+export class ProfileFormError extends Error {
+  readonly field?: ProfileErrorField
+
+  constructor(message: string, field?: ProfileErrorField) {
     super(message)
     this.field = field
   }
@@ -78,6 +82,14 @@ export function toProfileFormError(error: unknown): ProfileFormError {
     return new ProfileFormError(
       'Ingresa un correo válido, por ejemplo contacto@dominio.com.',
       'email',
+    )
+  }
+  const invalidLink =
+    status === 400 ? /^([A-Z]+) link must be a valid/.exec(message) : null
+  if (invalidLink && PLATFORMS.includes(invalidLink[1] as SocialPlatform)) {
+    return new ProfileFormError(
+      WEB_URL_MESSAGE,
+      `links.${invalidLink[1] as SocialPlatform}`,
     )
   }
   if (status === 400) {

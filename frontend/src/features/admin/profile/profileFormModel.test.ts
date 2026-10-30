@@ -96,6 +96,11 @@ describe('profileFormModel', () => {
     expect(
       toProfileFormError(httpError(400, 'about must not be blank')).field,
     ).toBeUndefined()
+    expect(
+      toProfileFormError(
+        httpError(400, 'GITHUB link must be a valid http or https URL'),
+      ).field,
+    ).toBe('links.GITHUB')
     expect(toProfileFormError(new Error('network')).message).toBe(
       'No se pudo guardar el perfil. Inténtalo de nuevo.',
     )
