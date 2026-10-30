@@ -1,5 +1,9 @@
 package com.portafolio_manager.backend.infrastructure.config;
 
+import com.portafolio_manager.backend.application.port.in.contact.DeleteContactMessageUseCase;
+import com.portafolio_manager.backend.application.port.in.contact.ListContactMessagesUseCase;
+import com.portafolio_manager.backend.application.port.in.contact.MarkContactMessageReadUseCase;
+import com.portafolio_manager.backend.application.port.in.contact.SendContactMessageUseCase;
 import com.portafolio_manager.backend.application.port.in.profile.GetPublicProfileUseCase;
 import com.portafolio_manager.backend.application.port.in.profile.RemoveProfilePhotoUseCase;
 import com.portafolio_manager.backend.application.port.in.profile.SetProfilePhotoUseCase;
@@ -21,10 +25,17 @@ import com.portafolio_manager.backend.application.port.in.technology.DeleteTechn
 import com.portafolio_manager.backend.application.port.in.technology.ListAdminTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.ListTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.UpdateTechnologyUseCase;
+import com.portafolio_manager.backend.application.port.out.contact.ContactMessageRepositoryPort;
+import com.portafolio_manager.backend.application.port.out.contact.ContactNotifierPort;
+import com.portafolio_manager.backend.application.port.out.contact.ContactRateLimiterPort;
 import com.portafolio_manager.backend.application.port.out.image.ImageStoragePort;
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
+import com.portafolio_manager.backend.application.service.contact.DeleteContactMessageService;
+import com.portafolio_manager.backend.application.service.contact.ListContactMessagesService;
+import com.portafolio_manager.backend.application.service.contact.MarkContactMessageReadService;
+import com.portafolio_manager.backend.application.service.contact.SendContactMessageService;
 import com.portafolio_manager.backend.application.service.profile.GetPublicProfileService;
 import com.portafolio_manager.backend.application.service.profile.RemoveProfilePhotoService;
 import com.portafolio_manager.backend.application.service.profile.SetProfilePhotoService;
@@ -49,6 +60,8 @@ import com.portafolio_manager.backend.application.service.technology.UpdateTechn
 import com.portafolio_manager.backend.infrastructure.storage.UploadProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
 
 /**
  * Wires the framework-free services behind the portfolio content: the public site and its administration.
@@ -186,5 +199,34 @@ public class PortfolioConfig {
     @Bean
     DeleteTechnologyUseCase deleteTechnologyUseCase(TechnologyRepositoryPort technologyRepository) {
         return new DeleteTechnologyService(technologyRepository);
+    }
+
+    @Bean
+    SendContactMessageUseCase sendContactMessageUseCase(
+            ContactMessageRepositoryPort messageRepository,
+            ContactRateLimiterPort rateLimiter,
+            ProfileRepositoryPort profileRepository,
+            ContactNotifierPort notifier,
+            Clock clock
+    ) {
+        return new SendContactMessageService(messageRepository, rateLimiter, profileRepository, notifier, clock);
+    }
+
+    @Bean
+    ListContactMessagesUseCase listContactMessagesUseCase(ContactMessageRepositoryPort messageRepository) {
+        return new ListContactMessagesService(messageRepository);
+    }
+
+    @Bean
+    MarkContactMessageReadUseCase markContactMessageReadUseCase(
+            ContactMessageRepositoryPort messageRepository,
+            Clock clock
+    ) {
+        return new MarkContactMessageReadService(messageRepository, clock);
+    }
+
+    @Bean
+    DeleteContactMessageUseCase deleteContactMessageUseCase(ContactMessageRepositoryPort messageRepository) {
+        return new DeleteContactMessageService(messageRepository);
     }
 }

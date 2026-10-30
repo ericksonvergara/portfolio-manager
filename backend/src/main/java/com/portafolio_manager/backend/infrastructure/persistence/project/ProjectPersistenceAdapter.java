@@ -2,7 +2,6 @@ package com.portafolio_manager.backend.infrastructure.persistence.project;
 
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.domain.project.AdminProject;
-import com.portafolio_manager.backend.domain.project.DuplicateProjectNameException;
 import com.portafolio_manager.backend.domain.project.GalleryImage;
 import com.portafolio_manager.backend.domain.project.ProjectDetail;
 import com.portafolio_manager.backend.domain.project.ProjectDraft;
@@ -85,7 +84,8 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
                     ProjectJpaEntity.newProject(draft, technologyReferences(draft)));
             return reloaded(saved);
         } catch (DataIntegrityViolationException exception) {
-            throw new DuplicateProjectNameException(draft.name());
+            // The name or slug was taken concurrently, after the service's check (RN001).
+            throw ProjectConstraints.translate(exception, draft.name());
         }
     }
 
@@ -102,7 +102,7 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
             projectRepository.saveAndFlush(entity);
             return Optional.of(reloaded(entity));
         } catch (DataIntegrityViolationException exception) {
-            throw new DuplicateProjectNameException(update.draft().name());
+            throw ProjectConstraints.translate(exception, update.draft().name());
         }
     }
 

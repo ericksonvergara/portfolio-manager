@@ -5,6 +5,7 @@ import type {
   TechnologyCategory,
 } from '../../landing/landingApi'
 import { CATEGORY_LABELS, STATUS_LABELS } from '../../landing/labels'
+import { WEB_URL_MESSAGE } from '../../../services/validation'
 import type { ProjectInput } from './adminProjectsApi'
 import {
   EMPTY_PROJECT,
@@ -77,9 +78,7 @@ export function ProjectForm({
 
   const urlRules = {
     validate: (value: string) =>
-      !value.trim() ||
-      isWebUrl(value.trim()) ||
-      'Ingresa una URL válida que empiece por http:// o https://.',
+      !value.trim() || isWebUrl(value.trim()) || WEB_URL_MESSAGE,
     maxLength: { value: 500, message: 'Máximo 500 caracteres.' },
   }
 

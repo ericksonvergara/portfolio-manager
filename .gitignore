@@ -52,3 +52,7 @@ docker-compose.override.yml
 
 # Images uploaded while running the backend outside Docker (UPLOADS_DIR defaults to ./uploads)
 uploads/
+
+# Python (github/scripts)
+__pycache__/
+*.pyc

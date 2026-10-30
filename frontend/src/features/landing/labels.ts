@@ -1,4 +1,5 @@
 import type {
+  ProjectCategory,
   ProjectStatus,
   SocialPlatform,
   TechnologyCategory,
@@ -25,5 +26,16 @@ export const CATEGORY_LABELS: Record<TechnologyCategory, string> = {
   DATABASE: 'Bases de datos',
   DEVOPS: 'DevOps',
   MOBILE: 'Móvil',
+  AI: 'Inteligencia artificial',
   TOOLS: 'Herramientas',
+}
+
+/** The project filters in the order they are shown (HU005). */
+export const PROJECT_CATEGORY_LABELS: Record<ProjectCategory, string> = {
+  BACKEND: 'Backend',
+  FRONTEND: 'Frontend',
+  FULL_STACK: 'Full Stack',
+  MOBILE: 'Móvil',
+  DEVOPS: 'DevOps',
+  AI: 'IA',
 }

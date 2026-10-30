@@ -219,7 +219,10 @@ describe('EditProjectPage', () => {
   it('marks the name when another project already has it', async () => {
     api.respond = () =>
       Promise.reject(
-        httpError(409, "A project named 'Sistema ERP' already exists"),
+        httpError(
+          409,
+          "A project named 'Sistema ERP', or with an equivalent name, already exists",
+        ),
       )
     const user = userEvent.setup()
     renderPage()
@@ -228,7 +231,9 @@ describe('EditProjectPage', () => {
     )
 
     expect(
-      await screen.findByText('Ya existe un proyecto con ese nombre.'),
+      await screen.findByText(
+        /Ya existe un proyecto con ese nombre o con uno equivalente/,
+      ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Nombre')).toHaveAttribute(
       'aria-invalid',

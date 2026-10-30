@@ -1,19 +1,41 @@
+import { AxiosError, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
 import type { AdminProject } from './adminProjectsApi'
 import {
   EMPTY_PROJECT,
   fromAdminProject,
-  isWebUrl,
+  toProjectFormError,
   toProjectInput,
 } from './projectFormModel'
 
-describe('isWebUrl', () => {
-  it('accepts absolute http and https URLs only', () => {
-    expect(isWebUrl('https://github.com/usuario/erp')).toBe(true)
-    expect(isWebUrl('http://localhost:8081')).toBe(true)
-    expect(isWebUrl('github.com/usuario/erp')).toBe(false)
-    expect(isWebUrl('ftp://example.com')).toBe(false)
-    expect(isWebUrl('javascript:alert(1)')).toBe(false)
+function badRequest(message: string) {
+  return new AxiosError(
+    'Request failed',
+    'ERR_BAD_REQUEST',
+    undefined,
+    undefined,
+    {
+      status: 400,
+      data: { message },
+    } as AxiosResponse,
+  )
+}
+
+describe('toProjectFormError (HU029)', () => {
+  it('shows an invalid link rejected by the server next to its field', () => {
+    for (const field of ['projectUrl', 'repositoryUrl', 'videoUrl'] as const) {
+      const error = toProjectFormError(
+        badRequest(`${field} must be a valid http or https URL`),
+      )
+      expect(error.field).toBe(field)
+      expect(error.message).toMatch(/Ingresa una URL completa y válida/)
+    }
+  })
+
+  it('keeps other rejections above the form', () => {
+    expect(
+      toProjectFormError(badRequest('name must not be blank')).field,
+    ).toBeUndefined()
   })
 })
 
