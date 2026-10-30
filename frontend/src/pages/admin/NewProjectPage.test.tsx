@@ -102,7 +102,7 @@ describe('NewProjectPage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Ingresa una URL válida que empiece por http:// o https://.',
+        'Ingresa una URL completa y válida, por ejemplo https://ejemplo.com.',
       ),
     ).toBeInTheDocument()
     expect(

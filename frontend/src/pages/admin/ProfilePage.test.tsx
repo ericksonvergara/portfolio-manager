@@ -134,7 +134,9 @@ describe('ProfilePage', () => {
     ).toBeInTheDocument()
     expect(email).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByText('El nombre es obligatorio.')).toBeInTheDocument()
-    expect(screen.getByText(/Ingresa una URL válida/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Ingresa una URL completa y válida/),
+    ).toBeInTheDocument()
     expect(api.saved).toEqual([])
   })
 
