@@ -902,6 +902,40 @@
           }
         },
         {
+          "name": "07b · Registrar proyecto con un nombre equivalente (signos y espacios) → 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Same slug: only punctuation and spaces change (HU028, RN001).",
+                  "pm.collectionVariables.set('adminProjectNameEquivalent', `  ${pm.collectionVariables.get('adminProjectName').toLowerCase().replace(' ', ' - ')}!  `);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Responde 409 Conflict (RN001)', () => pm.response.to.have.status(409));",
+                  "pm.test('Explica que el nombre equivale a otro', () => pm.expect(pm.response.json().message).to.include('equivalent name'));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminProjectNameEquivalent}}\",\n  \"shortDescription\": \"Proyecto creado por la colección de Postman.\",\n  \"description\": \"Descripción completa del proyecto de prueba.\",\n  \"projectUrl\": \"https://example.com\",\n  \"repositoryUrl\": \"https://github.com/usuario/postman\",\n  \"status\": \"IN_PROGRESS\",\n  \"developedOn\": null,\n  \"displayOrder\": 99,\n  \"featured\": false,\n  \"technologyIds\": [{{technologyId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/admin/projects"
+          }
+        },
+        {
           "name": "08 · Listar proyectos → 200 (incluye inactivos)",
           "event": [
             {
@@ -3244,6 +3278,7 @@
     { "key": "technologyId", "value": "", "description": "First technology of the catalog, set by the admin folder." },
     { "key": "adminProjectName", "value": "", "description": "Unique name of the project created by the admin folder." },
     { "key": "adminProjectNameUpper", "value": "", "description": "Same name in upper case (duplicate name test)." },
+    { "key": "adminProjectNameEquivalent", "value": "", "description": "Name that only differs in punctuation and spaces (HU028)." },
     { "key": "adminProjectId", "value": "", "description": "Id of the project created by the admin folder." },
     { "key": "adminProjectSlug", "value": "", "description": "Slug of the project created by the admin folder." },
     { "key": "publishedProjectId", "value": "", "description": "A published project with a cover image, hidden and published again by the admin folder." },
