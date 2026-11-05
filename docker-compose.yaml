@@ -44,6 +44,7 @@ services:
       CONTACT_MAX_MESSAGES: "${CONTACT_MAX_MESSAGES:-5}"
       CONTACT_WINDOW: "${CONTACT_WINDOW:-1h}"
       GEOIP_DATABASE: "${GEOIP_DATABASE:-/app/geoip/dbip-country-lite.mmdb}"
+      VISIT_DEDUP_WINDOW: "${VISIT_DEDUP_WINDOW:-30m}"
       UPLOADS_DIR: /app/uploads
       UPLOAD_MAX_SIZE: "${UPLOAD_MAX_SIZE:-5MB}"
     volumes:

@@ -78,9 +78,8 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
     @Test
     void shouldKeepTheVisitOfAProjectThatIsDeleted() throws Exception {
         long project = insertProject("sistema-erp", true);
-        when(geoLocation.countryOf("190.25.14.77")).thenReturn(Optional.empty());
 
-        visitProject("sistema-erp");
+        visitProject("sistema-erp", "190.25.14.79");
         assertThat(jdbcTemplate.queryForObject("SELECT project_id FROM visits", Long.class)).isEqualTo(project);
         assertThat(jdbcTemplate.queryForObject("SELECT country FROM visits", String.class)).isNull();
 
@@ -97,9 +96,9 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
         insertProject("sin-visitas", true);
         when(geoLocation.countryOf("190.25.14.77")).thenReturn(Optional.empty());
 
-        visitProject("sistema-erp");
-        visitProject("sistema-erp");
-        visitProject("tienda");
+        visitProject("sistema-erp", "190.25.14.77");
+        visitProject("sistema-erp", "190.25.14.78");
+        visitProject("tienda", "190.25.14.77");
         // A visit to the landing page belongs to no project.
         mockMvc.perform(post("/api/public/visits")).andExpect(status().isAccepted());
 
@@ -114,6 +113,22 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldNotCountAReloadOfTheSamePage() throws Exception {
+        long erp = insertProject("erp-recargado", true);
+
+        visitProject("erp-recargado", "198.51.100.7");
+        visitProject("erp-recargado", "198.51.100.7");
+        visitProject("erp-recargado", "198.51.100.7");
+        // The same visitor on another page, and another visitor on the same page, are new visits.
+        mockMvc.perform(post("/api/public/visits").header("X-Real-IP", "198.51.100.7")).andExpect(status().isAccepted());
+        visitProject("erp-recargado", "198.51.100.8");
+
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM visits", Long.class)).isEqualTo(3);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM visits WHERE project_id = ?", Long.class, erp)).isEqualTo(2);
+    }
+
+    @Test
     void shouldNotCountAVisitToAnUnpublishedProject() throws Exception {
         insertProject("oculto", false);
 
@@ -125,9 +140,9 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM visits", Long.class)).isZero();
     }
 
-    private void visitProject(String slug) throws Exception {
+    private void visitProject(String slug, String ip) throws Exception {
         mockMvc.perform(post("/api/public/visits")
-                        .header("X-Real-IP", "190.25.14.77")
+                        .header("X-Real-IP", ip)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"projectSlug\": \"" + slug + "\" }"))
                 .andExpect(status().isAccepted());

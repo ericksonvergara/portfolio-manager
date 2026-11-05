@@ -34,6 +34,7 @@ import com.portafolio_manager.backend.application.port.out.profile.ProfileReposi
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.visit.GeoLocationPort;
+import com.portafolio_manager.backend.application.port.out.visit.VisitDeduplicatorPort;
 import com.portafolio_manager.backend.application.port.out.visit.VisitRepositoryPort;
 import com.portafolio_manager.backend.application.service.contact.DeleteContactMessageService;
 import com.portafolio_manager.backend.application.service.contact.ListContactMessagesService;
@@ -239,8 +240,9 @@ public class PortfolioConfig {
             VisitRepositoryPort visitRepository,
             ProjectRepositoryPort projectRepository,
             GeoLocationPort geoLocation,
+            VisitDeduplicatorPort deduplicator,
             Clock clock
     ) {
-        return new RegisterVisitService(visitRepository, projectRepository, geoLocation, clock);
+        return new RegisterVisitService(visitRepository, projectRepository, geoLocation, deduplicator, clock);
     }
 }
