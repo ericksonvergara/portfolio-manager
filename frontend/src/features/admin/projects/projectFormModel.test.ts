@@ -89,6 +89,7 @@ describe('fromAdminProject', () => {
       active: false,
       technologies: [{ id: 3, name: 'Java' }],
       gallery: [],
+      visitCount: 0,
     }
 
     const values = fromAdminProject(project)

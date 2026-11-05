@@ -156,7 +156,7 @@ export function AdminProjectsPage() {
       )}
       {projects.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-slate-800">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <caption className="sr-only">Proyectos del portafolio</caption>
             <thead className="bg-slate-900 text-slate-400">
               <tr>
@@ -171,6 +171,9 @@ export function AdminProjectsPage() {
                 </th>
                 <th scope="col" className="px-4 py-3 font-medium">
                   Orden
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">
+                  Visitas
                 </th>
                 <th scope="col" className="px-4 py-3 font-medium">
                   Tecnologías
@@ -243,6 +246,9 @@ export function AdminProjectsPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-300">
                     {project.displayOrder}
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-300 tabular-nums">
+                    {project.visitCount.toLocaleString('es')}
                   </td>
                   <td className="px-4 py-3 text-slate-300">
                     {project.technologies.map((t) => t.name).join(', ')}

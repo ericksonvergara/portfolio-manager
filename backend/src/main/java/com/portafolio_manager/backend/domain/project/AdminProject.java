@@ -26,7 +26,8 @@ public record AdminProject(
         boolean featured,
         boolean active,
         List<Technology> technologies,
-        List<GalleryImage> gallery
+        List<GalleryImage> gallery,
+        long visitCount
 ) {
 
     public AdminProject {

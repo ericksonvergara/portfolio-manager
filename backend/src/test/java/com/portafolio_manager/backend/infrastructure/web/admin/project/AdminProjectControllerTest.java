@@ -70,7 +70,7 @@ class AdminProjectControllerTest {
     private static final AdminProject CREATED = new AdminProject(
             7L, "sistema-erp", "Sistema ERP", "Gestión de inventario.", "Descripción completa.", null,
             "https://erp.example.com", null, null, ProjectStatus.COMPLETED, LocalDate.of(2026, 10, 1), 1,
-            true, false, List.of(new Technology(1L, "Java", TechnologyCategory.BACKEND)), List.of()
+            true, false, List.of(new Technology(1L, "Java", TechnologyCategory.BACKEND)), List.of(), 0
     );
 
     @Autowired

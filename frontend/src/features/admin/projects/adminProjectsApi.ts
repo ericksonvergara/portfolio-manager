@@ -21,6 +21,8 @@ export interface AdminProject {
   technologies: { id: number; name: string }[]
   /** Gallery in display order (HU019). */
   gallery: AdminGalleryImage[]
+  /** Visits to its detail page (HU026). */
+  visitCount: number
 }
 
 export interface AdminGalleryImage {

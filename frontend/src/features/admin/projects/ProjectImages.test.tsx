@@ -48,6 +48,7 @@ const PROJECT: AdminProject = {
   active: false,
   technologies: [],
   gallery: [],
+  visitCount: 0,
 }
 
 function png(name = 'portada.png', size = 10) {
