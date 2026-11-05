@@ -2,6 +2,7 @@ package com.portafolio_manager.backend.infrastructure.web.contact;
 
 import com.portafolio_manager.backend.application.port.in.contact.SendContactMessageUseCase;
 import com.portafolio_manager.backend.domain.contact.ContactSubmission;
+import com.portafolio_manager.backend.infrastructure.web.ClientIp;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -17,9 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 class ContactController implements ContactApi {
 
     private static final Logger log = LoggerFactory.getLogger(ContactController.class);
-
-    /** Set by nginx, which overwrites any value sent by the client; the backend is only reachable through it. */
-    private static final String REAL_IP_HEADER = "X-Real-IP";
 
     private final SendContactMessageUseCase sendContactMessageUseCase;
 
@@ -38,12 +36,7 @@ class ContactController implements ContactApi {
             log.info("Contact message discarded: the hidden field was filled in");
             return ResponseEntity.accepted().build();
         }
-        sendContactMessageUseCase.execute(new ContactSubmission(request.toDraft(), clientIp(servletRequest)));
+        sendContactMessageUseCase.execute(new ContactSubmission(request.toDraft(), ClientIp.of(servletRequest)));
         return ResponseEntity.accepted().build();
-    }
-
-    private static String clientIp(HttpServletRequest request) {
-        String realIp = request.getHeader(REAL_IP_HEADER);
-        return realIp == null || realIp.isBlank() ? request.getRemoteAddr() : realIp.strip();
     }
 }

@@ -60,6 +60,12 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Long> findPublishedIdBySlug(String slug) {
+        return projectRepository.findPublishedIdBySlug(slug);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean existsByNameOrSlug(String name, String slug) {
         return projectRepository.existsByNameIgnoreCaseOrSlug(name, slug);
     }

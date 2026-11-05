@@ -477,7 +477,20 @@ export function ContactSection({ profile }: { profile: Profile }) {
 export function LandingFooter({ owner }: { owner: string }) {
   return (
     <footer className="border-t border-slate-800/80 py-8 text-center text-sm text-slate-500">
-      © {new Date().getFullYear()} {owner}
+      <p>
+        © {new Date().getFullYear()} {owner}
+      </p>
+      {/* Required by the CC BY 4.0 license of the country database used for the visit statistics. */}
+      <p className="mt-1 text-xs">
+        <a
+          href="https://db-ip.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-slate-300"
+        >
+          IP Geolocation by DB-IP
+        </a>
+      </p>
     </footer>
   )
 }

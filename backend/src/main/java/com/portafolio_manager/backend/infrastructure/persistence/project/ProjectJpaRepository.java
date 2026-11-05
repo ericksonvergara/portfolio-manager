@@ -21,6 +21,9 @@ interface ProjectJpaRepository extends JpaRepository<ProjectJpaEntity, Long> {
     @EntityGraph(attributePaths = "technologies")
     Optional<ProjectJpaEntity> findBySlugAndActiveTrue(String slug);
 
+    @Query("SELECT p.id FROM ProjectJpaEntity p WHERE p.slug = :slug AND p.active = TRUE")
+    Optional<Long> findPublishedIdBySlug(@Param("slug") String slug);
+
     @EntityGraph(attributePaths = "technologies")
     List<ProjectJpaEntity> findAllByOrderByDisplayOrderAscNameAsc();
 
