@@ -2,11 +2,13 @@ package com.portafolio_manager.backend.application.service.visit;
 
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.visit.GeoLocationPort;
+import com.portafolio_manager.backend.application.port.out.visit.VisitDeduplicatorPort;
 import com.portafolio_manager.backend.application.port.out.visit.VisitRepositoryPort;
 import com.portafolio_manager.backend.domain.project.ProjectNotFoundException;
 import com.portafolio_manager.backend.domain.visit.Visit;
 import com.portafolio_manager.backend.domain.visit.VisitRequest;
 import com.portafolio_manager.backend.domain.visit.VisitorAgent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -15,6 +17,7 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -30,8 +33,14 @@ class RegisterVisitServiceTest {
     private final VisitRepositoryPort visitRepository = mock(VisitRepositoryPort.class);
     private final ProjectRepositoryPort projectRepository = mock(ProjectRepositoryPort.class);
     private final GeoLocationPort geoLocation = mock(GeoLocationPort.class);
+    private final VisitDeduplicatorPort deduplicator = mock(VisitDeduplicatorPort.class);
     private final RegisterVisitService service = new RegisterVisitService(
-            visitRepository, projectRepository, geoLocation, Clock.fixed(NOW, ZoneOffset.UTC));
+            visitRepository, projectRepository, geoLocation, deduplicator, Clock.fixed(NOW, ZoneOffset.UTC));
+
+    @BeforeEach
+    void everyVisitIsNewByDefault() {
+        when(deduplicator.isFirstInWindow(any(VisitRequest.class))).thenReturn(true);
+    }
 
     @Test
     void shouldSaveAVisitToTheLandingPageWithTheIpMasked() {
@@ -59,6 +68,15 @@ class RegisterVisitServiceTest {
 
         assertThatThrownBy(() -> service.execute(new VisitRequest("190.25.14.77", CHROME_ON_WINDOWS, "oculto")))
                 .isInstanceOf(ProjectNotFoundException.class);
-        verifyNoInteractions(visitRepository);
+        verifyNoInteractions(visitRepository, deduplicator);
+    }
+
+    @Test
+    void shouldNotSaveAVisitThatRepeatsWithinTheWindow() {
+        when(deduplicator.isFirstInWindow(any(VisitRequest.class))).thenReturn(false);
+
+        service.execute(new VisitRequest("190.25.14.77", CHROME_ON_WINDOWS, null));
+
+        verifyNoInteractions(visitRepository, geoLocation);
     }
 }

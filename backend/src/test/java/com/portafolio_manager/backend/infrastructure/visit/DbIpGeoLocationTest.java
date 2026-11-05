@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,7 +18,7 @@ class DbIpGeoLocationTest {
 
     @Test
     void shouldWorkWithoutTheDatabase(@TempDir Path directory) throws IOException {
-        try (DbIpGeoLocation geoLocation = new DbIpGeoLocation(new VisitProperties(directory.resolve("none.mmdb")))) {
+        try (DbIpGeoLocation geoLocation = new DbIpGeoLocation(properties(directory.resolve("none.mmdb")))) {
             assertThat(geoLocation.countryOf("8.8.8.8")).isEmpty();
         }
     }
@@ -26,8 +27,12 @@ class DbIpGeoLocationTest {
     void shouldWorkWithADamagedDatabase(@TempDir Path directory) throws IOException {
         Path damaged = Files.writeString(directory.resolve("damaged.mmdb"), "this is not a database");
 
-        try (DbIpGeoLocation geoLocation = new DbIpGeoLocation(new VisitProperties(damaged))) {
+        try (DbIpGeoLocation geoLocation = new DbIpGeoLocation(properties(damaged))) {
             assertThat(geoLocation.countryOf("8.8.8.8")).isEmpty();
         }
+    }
+
+    private static VisitProperties properties(Path database) {
+        return new VisitProperties(database, Duration.ofMinutes(30));
     }
 }

@@ -1303,6 +1303,30 @@
           }
         },
         {
+          "name": "16b2 · Recargar el detalle: responde igual, pero no suma → 202",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 202 Accepted, igual que una visita nueva (HU027)', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectSlug\": \"{{adminProjectSlug}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/public/visits"
+          }
+        },
+        {
           "name": "16c · El contador de visitas del proyecto sube → 200",
           "event": [
             {
@@ -1311,7 +1335,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('Cuenta la visita al detalle (HU026)', () => pm.expect(pm.response.json().visitCount).to.eql(1));"
+                  "pm.test('Cuenta una sola visita: la recarga no suma (HU026, HU027)', () => pm.expect(pm.response.json().visitCount).to.eql(1));"
                 ]
               }
             }

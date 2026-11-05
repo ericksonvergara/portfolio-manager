@@ -81,6 +81,8 @@ app:
   visits:
     # DB-IP Lite country database, downloaded when the Docker image is built (HU025).
     geoip-database: ${GEOIP_DATABASE:/app/geoip/dbip-country-lite.mmdb}
+    # Reopening the same page within this time does not count as a new visit (HU027).
+    dedup-window: ${VISIT_DEDUP_WINDOW:30m}
 
   bootstrap:
     admin:

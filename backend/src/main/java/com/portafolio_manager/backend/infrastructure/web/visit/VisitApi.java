@@ -19,7 +19,9 @@ interface VisitApi {
     @Operation(
             summary = "Registrar una visita",
             description = "La envía la web al abrir una página. Guarda la fecha, la IP enmascarada, el navegador, "
-                    + "el sistema operativo, el dispositivo, el país y el proyecto cuando aplica."
+                    + "el sistema operativo, el dispositivo, el país y el proyecto cuando aplica. Si el mismo "
+                    + "visitante reabre la misma página dentro de la ventana (VISIT_DEDUP_WINDOW), no suma otra "
+                    + "visita, y la respuesta es la misma."
     )
     @ApiResponse(responseCode = "202", description = "Visita registrada")
     @ApiResponse(responseCode = "400", description = "El slug supera los 120 caracteres",
