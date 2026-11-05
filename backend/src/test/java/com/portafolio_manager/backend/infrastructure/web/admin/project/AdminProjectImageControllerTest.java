@@ -47,7 +47,7 @@ class AdminProjectImageControllerTest {
     private static final AdminProject PROJECT = new AdminProject(
             7L, "sistema-erp", "Sistema ERP", "Corta", "Completa", "/uploads/cover.png", null, null, null,
             ProjectStatus.COMPLETED, null, 1, false, false, List.of(),
-            List.of(new GalleryImage(12L, "/uploads/g.png", "Panel"))
+            List.of(new GalleryImage(12L, "/uploads/g.png", "Panel")), 0
     );
 
     @Autowired

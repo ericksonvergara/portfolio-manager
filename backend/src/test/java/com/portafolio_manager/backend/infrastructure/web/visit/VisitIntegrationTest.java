@@ -11,15 +11,20 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -37,6 +42,9 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private JwtEncoder jwtEncoder;
 
     @MockitoBean
     private GeoLocationPort geoLocation;
@@ -83,6 +91,29 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldCountTheVisitsToTheDetailOfEachProject() throws Exception {
+        long erp = insertProject("sistema-erp", true);
+        long shop = insertProject("tienda", true);
+        insertProject("sin-visitas", true);
+        when(geoLocation.countryOf("190.25.14.77")).thenReturn(Optional.empty());
+
+        visitProject("sistema-erp");
+        visitProject("sistema-erp");
+        visitProject("tienda");
+        // A visit to the landing page belongs to no project.
+        mockMvc.perform(post("/api/public/visits")).andExpect(status().isAccepted());
+
+        mockMvc.perform(get("/api/admin/projects/" + erp).header(HttpHeaders.AUTHORIZATION, admin()))
+                .andExpect(jsonPath("$.visitCount").value(2));
+        mockMvc.perform(get("/api/admin/projects/" + shop).header(HttpHeaders.AUTHORIZATION, admin()))
+                .andExpect(jsonPath("$.visitCount").value(1));
+        mockMvc.perform(get("/api/admin/projects").header(HttpHeaders.AUTHORIZATION, admin()))
+                .andExpect(jsonPath("$[?(@.slug == 'sistema-erp')].visitCount").value(contains(2)))
+                .andExpect(jsonPath("$[?(@.slug == 'tienda')].visitCount").value(contains(1)))
+                .andExpect(jsonPath("$[?(@.slug == 'sin-visitas')].visitCount").value(contains(0)));
+    }
+
+    @Test
     void shouldNotCountAVisitToAnUnpublishedProject() throws Exception {
         insertProject("oculto", false);
 
@@ -100,6 +131,10 @@ class VisitIntegrationTest extends AbstractPostgresIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"projectSlug\": \"" + slug + "\" }"))
                 .andExpect(status().isAccepted());
+    }
+
+    private String admin() {
+        return "Bearer " + TestJwt.token(jwtEncoder, TestJwt.ISSUER, Instant.now().plusSeconds(60), "ADMIN");
     }
 
     private long insertProject(String slug, boolean active) {

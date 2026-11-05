@@ -49,6 +49,7 @@ const PROJECT: AdminProject = {
     { id: 2, name: 'React' },
   ],
   gallery: [],
+  visitCount: 0,
 }
 
 function renderPage(state?: { created?: string; updated?: string }) {
@@ -291,5 +292,18 @@ describe('AdminProjectsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '«Sistema ERP» necesita una imagen principal y al menos una tecnología para publicarse.',
     )
+  })
+
+  it('shows how many visits the detail of each project has (HU026)', async () => {
+    adminApi.answers.push(() =>
+      Promise.resolve([{ ...PROJECT, visitCount: 1320 }]),
+    )
+    renderPage()
+
+    expect(
+      await screen.findByRole('columnheader', { name: 'Visitas' }),
+    ).toBeInTheDocument()
+    const row = screen.getByRole('row', { name: /Sistema ERP/ })
+    expect(row).toHaveTextContent((1320).toLocaleString('es'))
   })
 })

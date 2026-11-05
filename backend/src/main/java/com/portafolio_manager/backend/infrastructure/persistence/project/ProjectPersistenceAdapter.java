@@ -17,7 +17,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 class ProjectPersistenceAdapter implements ProjectRepositoryPort {
@@ -53,8 +55,10 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
     @Override
     @Transactional(readOnly = true)
     public List<AdminProject> findAllForAdmin() {
+        Map<Long, Long> visits = projectRepository.countVisitsByProject().stream()
+                .collect(Collectors.toMap(row -> ((Number) row[0]).longValue(), row -> ((Number) row[1]).longValue()));
         return projectRepository.findAllByOrderByDisplayOrderAscNameAsc().stream()
-                .map(ProjectPersistenceAdapter::toAdminProject)
+                .map(entity -> toAdminProject(entity, visits.getOrDefault(entity.getId(), 0L)))
                 .toList();
     }
 
@@ -79,7 +83,8 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
     @Override
     @Transactional(readOnly = true)
     public Optional<AdminProject> findForAdmin(Long id) {
-        return projectRepository.findWithTechnologiesById(id).map(ProjectPersistenceAdapter::toAdminProject);
+        return projectRepository.findWithTechnologiesById(id)
+                .map(entity -> toAdminProject(entity, projectRepository.countVisits(id)));
     }
 
     @Override
@@ -182,10 +187,10 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
     /** Reloads the project so its technologies come back complete and in display order. */
     private AdminProject reloaded(ProjectJpaEntity entity) {
         entityManager.refresh(entity);
-        return toAdminProject(entity);
+        return toAdminProject(entity, projectRepository.countVisits(entity.getId()));
     }
 
-    private static AdminProject toAdminProject(ProjectJpaEntity entity) {
+    private static AdminProject toAdminProject(ProjectJpaEntity entity, long visitCount) {
         return new AdminProject(
                 entity.getId(),
                 entity.getSlug(),
@@ -204,7 +209,8 @@ class ProjectPersistenceAdapter implements ProjectRepositoryPort {
                 toTechnologies(entity.getTechnologies()),
                 entity.getImages().stream()
                         .map(image -> new GalleryImage(image.getId(), image.getImageUrl(), image.getAltText()))
-                        .toList()
+                        .toList(),
+                visitCount
         );
     }
 

@@ -127,7 +127,7 @@ class ProjectImageServicesTest {
     static AdminProject project(String cover, boolean active, List<GalleryImage> gallery) {
         return new AdminProject(
                 7L, "sistema-erp", "Sistema ERP", "Corta", "Completa", cover, null, null, null,
-                ProjectStatus.COMPLETED, null, 1, false, active, List.of(), gallery
+                ProjectStatus.COMPLETED, null, 1, false, active, List.of(), gallery, 0
         );
     }
 }

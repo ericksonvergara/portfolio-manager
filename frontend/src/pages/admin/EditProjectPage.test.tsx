@@ -40,6 +40,7 @@ const PROJECT: AdminProject = {
   active: true,
   technologies: [{ id: 1, name: 'Java' }],
   gallery: [],
+  visitCount: 0,
 }
 
 vi.mock('../../features/admin/projects/adminProjectsApi', () => ({

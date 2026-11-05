@@ -24,7 +24,8 @@ record AdminProjectResponse(
         @Schema(example = "false") boolean featured,
         @Schema(example = "false", description = "Solo los activos aparecen en la Landing Page (RN008)") boolean active,
         List<TechnologyRef> technologies,
-        @Schema(description = "Galería, en orden de aparición") List<ImageRef> gallery
+        @Schema(description = "Galería, en orden de aparición") List<ImageRef> gallery,
+        @Schema(example = "320", description = "Visitas a su página de detalle (HU026)") long visitCount
 ) {
 
     @Schema(description = "Tecnología asociada al proyecto")
@@ -60,7 +61,8 @@ record AdminProjectResponse(
                         .toList(),
                 project.gallery().stream()
                         .map(image -> new ImageRef(image.id(), image.url(), image.altText()))
-                        .toList()
+                        .toList(),
+                project.visitCount()
         );
     }
 }

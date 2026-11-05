@@ -27,6 +27,16 @@ interface ProjectJpaRepository extends JpaRepository<ProjectJpaEntity, Long> {
     @EntityGraph(attributePaths = "technologies")
     List<ProjectJpaEntity> findAllByOrderByDisplayOrderAscNameAsc();
 
+    /** Pairs of project id and number of visits to its detail (only projects with visits, HU026). */
+    @Query(
+            value = "SELECT project_id, COUNT(*) FROM visits WHERE project_id IS NOT NULL GROUP BY project_id",
+            nativeQuery = true
+    )
+    List<Object[]> countVisitsByProject();
+
+    @Query(value = "SELECT COUNT(*) FROM visits WHERE project_id = :id", nativeQuery = true)
+    long countVisits(@Param("id") Long id);
+
     boolean existsByNameIgnoreCaseOrSlug(String name, String slug);
 
     @Query("""
