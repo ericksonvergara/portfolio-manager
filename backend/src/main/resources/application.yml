@@ -78,6 +78,10 @@ app:
     window: ${CONTACT_WINDOW:1h}
     mail-from: ${MAIL_FROM:Portfolio Manager <no-reply@portfolio.local>}
 
+  visits:
+    # DB-IP Lite country database, downloaded when the Docker image is built (HU025).
+    geoip-database: ${GEOIP_DATABASE:/app/geoip/dbip-country-lite.mmdb}
+
   bootstrap:
     admin:
       name: ${ADMIN_NAME:Administrador}

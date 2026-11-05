@@ -25,6 +25,7 @@ import com.portafolio_manager.backend.application.port.in.technology.DeleteTechn
 import com.portafolio_manager.backend.application.port.in.technology.ListAdminTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.ListTechnologiesUseCase;
 import com.portafolio_manager.backend.application.port.in.technology.UpdateTechnologyUseCase;
+import com.portafolio_manager.backend.application.port.in.visit.RegisterVisitUseCase;
 import com.portafolio_manager.backend.application.port.out.contact.ContactMessageRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.contact.ContactNotifierPort;
 import com.portafolio_manager.backend.application.port.out.contact.ContactRateLimiterPort;
@@ -32,6 +33,8 @@ import com.portafolio_manager.backend.application.port.out.image.ImageStoragePor
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.technology.TechnologyRepositoryPort;
+import com.portafolio_manager.backend.application.port.out.visit.GeoLocationPort;
+import com.portafolio_manager.backend.application.port.out.visit.VisitRepositoryPort;
 import com.portafolio_manager.backend.application.service.contact.DeleteContactMessageService;
 import com.portafolio_manager.backend.application.service.contact.ListContactMessagesService;
 import com.portafolio_manager.backend.application.service.contact.MarkContactMessageReadService;
@@ -57,6 +60,7 @@ import com.portafolio_manager.backend.application.service.technology.DeleteTechn
 import com.portafolio_manager.backend.application.service.technology.ListAdminTechnologiesService;
 import com.portafolio_manager.backend.application.service.technology.ListTechnologiesService;
 import com.portafolio_manager.backend.application.service.technology.UpdateTechnologyService;
+import com.portafolio_manager.backend.application.service.visit.RegisterVisitService;
 import com.portafolio_manager.backend.infrastructure.storage.UploadProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -228,5 +232,15 @@ public class PortfolioConfig {
     @Bean
     DeleteContactMessageUseCase deleteContactMessageUseCase(ContactMessageRepositoryPort messageRepository) {
         return new DeleteContactMessageService(messageRepository);
+    }
+
+    @Bean
+    RegisterVisitUseCase registerVisitUseCase(
+            VisitRepositoryPort visitRepository,
+            ProjectRepositoryPort projectRepository,
+            GeoLocationPort geoLocation,
+            Clock clock
+    ) {
+        return new RegisterVisitService(visitRepository, projectRepository, geoLocation, clock);
     }
 }

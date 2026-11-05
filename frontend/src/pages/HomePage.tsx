@@ -8,12 +8,14 @@ import {
   TechnologiesSection,
 } from '../features/landing/LandingSections'
 import { useLandingContent } from '../features/landing/useLandingContent'
+import { useRegisterVisit } from '../features/landing/useRegisterVisit'
 
 const DEFAULT_BRAND = 'Portafolio'
 
 /** Public landing page (HU001): accessible without logging in. */
 export function HomePage() {
   const content = useLandingContent()
+  useRegisterVisit(undefined, content.status === 'ready')
 
   if (content.status === 'loading') {
     return (

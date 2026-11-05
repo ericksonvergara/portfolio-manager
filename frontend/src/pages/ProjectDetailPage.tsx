@@ -7,6 +7,7 @@ import {
   toVideoEmbedUrl,
 } from '../features/landing/projectFormat'
 import { useProjectDetail } from '../features/landing/useProjectDetail'
+import { useRegisterVisit } from '../features/landing/useRegisterVisit'
 
 function PageFrame({ children }: { children: ReactNode }) {
   return (
@@ -189,6 +190,7 @@ function ProjectView({ project }: { project: ProjectDetail }) {
 export function ProjectDetailPage() {
   const { slug = '' } = useParams()
   const content = useProjectDetail(slug)
+  useRegisterVisit(slug, content.status === 'ready')
 
   // Opening a project from the bottom of the landing page must not land mid-page.
   useEffect(() => {

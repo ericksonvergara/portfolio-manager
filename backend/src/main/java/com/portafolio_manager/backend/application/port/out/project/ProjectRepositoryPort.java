@@ -18,6 +18,9 @@ public interface ProjectRepositoryPort extends PersistencePort {
     /** The active project with that slug, with its gallery and technologies in display order. */
     Optional<ProjectDetail> findPublishedBySlug(String slug);
 
+    /** The id of a published project, to relate a visit with it (HU025). */
+    Optional<Long> findPublishedIdBySlug(String slug);
+
     /** Every project, active or not, by display order and then by name. */
     List<AdminProject> findAllForAdmin();
 

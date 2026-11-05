@@ -43,6 +43,7 @@ services:
       PASSWORD_RESET_TTL: "${PASSWORD_RESET_TTL:-30m}"
       CONTACT_MAX_MESSAGES: "${CONTACT_MAX_MESSAGES:-5}"
       CONTACT_WINDOW: "${CONTACT_WINDOW:-1h}"
+      GEOIP_DATABASE: "${GEOIP_DATABASE:-/app/geoip/dbip-country-lite.mmdb}"
       UPLOADS_DIR: /app/uploads
       UPLOAD_MAX_SIZE: "${UPLOAD_MAX_SIZE:-5MB}"
     volumes:
