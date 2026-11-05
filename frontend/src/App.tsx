@@ -7,6 +7,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { AccountPage } from './pages/admin/AccountPage'
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage'
+import { DashboardPage } from './pages/admin/DashboardPage'
 import { EditProjectPage } from './pages/admin/EditProjectPage'
 import { MessagesPage } from './pages/admin/MessagesPage'
 import { NewProjectPage } from './pages/admin/NewProjectPage'
@@ -39,7 +40,8 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="proyectos" replace />} />
+            <Route index element={<Navigate to="inicio" replace />} />
+            <Route path="inicio" element={<DashboardPage />} />
             <Route path="proyectos" element={<AdminProjectsPage />} />
             <Route path="proyectos/nuevo" element={<NewProjectPage />} />
             <Route path="proyectos/:id/editar" element={<EditProjectPage />} />

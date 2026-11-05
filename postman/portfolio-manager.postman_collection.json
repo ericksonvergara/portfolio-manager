@@ -2947,6 +2947,95 @@
       ]
     },
     {
+      "name": "Administración - Dashboard",
+      "description": "Indicadores del panel (HU012): total de proyectos y de tecnologías, último proyecto registrado y último acceso, que es el anterior a la sesión actual. Solo lee, así que no deja datos.",
+      "item": [
+        {
+          "name": "01 · Login (dashboard) → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('accessToken', pm.response.json().accessToken);",
+                  "pm.collectionVariables.set('dashboardLoginAt', new Date().toISOString());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "02 · Consultar el dashboard sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/dashboard"
+          }
+        },
+        {
+          "name": "03 · Consultar el dashboard → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', () => pm.response.to.have.status(200));",
+                  "const dashboard = pm.response.json();",
+                  "pm.test('Trae los totales (HU012)', () => {",
+                  "  pm.expect(dashboard.totalProjects).to.be.a('number').and.at.least(0);",
+                  "  pm.expect(dashboard.totalTechnologies).to.be.a('number').and.at.least(0);",
+                  "});",
+                  "pm.test('El último proyecto trae nombre y fecha', () => {",
+                  "  if (dashboard.totalProjects > 0) {",
+                  "    pm.expect(dashboard.latestProject.name).to.be.a('string').and.not.empty;",
+                  "    pm.expect(new Date(dashboard.latestProject.registeredAt).getTime()).to.not.be.NaN;",
+                  "  } else {",
+                  "    pm.expect(dashboard.latestProject).to.be.null;",
+                  "  }",
+                  "});",
+                  "pm.test('El último acceso es anterior a esta sesión', () => {",
+                  "  if (dashboard.lastAccessAt !== null) {",
+                  "    pm.expect(new Date(dashboard.lastAccessAt).getTime()).to.be.below(new Date(pm.collectionVariables.get('dashboardLoginAt')).getTime());",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/dashboard"
+          }
+        }
+      ]
+    },
+    {
       "name": "Recuperación de contraseña",
       "description": "Recuperación por correo (HU010). Necesita `mailpitUrl` en el entorno: Mailpit atrapa el correo y la colección lee el enlace desde su API. La contraseña nueva es `adminPassword` misma, así que las credenciales no cambian. Sin `mailpitUrl`, las peticiones que dependen del correo se saltan.",
       "item": [
@@ -3502,6 +3591,7 @@
     { "key": "contactName", "value": "", "description": "Visitor name used by the contact folder (HU006)." },
     { "key": "contactEmail", "value": "", "description": "Visitor email used by the contact folder." },
     { "key": "contactSent", "value": "", "description": "'true' when the contact message was accepted (not 429)." },
-    { "key": "contactMessageId", "value": "", "description": "Id of that message in the inbox." }
+    { "key": "contactMessageId", "value": "", "description": "Id of that message in the inbox." },
+    { "key": "dashboardLoginAt", "value": "", "description": "When the dashboard folder logged in (HU012)." }
   ]
 }

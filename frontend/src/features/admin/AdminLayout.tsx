@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 
 const NAV_ITEMS = [
+  { to: '/admin/inicio', label: 'Inicio' },
   { to: '/admin/proyectos', label: 'Proyectos' },
   { to: '/admin/tecnologias', label: 'Tecnologías' },
   { to: '/admin/perfil', label: 'Perfil' },

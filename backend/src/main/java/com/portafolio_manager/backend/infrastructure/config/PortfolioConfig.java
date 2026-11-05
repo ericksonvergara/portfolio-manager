@@ -4,6 +4,7 @@ import com.portafolio_manager.backend.application.port.in.contact.DeleteContactM
 import com.portafolio_manager.backend.application.port.in.contact.ListContactMessagesUseCase;
 import com.portafolio_manager.backend.application.port.in.contact.MarkContactMessageReadUseCase;
 import com.portafolio_manager.backend.application.port.in.contact.SendContactMessageUseCase;
+import com.portafolio_manager.backend.application.port.in.dashboard.GetDashboardUseCase;
 import com.portafolio_manager.backend.application.port.in.profile.GetPublicProfileUseCase;
 import com.portafolio_manager.backend.application.port.in.profile.RemoveProfilePhotoUseCase;
 import com.portafolio_manager.backend.application.port.in.profile.SetProfilePhotoUseCase;
@@ -29,6 +30,7 @@ import com.portafolio_manager.backend.application.port.in.visit.RegisterVisitUse
 import com.portafolio_manager.backend.application.port.out.contact.ContactMessageRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.contact.ContactNotifierPort;
 import com.portafolio_manager.backend.application.port.out.contact.ContactRateLimiterPort;
+import com.portafolio_manager.backend.application.port.out.dashboard.DashboardRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.image.ImageStoragePort;
 import com.portafolio_manager.backend.application.port.out.profile.ProfileRepositoryPort;
 import com.portafolio_manager.backend.application.port.out.project.ProjectRepositoryPort;
@@ -40,6 +42,7 @@ import com.portafolio_manager.backend.application.service.contact.DeleteContactM
 import com.portafolio_manager.backend.application.service.contact.ListContactMessagesService;
 import com.portafolio_manager.backend.application.service.contact.MarkContactMessageReadService;
 import com.portafolio_manager.backend.application.service.contact.SendContactMessageService;
+import com.portafolio_manager.backend.application.service.dashboard.GetDashboardService;
 import com.portafolio_manager.backend.application.service.profile.GetPublicProfileService;
 import com.portafolio_manager.backend.application.service.profile.RemoveProfilePhotoService;
 import com.portafolio_manager.backend.application.service.profile.SetProfilePhotoService;
@@ -244,5 +247,10 @@ public class PortfolioConfig {
             Clock clock
     ) {
         return new RegisterVisitService(visitRepository, projectRepository, geoLocation, deduplicator, clock);
+    }
+
+    @Bean
+    GetDashboardUseCase getDashboardUseCase(DashboardRepositoryPort dashboardRepository) {
+        return new GetDashboardService(dashboardRepository);
     }
 }

@@ -14,8 +14,15 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 
     boolean existsByEmail(String email);
 
+    /**
+     * Native because previous_login_at is not mapped: the entity is rebuilt from the domain on every save,
+     * which would wipe a column that the domain does not carry.
+     */
     @Modifying
-    @Query("UPDATE UserJpaEntity u SET u.lastLoginAt = :lastLoginAt WHERE u.id = :userId")
+    @Query(
+            value = "UPDATE users SET previous_login_at = last_login_at, last_login_at = :lastLoginAt WHERE id = :userId",
+            nativeQuery = true
+    )
     void updateLastLogin(@Param("userId") Long userId, @Param("lastLoginAt") Instant lastLoginAt);
 
     @Modifying
