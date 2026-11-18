@@ -84,6 +84,10 @@ app:
     # Reopening the same page within this time does not count as a new visit (HU027).
     dedup-window: ${VISIT_DEDUP_WINDOW:30m}
 
+  statistics:
+    # Where "today" and "this month" of the dashboard start (HU013).
+    timezone: ${STATS_TIMEZONE:America/Bogota}
+
   bootstrap:
     admin:
       name: ${ADMIN_NAME:Administrador}

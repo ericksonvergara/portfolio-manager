@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
-import { getDashboard } from '../../features/admin/dashboard/adminDashboardApi'
+import {
+  getDashboard,
+  type DashboardSummary,
+} from '../../features/admin/dashboard/adminDashboardApi'
 import {
   ErrorState,
   LoadingState,
@@ -50,32 +53,84 @@ export function DashboardPage() {
           retry={content.retry}
         />
       )}
-      {content.status === 'ready' && (
+      {content.status === 'ready' && <Indicators summary={content.data} />}
+    </section>
+  )
+}
+
+function Indicators({ summary }: { summary: DashboardSummary }) {
+  const { latestProject, latestPublishedProject, visits } = summary
+  const mostVisited = visits.mostVisitedProject
+
+  return (
+    <div className="space-y-8">
+      <section aria-labelledby="dashboard-portfolio">
+        <h2 id="dashboard-portfolio" className="mb-3 text-lg font-semibold">
+          Portafolio
+        </h2>
         <dl className="grid gap-4 sm:grid-cols-2">
           <Indicator label="Proyectos">
-            {content.data.totalProjects.toLocaleString('es')}
+            {summary.totalProjects.toLocaleString('es')}
           </Indicator>
           <Indicator label="Tecnologías">
-            {content.data.totalTechnologies.toLocaleString('es')}
+            {summary.totalTechnologies.toLocaleString('es')}
           </Indicator>
           <Indicator
             label="Último proyecto registrado"
             detail={
-              content.data.latestProject &&
-              DATE_TIME.format(
-                new Date(content.data.latestProject.registeredAt),
-              )
+              latestProject &&
+              DATE_TIME.format(new Date(latestProject.registeredAt))
             }
           >
-            {content.data.latestProject?.name ?? 'Ninguno todavía'}
+            {latestProject?.name ?? 'Ninguno todavía'}
+          </Indicator>
+          <Indicator
+            label="Último proyecto publicado"
+            detail={
+              latestPublishedProject &&
+              DATE_TIME.format(new Date(latestPublishedProject.publishedAt))
+            }
+          >
+            {latestPublishedProject?.name ?? 'Ninguno todavía'}
           </Indicator>
           <Indicator label="Último acceso" detail="Tu sesión anterior a esta.">
-            {content.data.lastAccessAt
-              ? DATE_TIME.format(new Date(content.data.lastAccessAt))
+            {summary.lastAccessAt
+              ? DATE_TIME.format(new Date(summary.lastAccessAt))
               : 'Este es tu primer acceso'}
           </Indicator>
         </dl>
-      )}
-    </section>
+      </section>
+
+      <section aria-labelledby="dashboard-visits">
+        <h2 id="dashboard-visits" className="mb-1 text-lg font-semibold">
+          Visitas
+        </h2>
+        <p className="mb-3 text-sm text-slate-400">
+          Aperturas del portafolio y de sus proyectos, sin contar las recargas.
+        </p>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <Indicator label="Visitas totales">
+            {visits.total.toLocaleString('es')}
+          </Indicator>
+          <Indicator label="Visitas de hoy">
+            {visits.today.toLocaleString('es')}
+          </Indicator>
+          <Indicator label="Visitas del mes">
+            {visits.thisMonth.toLocaleString('es')}
+          </Indicator>
+          <Indicator
+            label="Proyecto más visto"
+            detail={
+              mostVisited &&
+              (mostVisited.visits === 1
+                ? '1 visita'
+                : `${mostVisited.visits.toLocaleString('es')} visitas`)
+            }
+          >
+            {mostVisited?.name ?? 'Ninguno todavía'}
+          </Indicator>
+        </dl>
+      </section>
+    </div>
   )
 }

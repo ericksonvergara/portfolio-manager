@@ -21,8 +21,9 @@ interface AdminDashboardApi {
 
     @Operation(
             summary = "Consultar los indicadores",
-            description = "Total de proyectos y de tecnologías, último proyecto registrado y último acceso, "
-                    + "que es el anterior a la sesión actual."
+            description = "Total de proyectos y de tecnologías, últimos proyectos registrado y publicado, último "
+                    + "acceso (el anterior a la sesión actual) y visitas: totales, de hoy, del mes y proyecto más "
+                    + "visto. El día y el mes siguen la zona horaria STATS_TIMEZONE."
     )
     @ApiResponse(responseCode = "200", description = "Indicadores")
     DashboardResponse getDashboard(@Parameter(hidden = true) Jwt jwt);

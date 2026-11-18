@@ -2,6 +2,8 @@ package com.portafolio_manager.backend.infrastructure.persistence.dashboard;
 
 import com.portafolio_manager.backend.application.port.out.dashboard.DashboardRepositoryPort;
 import com.portafolio_manager.backend.domain.dashboard.LatestProject;
+import com.portafolio_manager.backend.domain.dashboard.LatestPublishedProject;
+import com.portafolio_manager.backend.domain.dashboard.MostVisitedProject;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,12 +48,56 @@ class DashboardPersistenceAdapter implements DashboardRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<LatestPublishedProject> findLatestPublishedProject() {
+        return jdbcTemplate.query("""
+                SELECT name, COALESCE(published_at, updated_at) AS published_at
+                FROM projects
+                WHERE active
+                ORDER BY COALESCE(published_at, updated_at) DESC, id DESC
+                LIMIT 1
+                """,
+                (row, number) -> new LatestPublishedProject(
+                        row.getString("name"), row.getTimestamp("published_at").toInstant())
+        ).stream().findFirst();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Instant> findPreviousAccess(Long userId) {
         return jdbcTemplate.query(
                 "SELECT previous_login_at FROM users WHERE id = ?",
                 (row, number) -> Optional.ofNullable(row.getTimestamp("previous_login_at")).map(Timestamp::toInstant),
                 userId
         ).stream().findFirst().flatMap(access -> access);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countVisits() {
+        return count("SELECT COUNT(*) FROM visits");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countVisitsSince(Instant start) {
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM visits WHERE visited_at >= ?", Long.class, Timestamp.from(start));
+        return total == null ? 0 : total;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<MostVisitedProject> findMostVisitedProject() {
+        return jdbcTemplate.query("""
+                SELECT p.name, COUNT(*) AS visits
+                FROM visits v
+                JOIN projects p ON p.id = v.project_id
+                GROUP BY p.id, p.name
+                ORDER BY visits DESC, p.name
+                LIMIT 1
+                """,
+                (row, number) -> new MostVisitedProject(row.getString("name"), row.getLong("visits"))
+        ).stream().findFirst();
     }
 
     private long count(String sql) {

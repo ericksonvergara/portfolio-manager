@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DashboardSummary } from '../../features/admin/dashboard/adminDashboardApi'
@@ -20,7 +20,17 @@ const SUMMARY: DashboardSummary = {
     name: 'Sistema ERP',
     registeredAt: '2026-11-02T15:30:00Z',
   },
+  latestPublishedProject: {
+    name: 'Tienda en línea',
+    publishedAt: '2026-11-03T10:00:00Z',
+  },
   lastAccessAt: '2026-11-04T21:15:00Z',
+  visits: {
+    total: 12583,
+    today: 54,
+    thisMonth: 812,
+    mostVisitedProject: { name: 'Agenda de citas', visits: 320 },
+  },
 }
 
 const dateTime = (value: string) =>
@@ -50,17 +60,43 @@ describe('DashboardPage (HU012)', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the visit statistics (HU013)', async () => {
+    render(<DashboardPage />)
+    const visits = await screen.findByRole('region', { name: 'Visitas' })
+
+    expect(within(visits).getByText('Visitas totales')).toBeInTheDocument()
+    expect(
+      within(visits).getByText((12583).toLocaleString('es')),
+    ).toBeInTheDocument()
+    expect(within(visits).getByText('54')).toBeInTheDocument()
+    expect(within(visits).getByText('812')).toBeInTheDocument()
+    expect(within(visits).getByText('Agenda de citas')).toBeInTheDocument()
+    expect(within(visits).getByText('320 visitas')).toBeInTheDocument()
+  })
+
+  it('shows the latest published project next to the portfolio data', async () => {
+    render(<DashboardPage />)
+    const portfolio = await screen.findByRole('region', { name: 'Portafolio' })
+
+    expect(within(portfolio).getByText('Tienda en línea')).toBeInTheDocument()
+    expect(
+      within(portfolio).getByText(dateTime('2026-11-03T10:00:00Z')),
+    ).toBeInTheDocument()
+  })
+
   it('explains an empty portfolio and a first session', async () => {
     api.answer = () =>
       Promise.resolve({
         totalProjects: 0,
         totalTechnologies: 0,
         latestProject: null,
+        latestPublishedProject: null,
         lastAccessAt: null,
+        visits: { total: 0, today: 0, thisMonth: 0, mostVisitedProject: null },
       })
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Ninguno todavía')).toBeInTheDocument()
+    expect(await screen.findAllByText('Ninguno todavía')).toHaveLength(3)
     expect(screen.getByText('Este es tu primer acceso')).toBeInTheDocument()
   })
 
