@@ -22,6 +22,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -60,6 +61,7 @@ class AdminDashboardIntegrationTest extends AbstractPostgresIntegrationTest {
     @AfterEach
     void cleanUp() {
         jdbcTemplate.update("DELETE FROM users WHERE email = ?", EMAIL);
+        jdbcTemplate.update("DELETE FROM visits");
         jdbcTemplate.update("DELETE FROM projects");
         jdbcTemplate.update("DELETE FROM technologies");
     }
@@ -116,6 +118,61 @@ class AdminDashboardIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldShowTheVisitStatistics() throws Exception {
+        long erp = insertProject("Sistema ERP", true, "2026-01-10T10:00:00Z");
+        long shop = insertProject("Tienda", true, "2026-01-11T10:00:00Z");
+        insertVisit(erp, "now()");
+        insertVisit(erp, "now()");
+        insertVisit(shop, "now()");
+        insertVisit(null, "now()");
+        insertVisit(shop, "now() - interval '70 days'");
+        insertVisit(shop, "now() - interval '71 days'");
+        insertVisit(shop, "now() - interval '72 days'");
+
+        dashboard(login())
+                .andExpect(jsonPath("$.visits.total").value(7))
+                .andExpect(jsonPath("$.visits.today").value(4))
+                .andExpect(jsonPath("$.visits.thisMonth").value(4))
+                .andExpect(jsonPath("$.visits.mostVisitedProject.name").value("Tienda"))
+                .andExpect(jsonPath("$.visits.mostVisitedProject.visits").value(4));
+    }
+
+    @Test
+    void shouldNotNameAMostVisitedProjectWithoutProjectVisits() throws Exception {
+        insertVisit(null, "now()");
+
+        dashboard(login())
+                .andExpect(jsonPath("$.visits.total").value(1))
+                .andExpect(jsonPath("$.visits.mostVisitedProject").doesNotExist());
+    }
+
+    @Test
+    void shouldShowTheLatestProjectStillPublished() throws Exception {
+        long old = insertProject("Antiguo", true, "2026-01-10T10:00:00Z");
+        long hidden = insertProject("Oculto", false, "2026-01-11T10:00:00Z");
+        jdbcTemplate.update("UPDATE projects SET updated_at = '2026-02-01T10:00:00Z' WHERE id = ?", old);
+        jdbcTemplate.update("UPDATE projects SET published_at = now() WHERE id = ?", hidden);
+        String token = login();
+
+        // Published before the column existed: updated_at stands in for the date.
+        dashboard(token)
+                .andExpect(jsonPath("$.latestPublishedProject.name").value("Antiguo"))
+                .andExpect(jsonPath("$.latestPublishedProject.publishedAt").value("2026-02-01T10:00:00Z"));
+
+        long technology = jdbcTemplate.queryForObject(
+                "INSERT INTO technologies (name, category, display_order) VALUES ('Java', 'BACKEND', 1) RETURNING id",
+                Long.class);
+        jdbcTemplate.update("INSERT INTO project_technologies VALUES (?, ?)", hidden, technology);
+        mockMvc.perform(patch("/api/admin/projects/" + hidden + "/publication")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"active\": true }"))
+                .andExpect(status().isOk());
+
+        dashboard(token).andExpect(jsonPath("$.latestPublishedProject.name").value("Oculto"));
+    }
+
+    @Test
     void shouldKeepTheDashboardForTheAdministrator() throws Exception {
         mockMvc.perform(get("/api/admin/dashboard")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/admin/dashboard")
@@ -142,10 +199,18 @@ class AdminDashboardIntegrationTest extends AbstractPostgresIntegrationTest {
                 "SELECT last_login_at FROM users WHERE email = ?", Timestamp.class, EMAIL).toInstant();
     }
 
-    private void insertProject(String name, boolean active, String createdAt) {
-        jdbcTemplate.update("""
+    private long insertProject(String name, boolean active, String createdAt) {
+        return jdbcTemplate.queryForObject("""
                 INSERT INTO projects (name, slug, short_description, description, cover_image_url, active, created_at)
                 VALUES (?, lower(replace(?, ' ', '-')), 'Corta', 'Completa', '/images/cover.png', ?, ?::timestamptz)
-                """, name, name, active, createdAt);
+                RETURNING id
+                """, Long.class, name, name, active, createdAt);
+    }
+
+    private void insertVisit(Long projectId, String visitedAt) {
+        jdbcTemplate.update("""
+                INSERT INTO visits (visited_at, anonymized_ip, browser, operating_system, device, project_id)
+                VALUES (%s, '190.25.14.0', 'Chrome', 'Windows', 'Desktop', ?)
+                """.formatted(visitedAt), projectId);
     }
 }

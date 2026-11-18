@@ -66,6 +66,7 @@ import com.portafolio_manager.backend.application.service.technology.ListTechnol
 import com.portafolio_manager.backend.application.service.technology.UpdateTechnologyService;
 import com.portafolio_manager.backend.application.service.visit.RegisterVisitService;
 import com.portafolio_manager.backend.infrastructure.storage.UploadProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -75,6 +76,7 @@ import java.time.Clock;
  * Wires the framework-free services behind the portfolio content: the public site and its administration.
  */
 @Configuration
+@EnableConfigurationProperties(StatisticsProperties.class)
 public class PortfolioConfig {
 
     @Bean
@@ -250,7 +252,11 @@ public class PortfolioConfig {
     }
 
     @Bean
-    GetDashboardUseCase getDashboardUseCase(DashboardRepositoryPort dashboardRepository) {
-        return new GetDashboardService(dashboardRepository);
+    GetDashboardUseCase getDashboardUseCase(
+            DashboardRepositoryPort dashboardRepository,
+            Clock clock,
+            StatisticsProperties statistics
+    ) {
+        return new GetDashboardService(dashboardRepository, clock, statistics.timezone());
     }
 }

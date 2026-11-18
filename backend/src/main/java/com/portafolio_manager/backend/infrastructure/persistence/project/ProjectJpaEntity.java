@@ -76,6 +76,9 @@ public class ProjectJpaEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "published_at")
+    private Instant publishedAt;
+
     @ManyToMany
     @JoinTable(
             name = "project_technologies",
@@ -110,6 +113,9 @@ public class ProjectJpaEntity {
     void setActive(boolean active) {
         this.active = active;
         updatedAt = Instant.now();
+        if (active) {
+            publishedAt = updatedAt;
+        }
     }
 
     /** Replaces the editable data and the slug; publication and images stay as they are. */
