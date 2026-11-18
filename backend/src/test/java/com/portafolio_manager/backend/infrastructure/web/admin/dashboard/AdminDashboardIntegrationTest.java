@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -138,12 +139,35 @@ class AdminDashboardIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void shouldRankTheFiveMostVisitedProjects() throws Exception {
+        String[] names = {"Alfa", "Beta", "Gamma", "Delta", "Épsilon", "Zeta"};
+        int[] visits = {2, 6, 4, 4, 1, 3};
+        for (int i = 0; i < names.length; i++) {
+            long project = insertProject(names[i], i != 2, "2026-01-1%dT10:00:00Z".formatted(i));
+            for (int v = 0; v < visits[i]; v++) {
+                insertVisit(project, "now()");
+            }
+        }
+        insertProject("Sin visitas", true, "2026-01-20T10:00:00Z");
+
+        // Ties by name; a hidden project keeps its place; the sixth one and the one without visits stay out.
+        dashboard(login())
+                .andExpect(jsonPath("$.visits.ranking[*].name").value(contains("Beta", "Delta", "Gamma", "Zeta", "Alfa")))
+                .andExpect(jsonPath("$.visits.ranking[*].visits").value(contains(6, 4, 4, 3, 2)))
+                .andExpect(jsonPath("$.visits.ranking[2].published").value(false))
+                .andExpect(jsonPath("$.visits.ranking[0].published").value(true))
+                .andExpect(jsonPath("$.visits.ranking[0].id").isNumber())
+                .andExpect(jsonPath("$.visits.mostVisitedProject.name").value("Beta"));
+    }
+
+    @Test
     void shouldNotNameAMostVisitedProjectWithoutProjectVisits() throws Exception {
         insertVisit(null, "now()");
 
         dashboard(login())
                 .andExpect(jsonPath("$.visits.total").value(1))
-                .andExpect(jsonPath("$.visits.mostVisitedProject").doesNotExist());
+                .andExpect(jsonPath("$.visits.mostVisitedProject").doesNotExist())
+                .andExpect(jsonPath("$.visits.ranking").isEmpty());
     }
 
     @Test

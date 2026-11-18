@@ -1,18 +1,18 @@
 import type { ReactNode } from 'react'
-import {
-  getDashboard,
-  type DashboardSummary,
-} from '../../features/admin/dashboard/adminDashboardApi'
+import { Link } from 'react-router-dom'
+import type { DashboardSummary } from '../../features/admin/dashboard/adminDashboardApi'
+import { useDashboard } from '../../features/admin/dashboard/useDashboard'
 import {
   ErrorState,
   LoadingState,
 } from '../../features/admin/projects/AdminStates'
-import { useAdminData } from '../../features/admin/projects/useAdminData'
 
 const DATE_TIME = new Intl.DateTimeFormat('es', {
   dateStyle: 'medium',
   timeStyle: 'short',
 })
+
+const TIME = new Intl.DateTimeFormat('es', { timeStyle: 'short' })
 
 function Indicator({
   label,
@@ -36,13 +36,24 @@ function Indicator({
 
 /** The first screen of the admin panel: the general state of the portfolio (HU012). */
 export function DashboardPage() {
-  const content = useAdminData(getDashboard)
+  const content = useDashboard()
 
   return (
     <section aria-labelledby="dashboard-title" className="max-w-4xl">
-      <h1 id="dashboard-title" className="mb-6 text-2xl font-bold">
-        Inicio
-      </h1>
+      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+        <h1 id="dashboard-title" className="text-2xl font-bold">
+          Inicio
+        </h1>
+        {content.status === 'ready' && (
+          <p
+            className={`text-xs ${content.stale ? 'text-amber-300' : 'text-slate-500'}`}
+          >
+            {content.stale
+              ? `No se pudo actualizar: datos de las ${TIME.format(content.updatedAt)}.`
+              : `Actualizado a las ${TIME.format(content.updatedAt)} · se actualiza cada minuto.`}
+          </p>
+        )}
+      </div>
 
       {content.status === 'loading' && (
         <LoadingState label="Cargando indicadores…" />
@@ -131,6 +142,74 @@ function Indicators({ summary }: { summary: DashboardSummary }) {
           </Indicator>
         </dl>
       </section>
+
+      <Ranking projects={visits.ranking} />
     </div>
+  )
+}
+
+/** The projects with the most visits to their detail (HU014). */
+function Ranking({
+  projects,
+}: {
+  projects: DashboardSummary['visits']['ranking']
+}) {
+  return (
+    <section aria-labelledby="dashboard-ranking">
+      <h2 id="dashboard-ranking" className="mb-3 text-lg font-semibold">
+        Proyectos más visitados
+      </h2>
+      {projects.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+          Aún no hay visitas a los proyectos.
+        </p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-slate-800">
+          <table className="w-full min-w-[420px] text-left text-sm">
+            <caption className="sr-only">
+              Top {projects.length} de proyectos por visitas a su detalle
+            </caption>
+            <thead className="bg-slate-900 text-slate-400">
+              <tr>
+                <th scope="col" className="w-16 px-4 py-3 font-medium">
+                  Posición
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  Proyecto
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">
+                  Visitas
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {projects.map((project, index) => (
+                <tr key={project.id}>
+                  <td className="px-4 py-3 text-slate-400 tabular-nums">
+                    {index + 1}
+                  </td>
+                  <th scope="row" className="px-4 py-3 font-medium">
+                    <Link
+                      to={`/admin/proyectos/${project.id}/editar`}
+                      className="text-sky-400 hover:text-sky-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                    >
+                      {project.name}
+                    </Link>
+                    {!project.published && (
+                      <span className="ml-2 rounded-full bg-slate-700/60 px-2 py-0.5 text-xs font-normal text-slate-300">
+                        Oculto
+                      </span>
+                    )}
+                  </th>
+                  <td className="px-4 py-3 text-right text-slate-200 tabular-nums">
+                    {project.visits.toLocaleString('es')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   )
 }

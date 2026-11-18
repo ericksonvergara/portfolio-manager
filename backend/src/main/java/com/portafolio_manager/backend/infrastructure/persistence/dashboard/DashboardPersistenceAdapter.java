@@ -3,13 +3,14 @@ package com.portafolio_manager.backend.infrastructure.persistence.dashboard;
 import com.portafolio_manager.backend.application.port.out.dashboard.DashboardRepositoryPort;
 import com.portafolio_manager.backend.domain.dashboard.LatestProject;
 import com.portafolio_manager.backend.domain.dashboard.LatestPublishedProject;
-import com.portafolio_manager.backend.domain.dashboard.MostVisitedProject;
+import com.portafolio_manager.backend.domain.dashboard.RankedProject;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -87,17 +88,19 @@ class DashboardPersistenceAdapter implements DashboardRepositoryPort {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<MostVisitedProject> findMostVisitedProject() {
+    public List<RankedProject> findMostVisitedProjects(int limit) {
         return jdbcTemplate.query("""
-                SELECT p.name, COUNT(*) AS visits
+                SELECT p.id, p.name, p.active, COUNT(*) AS visits
                 FROM visits v
                 JOIN projects p ON p.id = v.project_id
-                GROUP BY p.id, p.name
+                GROUP BY p.id, p.name, p.active
                 ORDER BY visits DESC, p.name
-                LIMIT 1
+                LIMIT ?
                 """,
-                (row, number) -> new MostVisitedProject(row.getString("name"), row.getLong("visits"))
-        ).stream().findFirst();
+                (row, number) -> new RankedProject(
+                        row.getLong("id"), row.getString("name"), row.getLong("visits"), row.getBoolean("active")),
+                limit
+        );
     }
 
     private long count(String sql) {

@@ -3,9 +3,10 @@ package com.portafolio_manager.backend.application.port.out.dashboard;
 import com.portafolio_manager.backend.application.port.out.PersistencePort;
 import com.portafolio_manager.backend.domain.dashboard.LatestProject;
 import com.portafolio_manager.backend.domain.dashboard.LatestPublishedProject;
-import com.portafolio_manager.backend.domain.dashboard.MostVisitedProject;
+import com.portafolio_manager.backend.domain.dashboard.RankedProject;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface DashboardRepositoryPort extends PersistencePort {
@@ -28,6 +29,6 @@ public interface DashboardRepositoryPort extends PersistencePort {
 
     long countVisitsSince(Instant start);
 
-    /** Among the existing projects, with ties broken by name. */
-    Optional<MostVisitedProject> findMostVisitedProject();
+    /** The existing projects with visits to their detail, the most visited first and ties by name. */
+    List<RankedProject> findMostVisitedProjects(int limit);
 }
