@@ -11,6 +11,9 @@ import java.time.ZoneId;
 
 public class GetDashboardService implements GetDashboardUseCase {
 
+    /** Projects in the ranking (HU014). */
+    static final int RANKING_SIZE = 5;
+
     private final DashboardRepositoryPort dashboardRepository;
     private final Clock clock;
     private final ZoneId timezone;
@@ -40,7 +43,7 @@ public class GetDashboardService implements GetDashboardUseCase {
                 dashboardRepository.countVisits(),
                 dashboardRepository.countVisitsSince(today.atStartOfDay(timezone).toInstant()),
                 dashboardRepository.countVisitsSince(today.withDayOfMonth(1).atStartOfDay(timezone).toInstant()),
-                dashboardRepository.findMostVisitedProject().orElse(null)
+                dashboardRepository.findMostVisitedProjects(RANKING_SIZE)
         );
     }
 }

@@ -3,11 +3,12 @@ package com.portafolio_manager.backend.infrastructure.web.admin.dashboard;
 import com.portafolio_manager.backend.domain.dashboard.DashboardSummary;
 import com.portafolio_manager.backend.domain.dashboard.LatestProject;
 import com.portafolio_manager.backend.domain.dashboard.LatestPublishedProject;
-import com.portafolio_manager.backend.domain.dashboard.MostVisitedProject;
+import com.portafolio_manager.backend.domain.dashboard.RankedProject;
 import com.portafolio_manager.backend.domain.dashboard.VisitStatistics;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
+import java.util.List;
 
 @Schema(description = "Indicadores del portafolio y estadísticas de visitas")
 record DashboardResponse(
@@ -27,7 +28,6 @@ record DashboardResponse(
         LatestProject latest = summary.latestProject();
         LatestPublishedProject published = summary.latestPublishedProject();
         VisitStatistics visits = summary.visits();
-        MostVisitedProject mostVisited = visits.mostVisitedProject();
         return new DashboardResponse(
                 summary.totalProjects(),
                 summary.totalTechnologies(),
@@ -38,9 +38,10 @@ record DashboardResponse(
                         visits.total(),
                         visits.today(),
                         visits.thisMonth(),
-                        mostVisited == null
-                                ? null
-                                : new MostVisitedResponse(mostVisited.name(), mostVisited.visits())
+                        visits.mostVisitedProject()
+                                .map(top -> new MostVisitedResponse(top.name(), top.visits()))
+                                .orElse(null),
+                        visits.ranking().stream().map(RankedProjectResponse::from).toList()
                 )
         );
     }
@@ -65,8 +66,24 @@ record DashboardResponse(
             @Schema(example = "54") long today,
             @Schema(example = "812") long thisMonth,
             @Schema(description = "Proyecto con más visitas a su detalle; nulo si no hay ninguna", nullable = true)
-            MostVisitedResponse mostVisitedProject
+            MostVisitedResponse mostVisitedProject,
+            @Schema(description = "Top de proyectos por visitas a su detalle, el más visitado primero (HU014)")
+            List<RankedProjectResponse> ranking
     ) {
+    }
+
+    @Schema(description = "Proyecto del ranking")
+    record RankedProjectResponse(
+            @Schema(example = "7") Long id,
+            @Schema(example = "Sistema ERP") String name,
+            @Schema(example = "320") long visits,
+            @Schema(example = "true", description = "Falso si se ocultó después: sus visitas siguen contando")
+            boolean published
+    ) {
+
+        static RankedProjectResponse from(RankedProject project) {
+            return new RankedProjectResponse(project.id(), project.name(), project.visits(), project.published());
+        }
     }
 
     @Schema(description = "Proyecto y número de visitas")

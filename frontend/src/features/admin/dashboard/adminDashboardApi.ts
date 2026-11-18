@@ -8,6 +8,16 @@ export interface VisitStatistics {
   thisMonth: number
   /** Null while no project detail has visits. */
   mostVisitedProject: { name: string; visits: number } | null
+  /** Top 5 by visits to the detail, the most visited first (HU014). */
+  ranking: RankedProject[]
+}
+
+export interface RankedProject {
+  id: number
+  name: string
+  visits: number
+  /** False when it was hidden afterwards: its visits still count. */
+  published: boolean
 }
 
 /** The indicators of the portfolio (HU012) and its visits (HU013). */

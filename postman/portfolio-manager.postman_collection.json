@@ -2948,7 +2948,7 @@
     },
     {
       "name": "Administración - Dashboard",
-      "description": "Indicadores del panel (HU012, HU013): total de proyectos y de tecnologías, últimos proyectos registrado y publicado, último acceso (el anterior a la sesión actual) y visitas. Solo lee, así que no deja datos. Se ejecuta después de las carpetas que registran visitas.",
+      "description": "Indicadores del panel (HU012, HU013): total de proyectos y de tecnologías, últimos proyectos registrado y publicado, último acceso (el anterior a la sesión actual), visitas y ranking de proyectos. Solo lee, así que no deja datos. Se ejecuta después de las carpetas que registran visitas.",
       "item": [
         {
           "name": "01 · Login (dashboard) → 200",
@@ -3026,6 +3026,16 @@
                   "pm.test('Nombra el proyecto más visto', () => {",
                   "  pm.expect(dashboard.visits.mostVisitedProject.name).to.be.a('string').and.not.empty;",
                   "  pm.expect(dashboard.visits.mostVisitedProject.visits).to.be.at.least(1);",
+                  "});",
+                  "pm.test('El ranking va de más a menos visitas, con 5 como máximo (HU014)', () => {",
+                  "  const ranking = dashboard.visits.ranking;",
+                  "  pm.expect(ranking).to.be.an('array').with.length.within(1, 5);",
+                  "  ranking.slice(1).forEach((project, i) => pm.expect(project.visits).to.be.at.most(ranking[i].visits));",
+                  "  ranking.forEach((project) => {",
+                  "    pm.expect(project.id).to.be.a('number');",
+                  "    pm.expect(project.published).to.be.a('boolean');",
+                  "  });",
+                  "  pm.expect(ranking[0].name).to.eql(dashboard.visits.mostVisitedProject.name);",
                   "});",
                   "pm.test('El último publicado trae nombre y fecha', () => {",
                   "  if (dashboard.latestPublishedProject !== null) {",
